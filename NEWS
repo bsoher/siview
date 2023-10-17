@@ -1,0 +1,45 @@
+Version 0.5.0 - 31 July 2022
+-------------------------------------------------------------------------------
+First version in Python 3
+- ran 2to3 and did some manual touch-up
+
+
+
+Version 0.4.0  - 20 September 2019
+------------------------------------------------------------------------------
+Updated matplotlib to 2.2.3 and wxPython to 4.0.4 since conda was no longer
+allowing me to install those older versions from the main anaconda repositories
+- only changes are to GUI and plotting routines needed for compliance
+
+
+
+Version 0.3.0 (aka 0.3.1 in manual) - 01 November 2018
+------------------------------------------------------------------------------
+Release for Cecil use in DIAL.  Creates a wheel that is installed locally.
+- First release of 'washin-only' model and fitting
+- Beginning to create 'WashSim' application GUI and algorithms
+- a few GUI updates and extensions
+
+
+Version 0.2.2 - 14 December 2016 
+------------------------------------------------------------------------------
+Release for Cecil use in DIAL.  Creates a wheel that is installed locally.
+- Working CLI implementation, some small changes in arguments
+- Removed some unused time-series models and weight functions
+- More updates for DICOM results output and scale/intercept tag values to allow
+  us to properly display float results in resonable int16 images
+  
+  
+Version 0.2.0 - 2 May 2016 (also)
+------------------------------------------------------------------------------
+Only major change was switch to 64 bit. All worked the same.
+
+  
+Version 0.1.6 - 2 May 2016
+------------------------------------------------------------------------------
+This is the last 32 bit version before we went to 64 bit.
+
+
+Version 0.1.0 - 21 August 2014
+------------------------------------------------------------------------------
+This is the first (beta) version of Washout installed at DIAL.
