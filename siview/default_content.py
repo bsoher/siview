@@ -20,7 +20,7 @@ This module contains just three objects:
 1) the name of the application
 2) the name of the configuration file to use
 3) a dict called DEFAULT_INI_FILE_CONTENT. The dict has a key 
-   for the INI file ("timeseries", etc.) and associated with 
+   for the INI file ("siview", etc.) and associated with 
    that key is the default content for that INI file. 
 """
 

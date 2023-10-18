@@ -110,7 +110,7 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
 
     def on_tab_closed(self, event):        
         """
-        At this point the tab is already closed and the timeseries removed from
+        At this point the tab is already closed and the dataset removed from
         memory.        
         """
         if not self.tabs:
@@ -126,7 +126,7 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
     #
     #=======================================================
 
-    def add_siview_tab(self, timeseries=None, out_dicom=None):
+    def add_siview_tab(self, dataset=None, out_dicom=None):
 
         # If the welcome tab is open, close it.
         if self.is_welcome_tab_open:
@@ -136,7 +136,7 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
         name = "SIView%d" % self.count
 
         # create new notebook tab with process controls 
-        tab = tab_siview.TabSiview(self, self.top, timeseries, out_dicom=out_dicom)
+        tab = tab_siview.TabSiview(self, self.top, dataset, out_dicom=out_dicom)
         self.AddPage(tab, name, True)
 
 
@@ -162,8 +162,8 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
         if self.active_tab:
             tab = self.active_tab
 
-            if tab.timeseries:
-                title += " - " + tab.timeseries.timeseries_filename
+            if tab.dataset:
+                title += " - " + tab.dataset.dataset_filename
 
         wx.GetApp().GetTopWindow().SetTitle(title)
 

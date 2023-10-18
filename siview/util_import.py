@@ -13,50 +13,26 @@
 
 
 # Our modules
-import siview.mri_timeseries as mri_timeseries
-import siview.mri_siview as mri_siview
+import siview.si_dataset as si_dataset
 
 from siview.common.import_ import Importer
 
 
 
-class TimeseriesImporter(Importer):
+class SiDatasetImporter(Importer):
     def __init__(self, source):
         Importer.__init__(self, source, None, False)
 
     def go(self, add_history_comment=False):
-        for element in self.root.getiterator("timeseries"):
+        for element in self.root.getiterator("si_dataset"):
             self.found_count += 1
 
-            timeseries = mri_timeseries.Timeseries(element)
+            dataset = si_dataset.Dataset(element)
             
-            self.imported.append(timeseries)
+            self.imported.append(si_dataset)
 
         self.post_import()
         
         return self.imported
     
     
-class WashsimImporter(Importer):
-    def __init__(self, source):
-        Importer.__init__(self, source, None, False)
-
-    def go(self, add_history_comment=False):
-        
-        for element in self.root.getiterator("timeseries"):
-            self.found_count += 1
-
-            timeseries = mri_timeseries.Timeseries(element)
-            
-            self.imported.append(timeseries)
-
-        for element in self.root.getiterator("washsim"):
-            self.found_count += 1
-
-            washsim = mri_washsim.Washsim(element)
-            
-            self.imported.append(washsim)
-
-        self.post_import()
-        
-        return self.imported

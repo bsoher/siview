@@ -28,10 +28,7 @@ import struct
 import wx
 import wx.adv as wx_adv
 import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit
-try:
-    import pydicom
-except ImportError:
-    import dicom as pydicom
+import pydicom
 import numpy as np
 
 #import wx.lib.agw.multidirdialog as MDD
@@ -42,7 +39,8 @@ import siview.common.dcmstack.dcmstack as dcmstack
 import siview.util_menu as util_menu
 import siview.util_import as util_import
 import siview.dialog_export as dialog_export
-import siview.mri_timeseries as mri_timeseries
+import siview.si_dataset as si_dataset
+import siview.si_data_raw as si_data_raw
 import siview.default_content as default_content
 import siview.notebook_siview as notebook_siview
 import siview.util_siview_config as util_siview_config
@@ -50,7 +48,7 @@ import siview.util_siview_config as util_siview_config
 import siview.common.misc as misc
 import siview.common.export as export
 import siview.common.wx_util as wx_util
-import siview.common.local_nrrd as nrrd
+#import siview.common.local_nrrd as nrrd
 import siview.common.common_dialogs as common_dialogs
 
 from wx.lib.embeddedimage import PyEmbeddedImage
@@ -132,180 +130,64 @@ class Main(wx.Frame):
 
     ############    SIView menu
 
-    def on_import_dicom(self, event):
+    def on_import_data_crt(self, event):
 
-        ini_name = "import_timeseries_dicom"
+        ini_name = "import_data_crt"
         default_path = util_siview_config.get_path(ini_name)
+        msg = 'Select file with Processed CRT Data'
+        filetype_filter = "Numpy (*.npy)"
 
-        title="Choose directory(s) with DICOM time series:"
-
-        dlg = MDD.MultiDirDialog(self, title=title,
-                                 defaultPath=default_path,
-                                 agwStyle=MDD.DD_MULTIPLE|MDD.DD_DIR_MUST_EXIST)
-        
-        if dlg.ShowModal() == wx.ID_OK:
-            
-            msg = ""
+        fname = common_dialogs.pickfile(message=message,
+                                           default_path=default_path,
+                                           filetype_filter=filetype_filter)
+        msg = ""
+        if fname:
             try:
-                src_paths = dlg.GetPaths()
-                paths     = src_paths
-                
-                if len(paths) < 6:
-                    # could be Washin only, set flag
-                    flag_washin_only = True
-                else:
-                    flag_washin_only = False
-                
-                all_filenames = []
-                for path in paths:
-                    # Enumerate the directory contents
-                    filenames = os.listdir(path)
-            
-                    # Turn the filenames into fully-qualified filenames.
-                    filenames = [os.path.join(path, filename) for filename in filenames]
-            
-                    # Filter out non-files
-                    filenames = [filename for filename in filenames if os.path.isfile(filename)]
-                    
-                    all_filenames += filenames
-                
-                src_dcm  = pydicom.read_file(all_filenames[0])
-                patid    = src_dcm.PatientID
-                serdesc  = src_dcm.SeriesDescription
-                studyuid = src_dcm.StudyInstanceUID
-                
-                set_study_uid = set()
-                set_series_uid = set()
-                
-                my_stack = dcmstack.DicomStack(time_order='AcquisitionTime')
-                for item in all_filenames:
-                    src_dcm = pydicom.read_file(item)
-                    set_study_uid.add(src_dcm.StudyInstanceUID)
-                    set_series_uid.add(src_dcm.SeriesInstanceUID)
-                    my_stack.add_dcm(src_dcm)
-                    
-                # collect data from one series to use as template for DICOM output
-                #
-                # 1. grab first directory
-                # 2. fully qualify file names
-                # 3. filter out non-file
-                source_path = paths[0]
-                fnames = os.listdir(source_path)
-                fnames = [os.path.join(source_path, fname) for fname in fnames]
-                fnames = [fname for fname in fnames if os.path.isfile(fname)]
-
-                dicoms = []
-                for item in fnames:
-                    tmp = pydicom.read_file(item)
-                    dicoms.append(tmp)
-                    
-                source_path, _ = os.path.split(source_path)
-                
-                out_dcm = { 'study_uid'   : list(set_study_uid),
-                            'series_uid'  : list(set_series_uid),
-                            'source_path' : source_path,
-                            'dicom_files' : dicoms
-                          }
+                crt_dat = np.load(fname)
+                if len(crt_dat.shape) != 3:
+                    msg = 'Error (import_data_crt): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
+                if crt_dat.dtype != np.complex64:
+                    msg = 'Error (import_data_crt): Wrong Dtype, arr.dtype = '+str(crt_dat.dtype)
             except Exception as e:
-                msg = """Exception reading DICOM file: \n"%s".""" % str(e)
-                #msg = """Unknown exception reading DICOM file "%s".""" % filename 
+                msg = """Error (import_data_crt): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
 
             if msg:
-                common_dialogs.message(msg, default_content.APP_NAME+" - Import DICOM", common_dialogs.E_OK)
+                common_dialogs.message(msg, default_content.APP_NAME+" - Add Node Nifti", common_dialogs.E_OK)
             else:
-                # test if right dimensions
-                msg  = ""
-                dims = my_stack.get_data().shape
-                if len(dims) != 4:
-                    msg = """Data is not 4D, dim = "%s".""" % str(dims)
-                elif dims[0] < 3:
-                    msg = """Time series dimension too small, dim = "%s".""" % str(dims)
-                
-                if msg:
-                    common_dialogs.message(msg, default_content.APP_NAME+" - Import DICOM", common_dialogs.E_OK)
-                else:
-                    path, _ = os.path.split(all_filenames[0])
-                    path_up, _ = os.path.split(path)
-                    # convert to timeseries
-                    timeseries = mri_timeseries.Timeseries()
-                    if flag_washin_only:
-                        timeseries.time_course_model = 'Exponential Washin Only'
-                    timeseries.import_from_dcmstack(my_stack, all_filenames, False, patid, serdesc, studyuid, path_up)
+                source_path, _ = os.path.split(fname)
 
-                    # call standard new tab create
-                    self._import_file(timeseries, out_dicom=out_dcm)
-                    
-                    util_siview_config.set_path(ini_name, src_paths[0])
-        
-        dlg.Destroy()
+                raw = si_data_raw.SiDataRaw()
+                raw.data = crt_dat
+                raw.sw = 1250.0
+                raw.frequency = 123.9
+                raw.resppm = 4.7
+                raw.seqte = 110.0
+                raw.seqtr = 2000.0
 
-        
-    def _import_file(self, timeseries, out_dicom=None):
+                dataset = si_dataset.dataset_from_raw(raw)
 
-        if timeseries:
+                self.notebook_siview.Freeze()
+                self.notebook_siview.add_siview_tab(dataset=dataset)
+                self.notebook_siview.Thaw()
+                self.notebook_siview.Layout()
+                self.update_title()
+
+                path, _ = os.path.split(filename)
+
+
+    def _import_file(self, dataset, out_dicom=None):
+
+        if dataset:
             wx.BeginBusyCursor()
             self.notebook_siview.Freeze()
-            self.notebook_siview.add_siview_tab(timeseries=timeseries, out_dicom=out_dicom)
+            self.notebook_siview.add_siview_tab(dataset=dataset, out_dicom=out_dicom)
             self.notebook_siview.Thaw()
             self.notebook_siview.Layout()
             wx.EndBusyCursor()
             self.update_title()
 
    
-    def on_import_mask_files(self, event):
-        
-        # New default dir is due to my mistake is sometimes opening the NRRD 
-        # files under the last dicom dir by mistake ... no perfect answer here. 
-        # ini_name = "import_mask_files"
-        ini_name = "import_timeseries_dicom"
-        default_path = util_siview_config.get_path(ini_name)
 
-        filetype_filter="Masks NRRD format only (*.nrrd)|*.nrrd"
-        filenames = common_dialogs.pickfile(filetype_filter=filetype_filter,
-                                            multiple=True,
-                                            default_path=default_path)
-        if filenames:
-            msg = ""
-            masks = []
-            opts  = []
-            try:
-                for filename in filenames:
-                    data, options = nrrd.read(filename)
-                    data = data[:,:,::-1]   # empirically determined
-                    masks.append(data)
-                    opts.append(options)
-                    
-            except IOError:
-                msg = """I can't read the file "%s".""" % filename
-            except:
-                msg = """Unknown exception reading Mask NRRD file "%s".""" % filename 
-    
-            if msg:
-                common_dialogs.message(msg, default_content.APP_NAME+" - Import Mask", common_dialogs.E_OK)
-            else:
-                # test if all masks have same dimensions
-                for mask in masks:
-                    if mask.shape != masks[0].shape:
-                        msg = "Masks are not all the same shape."
-                        break
-                
-                if msg:
-                    common_dialogs.message(msg, default_content.APP_NAME+" - Import Mask", common_dialogs.E_OK)
-                else:
-                    # concatenate to one mask
-                    mask = masks[0]
-                    if len(masks) > 1:
-                        for item in masks[1:]:
-                            mask += item
-                            
-                    mask = mask.swapaxes(0,1)
-                            
-                    self.notebook_siview.set_mask(mask)
-
-                    path, _ = os.path.split(filename)
-                    util_siview_config.set_path(ini_name, path)
-        
-        
     
     def on_open(self, event):
         wx.BeginBusyCursor()
@@ -332,14 +214,14 @@ class Main(wx.Frame):
             else:
                 # Time to rock and roll!
                 wx.BeginBusyCursor()
-                siview = importer.go()
+                siviews = importer.go()
                 wx.EndBusyCursor()    
 
-                if siview:
-                    timeseries = siview[0]
+                if siviews:
+                    dataset = siviews[0]
     
                     self.notebook_siview.Freeze()
-                    self.notebook_siview.add_siview_tab(timeseries=timeseries)
+                    self.notebook_siview.add_siview_tab(dataset=dataset)
                     self.notebook_siview.Thaw()
                     self.notebook_siview.Layout()
                     self.update_title()
@@ -355,9 +237,9 @@ class Main(wx.Frame):
 
     def on_save_siview(self, event, save_as=False):
         # This event is also called programmatically by on_save_as_viff().
-        timeseries = self.notebook_siview.active_tab.timeseries
+        dataset = self.notebook_siview.active_tab.dataset
 
-        filename = timeseries.timeseries_filename
+        filename = dataset.dataset_filename
         if filename and (not save_as):
             # This dataset already has a filename which means it's already
             # associated with a VIFF file. We don't bug the user for a 
@@ -365,7 +247,7 @@ class Main(wx.Frame):
             pass
         else:
             if not filename:
-                filename = timeseries.data_sources[0]
+                filename = dataset.data_sources[0]
             path, filename = os.path.split(filename)
             # The default filename is the current filename with the extension
             # changed to ".xml".
@@ -376,9 +258,9 @@ class Main(wx.Frame):
                                               path, filename)
 
         if filename:
-            timeseries.timeseries_filename = filename
+            dataset.dataset_filename = filename
         
-            self._save_viff(timeseries)
+            self._save_viff(dataset)
         
         
     def on_save_as_siview(self, event):
@@ -484,7 +366,7 @@ class Main(wx.Frame):
         # Create an appropriate name for whatever is selected.
         tab = self.notebook_siview.active_tab
         if tab:
-            filename = tab.timeseries.timeseries_filename
+            filename = tab.dataset.dataset_filename
             fname = " - " + os.path.split(filename)[1] 
 
         self.SetTitle(default_content.APP_NAME + fname)
@@ -494,12 +376,12 @@ class Main(wx.Frame):
     ##############   Private  functions  alphabetized  below
     ##############
 
-    def _save_viff(self, timeseries):    
+    def _save_viff(self, dataset):    
         msg = ""
-        filename = timeseries.timeseries_filename
+        filename = dataset.dataset_filename
         comment  = "Processed in SIView version "+misc.get_application_version()
         try:
-            export.export(filename, [timeseries], db=None, comment=comment, compress=False)
+            export.export(filename, [dataset], db=None, comment=comment, compress=False)
             path, _ = os.path.split(filename)
             util_siview_config.set_path("save_viff", path)
         except IOError:
@@ -513,7 +395,7 @@ class Main(wx.Frame):
             # a filename from the raw data filenames with *.xml appended. We 
             # set it here to indicate the current name that the dataset has 
             # been saved to VIFF file as.
-            timeseries.timeseries_filename = filename
+            dataset.dataset_filename = filename
                     
         self.update_title()
 

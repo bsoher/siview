@@ -20,8 +20,6 @@ except ImportError:
 import siview.common.dcmstack.dcmstack as dcmstack
 
 # Our modules
-import siview.mri_timeseries as mri_timeseries
-import siview.common.local_nrrd as nrrd
 import siview.common.export as export
 
 

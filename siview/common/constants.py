@@ -10,6 +10,20 @@ DEGREES_TO_RADIANS = math.pi / 180
 RADIANS_TO_DEGREES = 180 / math.pi
 MINUTES_TO_SECONDS = 60
 
+# We encode numeric lists (also numpy arrays) in a three step process.
+# First is XDR (http://en.wikipedia.org/wiki/External_Data_Representation),
+# second is zlib to save space, third is base64 to make the output of
+# zlib palatable to XML.
+#
+# NUMERIC_LIST_ENCODING = "xdr zlib base64"
+#
+# As of 2019-12-2 we are using Numpy 'save()' format to encode numpy arrays
+# for saving to xml because it reads/writes much faster than the decode_xdr
+# methods in xdrlib. Vespa can still read in the 'xdr' encoded data, but it
+# will subsequently save it using 'npy' formatting.
+#
+# This constant used to be in vespa.common.util.xml_ module
+NUMERIC_LIST_ENCODING = "npy zlib base64"
 
 
 class Deflate(object):
@@ -39,6 +53,20 @@ class Export(object):
     
     ROOT_ELEMENT_NAME = "vespa_export"
     
+
+# These are used as default attribute values in a number of data objects
+# as well as widget start values in Simulation (and maybe Analysis)
+DEFAULT_ISOTOPE = "1H"
+DEFAULT_B0 = 123.9
+DEFAULT_PROTON_CENTER_FREQUENCY = 123.8 # [MHz]
+DEFAULT_PROTON_CENTER_PPM = 4.7         # [ppm]
+DEFAULT_XNUCLEI_CENTER_PPM = 0.0        # [ppm]
+DEFAULT_SWEEP_WIDTH = 2000.0            # [Hz]
+DEFAULT_LINEWIDTH = 3.0                 # [Hz]
+DEFAULT_SPECTRAL_POINTS = 512           # integer
+
+RESULTS_SPACE_DIMENSIONS = 4
+
 
 
 class DataTypes(object):

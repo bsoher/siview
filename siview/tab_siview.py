@@ -47,7 +47,7 @@ import siview.common.common_dialogs as common_dialogs
 
 class TabSiview(siview_ui.SiviewUI):
     
-    def __init__(self, outer_notebook, top, timeseries=None, out_dicom=None):
+    def __init__(self, outer_notebook, top, dataset=None, out_dicom=None):
 
         siview_ui.SiviewUI.__init__(self, outer_notebook)
         
@@ -55,7 +55,7 @@ class TabSiview(siview_ui.SiviewUI):
 
         self.top                = top
         self.parent             = outer_notebook
-        self.timeseries         = timeseries
+        self.dataset            = dataset
         self.out_dicom          = out_dicom     # list of DICOM files from one series
 
         self._prefs = prefs.PrefsMain()
@@ -113,13 +113,13 @@ class TabSiview(siview_ui.SiviewUI):
     ##### GUI Setup Handlers ##################################################
 
     def set_image_ranges(self):
-        if self.timeseries:
-            self.time_range = [self.timeseries.data.min(), self.timeseries.data.max()]
-            keys = list(self.timeseries.result_maps.keys())
+        if self.dataset:
+            self.time_range = [self.dataset.data.min(), self.dataset.data.max()]
+            keys = list(self.dataset.result_maps.keys())
             self.map_ranges = {}
             for key in ['Mask','Peak', 'R1', 'R2', 'Delay1', 'Delay2', 'Base', 'Chis', 'Badfit']:
-                vmax = np.nanmax(self.timeseries.result_maps[key])
-                vmin = np.nanmin(self.timeseries.result_maps[key])
+                vmax = np.nanmax(self.dataset.result_maps[key])
+                vmin = np.nanmin(self.dataset.result_maps[key])
                 self.map_ranges[key] = [vmin,vmax]
         else:
             self.time_range = [0,100]
@@ -147,11 +147,11 @@ class TabSiview(siview_ui.SiviewUI):
 
         # calculate a few useful values
         
-        timeseries  = self.timeseries
-        dims_top    = timeseries.dims
-        dims_bottom = len(list(timeseries.result_maps.keys()))
+        dataset  = self.dataset
+        dims_top    = dataset.dims
+        dims_bottom = len(list(dataset.result_maps.keys()))
 
-        t = self.timeseries.time_axis 
+        t = self.dataset.time_axis 
         tmax = t[-1]
         
         # we set the max range for these guis based on the max x-axis value
@@ -225,7 +225,7 @@ class TabSiview(siview_ui.SiviewUI):
             
         self.Bind(event, self.on_slider_changed_top, self.SliderTop)   
         
-        self.hide_siview_widgets(self.timeseries.time_course_model != 'Exponential Rate Decay')        
+        self.hide_siview_widgets(self.dataset.time_course_model != 'Exponential Rate Decay')        
 
 
     def populate_controls(self):
@@ -238,41 +238,41 @@ class TabSiview(siview_ui.SiviewUI):
         controls, no questions asked. 
         
         """
-        timeseries = self.timeseries
+        dataset = self.dataset
 
         #############################################################
         # Global controls            
         #############################################################
         
-        self.TextSource.SetValue(self.timeseries.data_sources[0])
+        self.TextSource.SetValue(self.dataset.data_sources[0])
 
-        self.ChoiceTimeCourseModel.SetStringSelection(self.timeseries.time_course_model)
-        self.ChoiceWeightFunction.SetStringSelection(self.timeseries.weight_function)
-        self.FloatWeightScale.SetValue(self.timeseries.weight_scale)
+        self.ChoiceTimeCourseModel.SetStringSelection(self.dataset.time_course_model)
+        self.ChoiceWeightFunction.SetStringSelection(self.dataset.weight_function)
+        self.FloatWeightScale.SetValue(self.dataset.weight_scale)
 
         self.SpinMapFloor.SetValue(self.map_ranges['Mask'][0])
         self.SpinMapCeil.SetValue(self.map_ranges['Mask'][1])
         self.SpinTimeFloor.SetValue(self.time_range[0])
         self.SpinTimeCeil.SetValue(self.time_range[1])
 
-        self.SpinPeakMin.SetValue(self.timeseries.peak_min)
-        self.SpinPeakStart.SetValue(self.timeseries.peak_start)
-        self.SpinPeakMax.SetValue(self.timeseries.peak_max)
-        self.SpinRate1Min.SetValue(self.timeseries.rate1_min)
-        self.SpinRate1Start.SetValue(self.timeseries.rate1_start)
-        self.SpinRate1Max.SetValue(self.timeseries.rate1_max)
-        self.SpinRate2Min.SetValue(self.timeseries.rate2_min)
-        self.SpinRate2Start.SetValue(self.timeseries.rate2_start)
-        self.SpinRate2Max.SetValue(self.timeseries.rate2_max)
-        self.SpinDelay1Min.SetValue(self.timeseries.delay1_min)
-        self.SpinDelay1Start.SetValue(self.timeseries.delay1_start)
-        self.SpinDelay1Max.SetValue(self.timeseries.delay1_max)
-        self.SpinDelay2Min.SetValue(self.timeseries.delay2_min)
-        self.SpinDelay2Start.SetValue(self.timeseries.delay2_start)
-        self.SpinDelay2Max.SetValue(self.timeseries.delay2_max)
-        self.SpinBaseMin.SetValue(self.timeseries.base_min)
-        self.SpinBaseStart.SetValue(self.timeseries.base_start)
-        self.SpinBaseMax.SetValue(self.timeseries.base_max)
+        self.SpinPeakMin.SetValue(self.dataset.peak_min)
+        self.SpinPeakStart.SetValue(self.dataset.peak_start)
+        self.SpinPeakMax.SetValue(self.dataset.peak_max)
+        self.SpinRate1Min.SetValue(self.dataset.rate1_min)
+        self.SpinRate1Start.SetValue(self.dataset.rate1_start)
+        self.SpinRate1Max.SetValue(self.dataset.rate1_max)
+        self.SpinRate2Min.SetValue(self.dataset.rate2_min)
+        self.SpinRate2Start.SetValue(self.dataset.rate2_start)
+        self.SpinRate2Max.SetValue(self.dataset.rate2_max)
+        self.SpinDelay1Min.SetValue(self.dataset.delay1_min)
+        self.SpinDelay1Start.SetValue(self.dataset.delay1_start)
+        self.SpinDelay1Max.SetValue(self.dataset.delay1_max)
+        self.SpinDelay2Min.SetValue(self.dataset.delay2_min)
+        self.SpinDelay2Start.SetValue(self.dataset.delay2_start)
+        self.SpinDelay2Max.SetValue(self.dataset.delay2_max)
+        self.SpinBaseMin.SetValue(self.dataset.base_min)
+        self.SpinBaseStart.SetValue(self.dataset.base_start)
+        self.SpinBaseMax.SetValue(self.dataset.base_max)
 
 
         #############################################################
@@ -424,7 +424,7 @@ class TabSiview(siview_ui.SiviewUI):
                 labels = ['Peak', 'R1', 'R2', 'Delay1', 'Delay2', 'Base', 'Chis', ]
             datas = []
             for key in labels:
-                datas.append(self.timeseries.result_maps[key])
+                datas.append(self.dataset.result_maps[key])
 
             filetypes, exts, filter_index = self.image.canvas._get_imagesave_wildcards()
             default_file = self.image.canvas.get_default_filename()
@@ -527,7 +527,7 @@ class TabSiview(siview_ui.SiviewUI):
                 labels = ['Peak', 'R1', 'R2', 'Delay1', 'Delay2', 'Base', 'Chis', 'Badfit']
             datas = []
             for key in labels:
-                datas.append(self.timeseries.result_maps[key])
+                datas.append(self.dataset.result_maps[key])
 
             filetypes, exts, filter_index = self.image.canvas._get_imagesave_wildcards()
             default_file = self.image.canvas.get_default_filename()
@@ -645,7 +645,7 @@ class TabSiview(siview_ui.SiviewUI):
 
                 outype = outype4[event_id]
 
-                data = self.timeseries.data
+                data = self.dataset.data
                 dims = list(data.shape)
                 vmin = np.nanmin(data)
                 vmax = np.nanmax(data) 
@@ -724,15 +724,15 @@ class TabSiview(siview_ui.SiviewUI):
         written to the same voxel line as are the mask and image value.
         
         """
-        patid = self.timeseries.patient_id
-        sdesc = self.timeseries.series_description
-        path  = self.timeseries.output_path
+        patid = self.dataset.patient_id
+        sdesc = self.dataset.series_description
+        path  = self.dataset.output_path
         default_fbase = os.path.join(path, patid+'_'+sdesc)
             
         filename_left  = default_fbase+'_Left_Masked_XYZV.csv'
         filename_right = default_fbase+'_Right_Masked_XYZV.csv'
         
-        lines_left, lines_right = self.timeseries.get_output_text_by_slice()
+        lines_left, lines_right = self.dataset.get_output_text_by_slice()
         
         lines_left = "\n".join(lines_left)
         lines_left = lines_left.encode("utf-8")
@@ -768,7 +768,7 @@ class TabSiview(siview_ui.SiviewUI):
                                           default_filename=default_fname)
         if filename:
             
-            lines = self.timeseries.get_output_text_by_voxel()
+            lines = self.dataset.get_output_text_by_voxel()
                        
             lines = "\n".join(lines)
             lines = lines.encode("utf-8")
@@ -784,16 +784,16 @@ class TabSiview(siview_ui.SiviewUI):
     def on_menu_output_to_dicom(self, event): 
 
         try:
-            self.timeseries.do_results_output_dicom()
+            self.dataset.do_results_output_dicom()
         except Exception as e:
             msg_title = "SIView - Output Results to DICOM"
-            msg = "Error(mri_timeseries::do_results_output_dicom): Can not get default DICOM headers for output. Returning \n%s" % str(e)
+            msg = "Error(mri_dataset::do_results_output_dicom): Can not get default DICOM headers for output. Returning \n%s" % str(e)
             r = common_dialogs.message(msg, msg_title, common_dialogs.X_OK)
             return
             
 
     def set_mask(self, mask):
-        dims =  self.timeseries.result_maps['Mask'].shape
+        dims =  self.dataset.result_maps['Mask'].shape
         msg = ''
         if mask.shape != dims:
             msg = 'New mask is different shape than Image1 spatial dims.'
@@ -801,7 +801,7 @@ class TabSiview(siview_ui.SiviewUI):
         if msg:
             common_dialogs.message(msg, default_content.APP_NAME+" - New Mask", common_dialogs.E_OK)
         else:
-            self.timeseries.result_maps['Mask'] = mask
+            self.dataset.result_maps['Mask'] = mask
             self.show()
             
 
@@ -825,7 +825,7 @@ class TabSiview(siview_ui.SiviewUI):
 
     def _slider_changed_top(self):
         tmp  = self.SliderTop.GetValue() - 1
-        dims = self.timeseries.dims
+        dims = self.dataset.dims
         tmp  = max(0, min(dims[3]-1, tmp))      # clip to range
         self.itime = tmp
         self.show()
@@ -856,7 +856,7 @@ class TabSiview(siview_ui.SiviewUI):
     def on_map_reset(self, event):
         indx = self.ChoiceResults.GetSelection()
         key  = self.ChoiceResults.GetString(indx)
-        dat  = self.timeseries.result_maps[key][:,:,:]
+        dat  = self.dataset.result_maps[key][:,:,:]
         ceil_val  = np.nanmax(dat)
         floor_val = np.nanmin(dat)
         self.map_ranges[key] = [floor_val, ceil_val]
@@ -871,9 +871,9 @@ class TabSiview(siview_ui.SiviewUI):
         self.show()
 
     def on_time_reset(self, event):
-        dat = self.timeseries.data
-        ceil_val  = self.timeseries.data.max()
-        floor_val = self.timeseries.data.min()
+        dat = self.dataset.data
+        ceil_val  = self.dataset.data.max()
+        floor_val = self.dataset.data.min()
         self.time_range = [floor_val, ceil_val]
         self.SpinTimeCeil.SetValue(ceil_val)
         self.SpinTimeFloor.SetValue(floor_val)
@@ -882,21 +882,21 @@ class TabSiview(siview_ui.SiviewUI):
     def on_time_course_model(self, event):
         indx = self.ChoiceTimeCourseModel.GetSelection()
         key  = self.ChoiceTimeCourseModel.GetString(indx)
-        self.timeseries.time_course_model = key
-        self.timeseries.assign_functions()
-        if self.timeseries.time_course_model == "Exponential Rate Decay":
+        self.dataset.time_course_model = key
+        self.dataset.assign_functions()
+        if self.dataset.time_course_model == "Exponential Rate Decay":
             self.hide_siview_widgets(False)
-        elif self.timeseries.time_course_model == "Exponential Washin Only":
+        elif self.dataset.time_course_model == "Exponential Washin Only":
             self.hide_siview_widgets(True)
         
     def on_weight_function(self, event):
         indx = self.ChoiceWeightFunction.GetSelection()
         key  = self.ChoiceWeightFunction.GetString(indx)
-        self.timeseries.weight_function = key
+        self.dataset.weight_function = key
 
     def on_weight_scale(self, event):
         val = self.FloatWeightScale.GetValue() 
-        self.timeseries.weight_scale = val
+        self.dataset.weight_scale = val
 
     def on_peak_min(self, event):
         self.check_limits()
@@ -953,8 +953,8 @@ class TabSiview(siview_ui.SiviewUI):
         self.check_limits()
 
     def on_reset_mask(self, event):
-        #self.timeseries.reset_mask()
-        self.timeseries.make_mask()
+        #self.dataset.reset_mask()
+        self.dataset.make_mask()
 
     def on_fit_all(self, event):
         self.top.statusbar.SetStatusText((" Fitting All Voxels "), 1)
@@ -1024,24 +1024,24 @@ class TabSiview(siview_ui.SiviewUI):
             id[1].SetValue(vsort[1])
             id[2].SetValue(vsort[2]) 
             
-        self.timeseries.peak_min     = self.SpinPeakMin.GetValue()
-        self.timeseries.peak_start   = self.SpinPeakStart.GetValue()
-        self.timeseries.peak_max     = self.SpinPeakMax.GetValue()
-        self.timeseries.rate1_min    = self.SpinRate1Min.GetValue()
-        self.timeseries.rate1_start  = self.SpinRate1Start.GetValue()
-        self.timeseries.rate1_max    = self.SpinRate1Max.GetValue()
-        self.timeseries.rate2_min    = self.SpinRate2Min.GetValue()
-        self.timeseries.rate2_start  = self.SpinRate2Start.GetValue()
-        self.timeseries.rate2_max    = self.SpinRate2Max.GetValue()
-        self.timeseries.delay1_min   = self.SpinDelay1Min.GetValue()
-        self.timeseries.delay1_start = self.SpinDelay1Start.GetValue()
-        self.timeseries.delay1_max   = self.SpinDelay1Max.GetValue()
-        self.timeseries.delay2_min   = self.SpinDelay2Min.GetValue()
-        self.timeseries.delay2_start = self.SpinDelay2Start.GetValue()
-        self.timeseries.delay2_max   = self.SpinDelay2Max.GetValue()
-        self.timeseries.base_min     = self.SpinBaseMin.GetValue()
-        self.timeseries.base_start   = self.SpinBaseStart.GetValue()
-        self.timeseries.base_max     = self.SpinBaseMax.GetValue()
+        self.dataset.peak_min     = self.SpinPeakMin.GetValue()
+        self.dataset.peak_start   = self.SpinPeakStart.GetValue()
+        self.dataset.peak_max     = self.SpinPeakMax.GetValue()
+        self.dataset.rate1_min    = self.SpinRate1Min.GetValue()
+        self.dataset.rate1_start  = self.SpinRate1Start.GetValue()
+        self.dataset.rate1_max    = self.SpinRate1Max.GetValue()
+        self.dataset.rate2_min    = self.SpinRate2Min.GetValue()
+        self.dataset.rate2_start  = self.SpinRate2Start.GetValue()
+        self.dataset.rate2_max    = self.SpinRate2Max.GetValue()
+        self.dataset.delay1_min   = self.SpinDelay1Min.GetValue()
+        self.dataset.delay1_start = self.SpinDelay1Start.GetValue()
+        self.dataset.delay1_max   = self.SpinDelay1Max.GetValue()
+        self.dataset.delay2_min   = self.SpinDelay2Min.GetValue()
+        self.dataset.delay2_start = self.SpinDelay2Start.GetValue()
+        self.dataset.delay2_max   = self.SpinDelay2Max.GetValue()
+        self.dataset.base_min     = self.SpinBaseMin.GetValue()
+        self.dataset.base_start   = self.SpinBaseStart.GetValue()
+        self.dataset.base_max     = self.SpinBaseMax.GetValue()
 
 
     def chain_status(self, msg, slot=1):
@@ -1063,19 +1063,19 @@ class TabSiview(siview_ui.SiviewUI):
         
         """
         if self.fit_mode == 'display':
-            self.plot_results = self.timeseries.get_fit_plot(self.voxel)
+            self.plot_results = self.dataset.get_fit_plot(self.voxel)
         elif self.fit_mode == 'current':
             voxel = [self.voxel]
             entry = 'one'
-            self.plot_results = self.timeseries.chain.run(voxel, entry=entry, status=self.chain_status)
+            self.plot_results = self.dataset.chain.run(voxel, entry=entry, status=self.chain_status)
         elif self.fit_mode == 'slice':
-            voxel = self.timeseries.get_all_voxels_by_slice(self.voxel[2])  # list of tuples, with mask != 0
+            voxel = self.dataset.get_all_voxels_by_slice(self.voxel[2])  # list of tuples, with mask != 0
             entry = 'slice'
-            self.plot_results = self.timeseries.chain.run(voxel, entry=entry, status=self.chain_status)
+            self.plot_results = self.dataset.chain.run(voxel, entry=entry, status=self.chain_status)
         elif self.fit_mode == 'all':
-            voxel = self.timeseries.get_all_voxels()  # list of tuples, with mask != 0
+            voxel = self.dataset.get_all_voxels()  # list of tuples, with mask != 0
             entry = 'all'
-            self.plot_results = self.timeseries.chain.run(voxel, entry=entry, status=self.chain_status)
+            self.plot_results = self.dataset.chain.run(voxel, entry=entry, status=self.chain_status)
         self.fit_mode = 'display'
             
                         
@@ -1084,14 +1084,14 @@ class TabSiview(siview_ui.SiviewUI):
         if not self.plotting_enabled: 
             return
         
-        if self.timeseries == None:
+        if self.dataset == None:
             return
         
         voxel = self.voxel
         
-        t = self.timeseries.time_axis #/ 60.0  # time in sec
+        t = self.dataset.time_axis #/ 60.0  # time in sec
         
-        line1 = self.timeseries.data[voxel[1],voxel[0],voxel[2],:]
+        line1 = self.dataset.data[voxel[1],voxel[0],voxel[2],:]
         data1 = {'data' : line1, 
                  'xaxis_values' : t,
                  'line_color_real' : 'black'
@@ -1119,14 +1119,14 @@ class TabSiview(siview_ui.SiviewUI):
         if not self.plotting_enabled: 
             return
         
-        if self.timeseries == None:
+        if self.dataset == None:
             return
     
         voxel = self.voxel
         
-        dat1 = self.timeseries.data[:,:, voxel[2], self.itime]
-        dat2 = self.timeseries.result_maps[self.iresult][:,:, voxel[2]]
-        dat2mm = self.timeseries.result_maps[self.iresult][:,:,:]
+        dat1 = self.dataset.data[:,:, voxel[2], self.itime]
+        dat2 = self.dataset.result_maps[self.iresult][:,:, voxel[2]]
+        dat2mm = self.dataset.result_maps[self.iresult][:,:,:]
 
 #         # we want to refer to time rates in sec and 1/sec so we multiply by 60 
 #         # here as data was fitted with time set as minutes for the model's sake
@@ -1137,8 +1137,8 @@ class TabSiview(siview_ui.SiviewUI):
         data1 =  [{'data'      : dat1,
                    'cmap'      : cm.gray,
                    'alpha'     : 1.0,
-#                   'vmax'      : self.timeseries.data.max(),
-#                   'vmin'      : self.timeseries.data.min(),
+#                   'vmax'      : self.dataset.data.max(),
+#                   'vmin'      : self.dataset.data.min(),
                    'vmax'      : self.time_range[1],
                    'vmin'      : self.time_range[0],
                    'keep_norm' : False         }] 

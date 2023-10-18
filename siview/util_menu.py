@@ -42,21 +42,21 @@ class ViewIds(common_menu.IdContainer):
     CMAP_GRAY   = "replace me"
     CMAP_RDYLBU = "replace me"
 
-    MASK_TO_MOSAIC = "replace me"
-    FITS_TO_MOSAIC = "replace me"
-    MASK_TO_STRIP = "replace me"
-    FITS_TO_STRIP = "replace me"
-    MRI_TO_VSTRIP = "replace me"
-    MRI_TO_HSTRIP = "replace me"
-
-    VIEW_TO_PNG = "replace me"
-    VIEW_TO_SVG = "replace me"
-    VIEW_TO_PDF = "replace me"
-    VIEW_TO_EPS = "replace me"
-    
-    VIEW_TO_CSV1 = "replace me"
-    VIEW_TO_CSV2 = "replace me"
-    VIEW_TO_DICOM = "replace me"
+    # MASK_TO_MOSAIC = "replace me"
+    # FITS_TO_MOSAIC = "replace me"
+    # MASK_TO_STRIP = "replace me"
+    # FITS_TO_STRIP = "replace me"
+    # MRI_TO_VSTRIP = "replace me"
+    # MRI_TO_HSTRIP = "replace me"
+    #
+    # VIEW_TO_PNG = "replace me"
+    # VIEW_TO_SVG = "replace me"
+    # VIEW_TO_PDF = "replace me"
+    # VIEW_TO_EPS = "replace me"
+    #
+    # VIEW_TO_CSV1 = "replace me"
+    # VIEW_TO_CSV2 = "replace me"
+    # VIEW_TO_DICOM = "replace me"
 
 
 # When main creates an instance of PriorsetMenuBar(), it sets the variable
@@ -105,15 +105,14 @@ def _get_menu_data(main):
     # Gnome.
 
     study = (
-                ("O&pen Timeseries...\tCTRL+O",   main.on_open),
+                ("O&pen Siview...\tCTRL+O",   main.on_open),
                 common_menu.SEPARATOR,
                 ("S&ave\tCTRL+S",       main.on_save_siview),
                 ("S&ave As...",         main.on_save_as_siview),
                 common_menu.SEPARATOR,
                 ("Close\tCTRL+W",       main.on_close_siview),
                 common_menu.SEPARATOR,
-                ("Import Time Data from DICOM", main.on_import_dicom),
-                ("Import Mask File(s)", main.on_import_mask_files),
+                ("Import Processed CRT Data", main.on_import_data_crt),
                 common_menu.SEPARATOR,
                 ("&Exit",               main.on_self_close))
 
@@ -136,22 +135,22 @@ def _get_menu_data(main):
                     ("gray",   main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_GRAY),
                     ("RdYlBu", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_RDYLBU))),
                 common_menu.SEPARATOR,
-                ("Output Images", (
-                    ("Mask to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_MOSAIC),
-                    ("Fits to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.FITS_TO_MOSAIC),
-                    ("Mask to Strip",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_STRIP),
-                    ("Fits to Strip",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.FITS_TO_STRIP),
-                    ("MRI to Strip Vert",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MRI_TO_VSTRIP),
-                    ("MRI to Strip Horiz", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MRI_TO_HSTRIP))),
-                ("Output Plots", (
-                    ("Plot to PNG", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_PNG),
-                    ("Plot to SVG", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_SVG),
-                    ("Plot to EPS", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_EPS),
-                    ("Plot to PDF", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_PDF))),
-                ("Output Results", (
-                    ("to CSV File by Slice", main.on_menu_output_by_slice, wx.ITEM_NORMAL, ViewIds.VIEW_TO_CSV1),
-                    ("to CSV File by Voxel", main.on_menu_output_by_voxel, wx.ITEM_NORMAL, ViewIds.VIEW_TO_CSV2),
-                    ("to DICOM by Slice",    main.on_menu_output_to_dicom, wx.ITEM_NORMAL, ViewIds.VIEW_TO_DICOM)  )))
+                # ("Output Images", (
+                #     ("Mask to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_MOSAIC),
+                #     ("Fits to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.FITS_TO_MOSAIC),
+                #     ("Mask to Strip",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_STRIP),
+                #     ("Fits to Strip",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.FITS_TO_STRIP),
+                #     ("MRI to Strip Vert",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MRI_TO_VSTRIP),
+                #     ("MRI to Strip Horiz", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MRI_TO_HSTRIP))),
+                # ("Output Plots", (
+                #     ("Plot to PNG", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_PNG),
+                #     ("Plot to SVG", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_SVG),
+                #     ("Plot to EPS", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_EPS),
+                #     ("Plot to PDF", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_PDF))),
+                # ("Output Results", (
+                #     ("to CSV File by Slice", main.on_menu_output_by_slice, wx.ITEM_NORMAL, ViewIds.VIEW_TO_CSV1),
+                #     ("to CSV File by Voxel", main.on_menu_output_by_voxel, wx.ITEM_NORMAL, ViewIds.VIEW_TO_CSV2),
+                #     ("to DICOM by Slice",    main.on_menu_output_to_dicom, wx.ITEM_NORMAL, ViewIds.VIEW_TO_DICOM)  )))
 
     help = (
                 ("&User Manual",          main.on_user_manual),

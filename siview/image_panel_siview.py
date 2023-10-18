@@ -52,7 +52,7 @@ class ImagePanelSiview(image_panel_toolbar.ImagePanelToolbar2):
 
         xvox, yvox, zvox = self.tab.voxel
         step = 1 if step>0 else -1
-        dims = self.tab.timeseries.dims
+        dims = self.tab.dataset.dims
         tmp = self.tab.voxel[2] + step
         tmp = tmp if tmp>0 else 0
         tmp = tmp if tmp<dims[2]-1 else dims[2]-1
