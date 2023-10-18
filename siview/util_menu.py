@@ -134,7 +134,7 @@ def _get_menu_data(main):
                     ("RdBu",   main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_RDBU),
                     ("gray",   main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_GRAY),
                     ("RdYlBu", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_RDYLBU))),
-                common_menu.SEPARATOR,
+                common_menu.SEPARATOR)
                 # ("Output Images", (
                 #     ("Mask to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_MOSAIC),
                 #     ("Fits to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.FITS_TO_MOSAIC),

@@ -4,11 +4,11 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.chain_raw as chain_raw
-import vespa.analysis.block as block
-import vespa.common.mrs_data_raw as mrs_data_raw
-import vespa.common.util.xml_ as util_xml
-from vespa.common.constants import Deflate
+import siview.chain_raw as chain_raw
+import siview.block as block
+import siview.si_data_raw as si_data_raw
+import siview.common.xml_ as util_xml
+from siview.common.constants import Deflate
 
 
 
@@ -50,13 +50,13 @@ class _Settings(object):
 
 
 
-class BlockRaw(block.Block, mrs_data_raw.DataRaw):
+class BlockRaw(block.Block, si_data_raw.SiDataRaw):
     """ 
     Building block to hold the state of a step in an MRS processing chain.
     Includes the functionality to save/recall this object to/from an XML node.
 
     Raw Blocks hold data loaded from file. They don't have 'inputs' for a
-    Chain object. They do have the attributes inheirited from DataRaw. 
+    Chain object. They do have the attributes inherited from SiDataRaw.
     
     For some subclasses, one or more DataRaws objects can be held in a Block
     object, such as the On/Off/Add/Diff objects of an Edited data file.
@@ -66,7 +66,7 @@ class BlockRaw(block.Block, mrs_data_raw.DataRaw):
     
     def __init__(self, attributes=None):
         block.Block.__init__(self, attributes)
-        mrs_data_raw.DataRaw.__init__(self, attributes)  
+        si_data_raw.SiDataRaw.__init__(self, attributes)
 
         # processing parameters
         self.set = _Settings(attributes)
@@ -81,7 +81,7 @@ class BlockRaw(block.Block, mrs_data_raw.DataRaw):
 
 
     def __str__(self):
-        lines = mrs_data_raw.DataRaw.__str__(self).split('\n')
+        lines = si_data_raw.SiDataRaw.__str__(self).split('\n')
         # Replace the heading line
         lines[0] = "------- {0} Object -------".format(self.__class__.__name__)
         lines.append("No printable data ")
@@ -93,7 +93,7 @@ class BlockRaw(block.Block, mrs_data_raw.DataRaw):
 
 
     def concatenate(self, new):
-        # This is a method from DataRaw that's not supported here. 
+        # This is a method from SiDataRaw that's not supported here.
         raise NotImplementedError
 
 
@@ -101,7 +101,7 @@ class BlockRaw(block.Block, mrs_data_raw.DataRaw):
         if flavor == Deflate.ETREE:
             
             # Call base class - then update for subclass
-            e = mrs_data_raw.DataRaw.deflate(self, flavor)
+            e = si_data_raw.SiDataRaw.deflate(self, flavor)
             e.tag = "block_raw"
             e.set("version", self.XML_VERSION)
             
@@ -117,7 +117,7 @@ class BlockRaw(block.Block, mrs_data_raw.DataRaw):
     def inflate(self, source):
 
         # Make my base class do its inflate work
-        mrs_data_raw.DataRaw.inflate(self, source)
+        si_data_raw.SiDataRaw.inflate(self, source)
 
         # Now I inflate the attribs that are specific to this class
         if hasattr(source, "makeelement"):

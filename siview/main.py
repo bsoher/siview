@@ -137,9 +137,9 @@ class Main(wx.Frame):
         msg = 'Select file with Processed CRT Data'
         filetype_filter = "Numpy (*.npy)"
 
-        fname = common_dialogs.pickfile(message=message,
-                                           default_path=default_path,
-                                           filetype_filter=filetype_filter)
+        fname = common_dialogs.pickfile(message=msg,
+                                        default_path=default_path,
+                                        filetype_filter=filetype_filter)
         msg = ""
         if fname:
             try:
@@ -154,9 +154,10 @@ class Main(wx.Frame):
             if msg:
                 common_dialogs.message(msg, default_content.APP_NAME+" - Add Node Nifti", common_dialogs.E_OK)
             else:
-                source_path, _ = os.path.split(fname)
+                path, _ = os.path.split(fname)
 
                 raw = si_data_raw.SiDataRaw()
+                raw.data_sources = [fname,]
                 raw.data = crt_dat
                 raw.sw = 1250.0
                 raw.frequency = 123.9
@@ -172,21 +173,8 @@ class Main(wx.Frame):
                 self.notebook_siview.Layout()
                 self.update_title()
 
-                path, _ = os.path.split(filename)
-
-
-    def _import_file(self, dataset, out_dicom=None):
-
-        if dataset:
-            wx.BeginBusyCursor()
-            self.notebook_siview.Freeze()
-            self.notebook_siview.add_siview_tab(dataset=dataset, out_dicom=out_dicom)
-            self.notebook_siview.Thaw()
-            self.notebook_siview.Layout()
-            wx.EndBusyCursor()
-            self.update_title()
-
-   
+                path, _ = os.path.split(fname)
+                util_siview_config.set_path(ini_name, path)
 
     
     def on_open(self, event):
@@ -202,15 +190,14 @@ class Main(wx.Frame):
         if filename:
             msg = ""
             try:
-                importer = util_import.TimeseriesImporter(filename)
+                importer = util_import.SiDatasetImporter(filename)
             except IOError:
                 msg = """I can't read the file "%s".""" % filename
             except SyntaxError:
                 msg = """The file "%s" isn't valid Vespa Interchange File Format.""" % filename
 
             if msg:
-                common_dialogs.message(msg, "MRI_Timeseries - Open File", 
-                                       common_dialogs.E_OK)
+                common_dialogs.message(msg, "MRI_Timeseries - Open File", common_dialogs.E_OK)
             else:
                 # Time to rock and roll!
                 wx.BeginBusyCursor()
@@ -282,17 +269,17 @@ class Main(wx.Frame):
     def on_menu_view_option(self, event):
         self.notebook_siview.on_menu_view_option(event)
         
-    def on_menu_view_output(self, event):
-        self.notebook_siview.on_menu_view_output(event)
-        
-    def on_menu_output_by_slice(self, event):
-        self.notebook_siview.on_menu_output_by_slice(event)
-
-    def on_menu_output_by_voxel(self, event):
-        self.notebook_siview.on_menu_output_by_voxel(event)
-
-    def on_menu_output_to_dicom(self, event):
-        self.notebook_siview.on_menu_output_to_dicom(event)
+    # def on_menu_view_output(self, event):
+    #     self.notebook_siview.on_menu_view_output(event)
+    #
+    # def on_menu_output_by_slice(self, event):
+    #     self.notebook_siview.on_menu_output_by_slice(event)
+    #
+    # def on_menu_output_by_voxel(self, event):
+    #     self.notebook_siview.on_menu_output_by_voxel(event)
+    #
+    # def on_menu_output_to_dicom(self, event):
+    #     self.notebook_siview.on_menu_output_to_dicom(event)
 
 
     ############    Help menu
@@ -315,8 +302,8 @@ class Main(wx.Frame):
         bit = str(8 * struct.calcsize('P')) + '-bit Python'
         info = wx_adv.AboutDialogInfo()
         info.SetVersion(version)  
-        info.SetCopyright("Copyright 2014, Brian J. Soher. All rights reserved.")
-        info.SetDescription(default_content.APP_NAME+" - analyzes ventilation time series data. \nRunning on "+bit)
+        info.SetCopyright("Copyright 2023, Brian J. Soher. All rights reserved.")
+        info.SetDescription(default_content.APP_NAME+" - view and tweak SI data. \nRunning on "+bit)
         wx_adv.AboutBox(info)
 
 
@@ -333,7 +320,6 @@ class Main(wx.Frame):
 
         config.set_window_coordinates("main", self._left, self._top, 
                                       self._width, self._height)
-
         config.write()
         self.Destroy()
 

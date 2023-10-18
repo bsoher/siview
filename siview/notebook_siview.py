@@ -74,18 +74,18 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
         if self.active_tab:
             self.active_tab.on_menu_view_option(event)
 
-    def on_menu_view_output(self, event):
-        if self.active_tab:
-            self.active_tab.on_menu_view_output(event)
-
-    def on_menu_output_by_slice(self, event):
-        self.active_tab.on_menu_output_by_slice(event)
-
-    def on_menu_output_by_voxel(self, event):
-        self.active_tab.on_menu_output_by_voxel(event)
-
-    def on_menu_output_to_dicom(self, event):
-        self.active_tab.on_menu_output_to_dicom(event)
+    # def on_menu_view_output(self, event):
+    #     if self.active_tab:
+    #         self.active_tab.on_menu_view_output(event)
+    #
+    # def on_menu_output_by_slice(self, event):
+    #     self.active_tab.on_menu_output_by_slice(event)
+    #
+    # def on_menu_output_by_voxel(self, event):
+    #     self.active_tab.on_menu_output_by_voxel(event)
+    #
+    # def on_menu_output_to_dicom(self, event):
+    #     self.active_tab.on_menu_output_to_dicom(event)
 
 
     def on_tab_changed(self, event):
@@ -145,9 +145,9 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
             wx_util.send_close_to_active_tab(self)
 
 
-    def set_mask(self, mask):
-        if self.active_tab:
-            self.active_tab.set_mask(mask)
+    # def set_mask(self, mask):
+    #     if self.active_tab:
+    #         self.active_tab.set_mask(mask)
 
     #=======================================================
     #

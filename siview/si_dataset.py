@@ -8,7 +8,6 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-# import siview.constants as constants
 import siview.block_raw as block_raw
 import siview.block_prep_identity as block_prep_identity
 import siview.block_spatial_identity as block_spatial_identity
