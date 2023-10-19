@@ -24,6 +24,7 @@ import matplotlib.cm as cm
 import siview.tab_base
 import siview.prefs as prefs
 import siview.util_menu as util_menu
+import siview.constants as constants
 from sivie.plot_panel_spectral import PlotPanelSpectral
 from siview.plot_panel_siview import ImagePanelSiview
 
@@ -39,7 +40,7 @@ from siview.common.dist import dist
 
 class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
     
-    def __init__(self, outer_notebook, top, dataset=None, out_dicom=None):
+    def __init__(self, outer_notebook, top, dataset=None):
 
         siview_ui.SiviewUI.__init__(self, outer_notebook)
         
@@ -48,7 +49,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.top                = top
         self.parent             = outer_notebook
         self.dataset            = dataset
-        self.out_dicom          = out_dicom     # list of DICOM files from one series
+        self.block              = dataset.blocks['spectral']
 
         self._prefs = prefs.PrefsMain()
 
@@ -192,7 +193,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
 
         self.view = PlotPanelSpectral(self.PanelPlot,
                                       self,
-                                      self.parent,
+                                      self,
                                       naxes=1,
                                       reversex=True,
                                       zoom='span',
@@ -217,26 +218,6 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
                                       dataset=self.dataset,
                                       )
 
-        # self.view = plot_panel_siview.PlotPanelSiview(
-        #                                 self.PanelPlot,
-        #                                 self,
-        #                                 self.parent,
-        #                                 naxes=1,
-        #                                 zoom='box',
-        #                                 middle=True,
-        #                                 do_zoom_select_event=True,
-        #                                 do_zoom_motion_event=True,
-        #                                 do_middle_select_event=True,
-        #                                 do_middle_motion_event=True,
-        #                                 do_scroll_event=True,
-        #                                 props_zoom=dict(alpha=0.2, facecolor='yellow'),
-        #                                 xscale_bump=0.0,
-        #                                 yscale_bump=0.05,
-        #                                 data=[],
-        #                                 prefs=self._prefs,
-        #                                 xtitle='Time [sec]'
-        #                              )
-        
         # weird work around for Wx issue where it can't initialize and get RGBA buffer because height = 0?
         self.PanelPlot.SetSize((6,8))
         
@@ -476,38 +457,38 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
             view.set_vertical_scale(-1.0, scale_mult=1.1)
         self.FloatScale.SetValue(view.vertical_scale)
 
+    # Image Control events ---------------------------------------
 
-    def on_slider_changed_top(self, event):
-        # Top slider changed. Here we allow the control to update itself.
+    def on_slice_index(self, event):
+        # Index spinner changed. Here we allow the control to update itself.
         # If we don't, then there can be a noticeable & confusing pause 
         # between interacting with the control and seeing it actually change.
-        wx.CallAfter(self._slider_changed_top)
+        wx.CallAfter(self._slice_index_changed)
 
-    def _slider_changed_top(self):
-        tmp  = self.SliderTop.GetValue() - 1
+    def _slice_index_changed(self):
+        tmp  = self.SpinSliceIndex.GetValue() - 1
         # dims = self.dataset.dims
         # tmp  = max(0, min(dims[3]-1, tmp))      # clip to range
         # self.itime = tmp
         # self.show()
 
-
-    def on_results(self, event):
+    def on_calc_image(self, event):
         # Results choice changed. Here we allow the control to update itself.
         # If we don't, then there can be a noticeable & confusing pause 
         # between interacting with the control and seeing it actually change.
-        wx.CallAfter(self._results_changed)
+        wx.CallAfter(self._calc_image_changed)
 
-    def _results_changed(self):
-        indx = self.ChoiceResults.GetSelection()
-        key  = self.ChoiceResults.GetString(indx)
+    def _calc_image_changed(self):
+        indx = self.ChoiceCalcImage.GetSelection()
+        key  = self.ChoiceCalcImage.GetString(indx)
         self.iresult = key
         self.SpinCalcCeil.SetValue(self.ranges_calc[key][1])
         self.SpinCalcFloor.SetValue(self.ranges_calc[key][0])
         self.show()
 
     def on_calc_range(self, event):
-        indx = self.ChoiceResults.GetSelection()
-        key  = self.ChoiceResults.GetString(indx)
+        indx = self.ChoiceCalcImage.GetSelection()
+        key  = self.ChoiceCalcImage.GetString(indx)
         ceil_val  = self.SpinCalcCeil.GetValue()
         floor_val = self.SpinCalcFloor.GetValue()
         self.ranges_calc[key] = [floor_val, ceil_val] if floor_val<ceil else [ceil_val, floor_val]
@@ -516,8 +497,8 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.show()
 
     def on_calc_reset(self, event):
-        indx = self.ChoiceResults.GetSelection()
-        key  = self.ChoiceResults.GetString(indx)
+        indx = self.ChoiceCalcImage.GetSelection()
+        key  = self.ChoiceCalcImage.GetString(indx)
         dat  = self.images_calc[key]
         ceil_val  = np.nanmax(dat)
         floor_val = np.nanmin(dat)
@@ -548,7 +529,73 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         key  = self.ChoiceModel.GetString(indx)
         self.model = key
 
+    # Spectral Control events ---------------------------------------
 
+    def on_apodization_method(self, event):
+        index = event.GetEventObject().GetSelection()
+        apodization = list(constants.Apodization.choices.keys())[index]
+        self.block.set.apodization = apodization
+            # Enable the value textbox if a method is selected
+        self.FloatWidth.Enable(bool(apodization))
+        self.process_and_plot()
+
+    def on_apodization_value(self, event):
+        value = event.GetEventObject().GetValue()
+        self.block.set.apodization_width = value
+        self.process_and_plot()
+
+    def on_b0_shift(self, event):
+        value = event.GetEventObject().GetValue()
+        voxel = self.voxel
+        orig = self.dataset.get_frequency_shift(voxel)
+        self.dataset.set_frequency_shift(value-orig, voxel)     # send delta shift
+
+    def on_phase0(self, event):
+        # phase 0 respects the sync A/B setting
+        value = event.GetEventObject().GetValue()
+        voxel = self._tab_dataset.voxel
+        orig = self.dataset.get_phase_0(voxel)
+        # we use the notebook level method to deal with this change because it
+        # covers all the actions that need to be taken for manual changes
+        poll_labels = [self._tab_dataset.indexAB[0]]
+        if self.do_sync:
+            poll_labels = [self._tab_dataset.indexAB[0],self._tab_dataset.indexAB[1]]
+        self.top.notebook_datasets.global_poll_phase(poll_labels, value-orig, voxel, do_zero=True)
+
+    def on_phase1(self, event):
+        # phase 1 respects the sync A/B setting
+        value = event.GetEventObject().GetValue()
+        voxel = self._tab_dataset.voxel
+        orig = self.dataset.get_phase_1(voxel)
+        # we use the notebook level method to deal with this change because it
+        # covers all the actions that need to be taken for manual changes
+        poll_labels = [self._tab_dataset.indexAB[0]]
+        if self.do_sync:
+            poll_labels = [self._tab_dataset.indexAB[0],self._tab_dataset.indexAB[1]]
+        self.top.notebook_datasets.global_poll_phase(poll_labels, value-orig, voxel, do_zero=False)
+
+    def on_phase1_zero(self, event):
+        # phase 1 zero respects the sync A/B setting
+        value = event.GetEventObject().GetValue()
+        nb = self.top.notebook_datasets
+        poll_labels = [self._tab_dataset.indexAB[0]]
+        if self.do_sync:
+            poll_labels = [self._tab_dataset.indexAB[0],self._tab_dataset.indexAB[1]]
+        nb.global_poll_sync_event(poll_labels, value, event='phase1_zero')
+
+    def on_phase1_pivot(self, event):
+        # phase 1 pivot respects the sync A/B setting
+        value = event.GetEventObject().GetValue()
+        nb = self.top.notebook_datasets
+        poll_labels = [self._tab_dataset.indexAB[0]]
+        if self.do_sync:
+            poll_labels = [self._tab_dataset.indexAB[0],self._tab_dataset.indexAB[1]]
+        nb.global_poll_sync_event(poll_labels, value, event='phase1_pivot')
+
+    def set_phase1_pivot(self, value):
+        self.block.set.phase_1_pivot = value
+        self.FloatPhase1Pivot.SetValue(value)
+        self.process_and_plot()
 
 
     def on_fit_all(self, event):
@@ -563,6 +610,74 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
 
 
     ##### Internal helper functions  ##########################################
+
+    def set_frequency_shift(self, delta, voxel, auto_calc=False, entry='all'):
+        '''
+        Phase0, phase 1 and frequency shift are all parameters that affect the
+        data in the spectral tab, however, they can also be changed in other
+        places using either widgets or mouse canvas events. In the end, these
+        GUI interactions are all changing the same variables located in the
+        block_spectral object.
+
+        Because these can be changed by "between tabs" actions, I've located
+        these methods at this level so that one datasest does not ever talk
+        directly to another tab, but just to a parent (or grandparent).
+
+        '''
+        b0shift = self.block.get_frequency_shift(voxel)
+        b0shift = b0shift + delta
+        self.block.set_frequency_shift(b0shift, voxel)
+        self.FloatFrequency.SetValue(b0shift)
+        self.plot_results = self.block.chain.run([voxel]) #, entry=entry)
+        self.plot()
+
+
+    def set_phase_0(self, delta, voxel, auto_calc=False):
+        '''
+        This method only updates block values and widget settings, not view
+        display. That is done in the set_xxx_x_view() method.
+
+        '''
+        phase_0 = self.block.get_phase_0(voxel)
+        phase_0 = (phase_0  + delta) # % 360
+        self.block.set_phase_0(phase_0,voxel)
+        self.FloatPhase0.SetValue(phase_0)
+
+
+    def set_phase_0_view(self, voxel):
+        phase0 = self.block.get_phase_0(voxel)
+        self.view.set_phase_0(phase0, index=[0], absolute=True, no_draw=True)
+        tab.view.canvas.draw()
+
+
+    def set_phase_1(self, delta, voxel, auto_calc=False):
+        '''
+        Phase0, phase 1 and frequency shift are all parameters that affect the
+        data in the spectral tab, however, they can also be changed in other
+        places using either widgets or mouse canvas events. In the end, these
+        GUI interactions are all changing the same variables located in the
+        block_spectral object.
+
+        Because these can be changed by "between tabs" actions, I've located
+        these methods at this level so that one tab does not ever talk directly
+        to another tab, but just to a parent (or grandparent).
+
+        '''
+        # check if phase1 is locked at zero
+        if not self.block.phase_1_lock_at_zero:
+            phase_1 = self.block.get_phase_1(voxel)
+            phase_1 = phase_1  + delta
+        else:
+            phase_1 = 0.0
+
+        self.block.set_phase_1(phase_1,voxel)
+        self.FloatPhase1.SetValue(phase_1)
+
+
+    def set_phase_1_view(self, voxel):
+        phase1 = tab.block.get_phase_1(voxel)
+        tab.view.set_phase_1(phase1, index=[0], absolute=True, no_draw=True)
+        tab.view.canvas.draw()
 
 
     def chain_status(self, msg, slot=1):
@@ -583,7 +698,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         """
         voxel = [self.voxel]
         entry = 'one'
-        self.plot_results = self.dataset.chain.run(voxel, entry=entry, status=self.chain_status)
+        self.plot_results = self.block.chain.run(voxel, entry=entry, status=self.chain_status)
 
         # if self.fit_mode == 'all':
         #     voxel = self.dataset.get_all_voxels()  # list of tuples, with mask != 0
@@ -593,37 +708,33 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
                         
     def plot(self, is_replot=False, initialize=False):
 
-        if not self.plotting_enabled: 
-            return
-        
         if self.dataset == None:
             return
-        
-        voxel = self.voxel
-        
-        t = self.dataset.time_axis #/ 60.0  # time in sec
-        
-        line1 = self.dataset.data[voxel[2],voxel[1],voxel[0],:]
-        data1 = {'data' : line1, 
-                 'xaxis_values' : t,
-                 'line_color_real' : 'black'
-                }
 
-        data2 = {'data' : self.plot_results, 
-                 'xaxis_values' : t,
-                 'line_color_real' : 'green'
-                }
+        if self.plotting_enabled:
 
-        data3 = {'data' : line1-self.plot_results, 
-                 'xaxis_values' : t,
-                 'line_color_real' : 'black'
-                }
-        
-        data =  [[data1, data2, data3]] 
+            voxel = self.voxel
+            data1 = self.plot_results['freq']
+            ph0_1 = self.dataset.get_phase_0(voxel)
+            ph1_1 = self.dataset.get_phase_1(voxel)
 
-        self.view.set_data(data)
-        self.view.update(no_draw=True)
-        self.view.canvas.draw()
+            data = [[data1], ]
+            self.view.set_data(data)
+            self.view.update(no_draw=True, set_scale=not self._scale_intialized)
+
+            if not self._scale_intialized:
+                self._scale_intialized = True
+
+            # we take this opportunity to ensure that our phase values reflect
+            # the values in the block.
+            self.view.set_phase_0(ph0_1, absolute=True, no_draw=True, index=[0])
+            self.view.set_phase_1(ph1_1, absolute=True, no_draw=True, index=[0])
+
+            self.view.canvas.draw()
+
+            # Calculate the new area after phasing
+            area, rms = self.view.calculate_area()
+            self.top.statusbar.SetStatusText(self.build_area_text(area[0], rms[0], plot_label='A'), 3)
 
 
     def show(self, keep_norm=True):
@@ -636,21 +747,12 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
     
         voxel = self.voxel
         
-        dat1 = self.dataset.data[:,:, voxel[2], self.itime]
-        dat2 = self.dataset.result_maps[self.iresult][:,:, voxel[2]]
-        dat2mm = self.dataset.result_maps[self.iresult][:,:,:]
-
-#         # we want to refer to time rates in sec and 1/sec so we multiply by 60 
-#         # here as data was fitted with time set as minutes for the model's sake
-#         if (self.iresult in ['R1','R2','Delay1','Delay2']):
-#             dat2 = dat2.copy() * 60
-#             dat2mm = dat2mm.copy() * 60
+        dat1 = self.image_mri[:,:, voxel[2], self.itime]
+        dat2 = self.image_calc[self.iresult][:,:, voxel[2]]
 
         data1 =  [{'data'      : dat1,
                    'cmap'      : cm.gray,
                    'alpha'     : 1.0,
-#                   'vmax'      : self.dataset.data.max(),
-#                   'vmin'      : self.dataset.data.min(),
                    'vmax'      : self.ranges_mri[1],
                    'vmin'      : self.ranges_mri[0],
                    'keep_norm' : False         }] 
@@ -658,8 +760,6 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         data2 =  [{'data'      : dat2,
                    'cmap'      : self.cmap_results,
                    'alpha'     : 1.0,
-#                   'vmax'      : np.nanmax(dat2mm),     # ignores NaN values
-#                   'vmin'      : np.nanmin(dat2mm),
                    'vmax'      : self.ranges_calc[self.iresult][1],     # ignores NaN values
                    'vmin'      : self.ranges_calc[self.iresult][0],
                    'keep_norm' : False          }] 

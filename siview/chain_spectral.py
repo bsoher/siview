@@ -2,9 +2,10 @@
 
 # 3rd party modules
 import numpy as np
+from scipy.fft import fft, fftshift
 
 # Our modules
-import siview.funct_spectral_all as funct_spectral_all
+import siview.common.funct_spectral_all as funct_spectral_all
 from siview.chain_base import Chain
 
 
@@ -83,45 +84,56 @@ class ChainSpectral(Chain):
         self.spectral_hpp         = self._dataset.spectral_hpp
         self.zero_fill_multiplier = self._dataset.zero_fill_multiplier
         self.phase_1_pivot        = self._dataset.phase_1_pivot
-        
+
         for voxel in voxels:
             # local copy of input data
-            self.data = self._dataset.get_source_data('spectral')
-            self.data = self.data[voxel[2],voxel[1],voxel[0],:]
-            self.data = self.data.copy()
+            data = self._dataset.get_source_data('spectral')
+            data = data[voxel[2], voxel[1], voxel[0], :].copy()
 
-            # copy 'global' parameters, that DO change with voxel, from Dataset
-            self.frequency_shift = self._dataset.get_frequency_shift(voxel)
-            self.phase0          = self._dataset.get_phase_0(voxel)
-            self.phase1          = self._dataset.get_phase_1(voxel)
-            
-            # copy block parameters, that DO change with voxel, from Block
-            svd_output = self._block.get_svd_output(voxel)
+            freq = fftshift(fft(data))
 
-            self.ndp             = self._block.get_data_point_count(voxel)
-            self.nssv            = self._block.get_signal_singular_value_count(voxel)
-            self.do_fit          = self._block.get_do_fit(voxel)
-            self.svd_output      = svd_output
-            self.voxel           = voxel
+            self._block.data[voxel[2], voxel[1], voxel[0], :] = freq
 
-            # select the chain processing functor based on the entry point
-            if entry == 'all':
-                self.functor_all(self)
-            else:
-                print('oooops!')
-
-            # save data and parameter results into the Block results arrays
-            self._block.data[voxel[2],voxel[1],voxel[0],:] = self.freq.copy()
-            self._block.set_svd_output(self.svd_output, voxel)
-            self._block.set_do_fit(self.do_fit, voxel)
+        # for voxel in voxels:
+        #     # local copy of input data
+        #     self.data = self._dataset.get_source_data('spectral')
+        #     self.data = self.data[voxel[2],voxel[1],voxel[0],:]
+        #     self.data = self.data.copy()
+        #
+        #     # copy 'global' parameters, that DO change with voxel, from Dataset
+        #     self.frequency_shift = self._dataset.get_frequency_shift(voxel)
+        #     self.phase0          = self._dataset.get_phase_0(voxel)
+        #     self.phase1          = self._dataset.get_phase_1(voxel)
+        #
+        #     # # copy block parameters, that DO change with voxel, from Block
+        #     # svd_output = self._block.get_svd_output(voxel)
+        #     #
+        #     # self.ndp             = self._block.get_data_point_count(voxel)
+        #     # self.nssv            = self._block.get_signal_singular_value_count(voxel)
+        #     # self.do_fit          = self._block.get_do_fit(voxel)
+        #     # self.svd_output      = svd_output
+        #     self.voxel           = voxel
+        #
+        #     # select the chain processing functor based on the entry point
+        #     if entry == 'all':
+        #         self.functor_all(self)
+        #     else:
+        #         print('oooops!')
+        #
+        #     # save data and parameter results into the Block results arrays
+        #     self._block.data[voxel[2],voxel[1],voxel[0],:] = self.freq.copy()
+        #     # self._block.set_svd_output(self.svd_output, voxel)
+        #     # self._block.set_do_fit(self.do_fit, voxel)
 
         # Return values specific to calling Tab that contains this Block.Chain
         # Used to update its self.view (plot_panel_spectrum object).
 
-        plot_results = { 'svd_data'               : self.svd_data.copy(),
-                         'svd_peaks_checked'      : self.svd_peaks_checked.copy(),
-                         'svd_peaks_checked_sum'  : self.svd_peaks_checked_sum.copy(),
-                         'svd_fids_checked_sum'   : self.svd_fids_checked.copy(),
-                         'freq'                   : self.freq.copy()   }
+        plot_results = { 'freq' : freq.copy()   }
+
+        # plot_results = { 'svd_data'               : self.svd_data.copy(),
+        #                  'svd_peaks_checked'      : self.svd_peaks_checked.copy(),
+        #                  'svd_peaks_checked_sum'  : self.svd_peaks_checked_sum.copy(),
+        #                  'svd_fids_checked_sum'   : self.svd_fids_checked.copy(),
+        #                  'freq'                   : self.freq.copy()   }
                         
         return plot_results

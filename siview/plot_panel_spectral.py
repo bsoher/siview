@@ -49,11 +49,11 @@ class PlotPanelSpectral(PlotPanelSpectrum):
 
     def on_scroll(self, button, step, iaxis):
         self.set_vertical_scale(step)
-        self.tab_dataset.FloatScale.SetValue(self.vertical_scale)
+        self.tab.FloatScale.SetValue(self.vertical_scale)
 
 
     def on_zoom_select(self, xmin, xmax, val, ymin, ymax, reset=False, iplot=None):
-        self.tab_dataset.FloatScale.SetValue(self.dataymax)
+        self.tab.FloatScale.SetValue(self.dataymax)
 
 
     def on_zoom_motion(self, xmin, xmax, val, ymin, ymax, iplot=None):
@@ -111,16 +111,6 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         the set_phase_0() and set_phase_1() methods can be called from any
         tab without sibling tabs talking to each other.
 
-        Due to the 'sync' check box on the Spectral tab, phase changes on
-        one dataset tab can also cause phase changes on another dataset tab.
-        To accomodate this rule, phase events actually call an event handler
-        at the notebook_dataset level. This polls whether sync is on, whether
-        there is a datasetB displayed that needs updating too, and iterates
-        through all dataset tabs to find out which tabs are affected by this
-        phase event. When it has a list of affected datasets, it then calls
-        one by one the set_phase_x() calls in each dataset to update the
-        block values and view plots.
-
         An important differentiation to understand is that now that phase is
         inherently taken care of in the plot_panel_spectral object, the phase
         value stored in the block AND the new phase displayed in various plots
@@ -132,7 +122,7 @@ class PlotPanelSpectral(PlotPanelSpectrum):
 
         '''
         if iplot not in (0,1): return
-        voxel = self.tab_dataset.voxel
+        voxel = self.tab.voxel
 
         # The mouse probably moved in both the X and Y directions, but to
         # make phasing easier for the user to do accurately, we only pay
@@ -141,28 +131,15 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         dy = ycur - yprev
         dx = xcur - xprev
 
-        # determine label(s) of dataset(s) being phased
-        if self.tab.do_sync:
-            poll_labels = [self.tab_dataset.indexAB[0],self.tab_dataset.indexAB[1]]
-        else:
-            if iplot==0:
-                poll_labels = [self.tab_dataset.indexAB[0]]
-            else:
-                poll_labels = [self.tab_dataset.indexAB[1]]
-
-        index = [iplot]
-        if self.tab.do_sync:
-            index = [0,1]
-
         if abs(dy) > abs(dx):
             # 0 order phase
             delta = dy
-            self.tab.top.notebook_datasets.global_poll_phase(poll_labels, delta, voxel, do_zero=True)
+            self.tab.set_phase_0(delta, voxel)
         else:
             pass
             # first order phase, x10 makes Phase1 changes more noticeable
             delta = dx*10
-            self.tab.top.notebook_datasets.global_poll_phase(poll_labels, delta, voxel, do_zero=False)
+            self.tab.set_phase_1(delta, voxel)
 
         # Calculate the new area after phasing
         area, rms = self.calculate_area()
