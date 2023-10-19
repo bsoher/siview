@@ -274,6 +274,16 @@ class Dataset(object):
         return self.blocks["raw"].seqtr if self.blocks else None
 
     @property
+    def voxel_dimensions(self):
+        """Acquisition repetition time in msec. It's read only."""
+        return self.blocks["raw"].voxel_dimensions if self.blocks else None
+
+    @property
+    def fov(self):
+        """Acquisition repetition time in msec. It's read only."""
+        return self.blocks["raw"].fov if self.blocks else None
+
+    @property
     def nucleus(self):
         """Acquisition nucleus. It's read only."""
         return self.blocks["raw"].nucleus if self.blocks else None

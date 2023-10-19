@@ -135,7 +135,8 @@ def _get_menu_data(main):
                     ("gray",   main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_GRAY),
                     ("RdYlBu", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_RDYLBU))),
                 common_menu.SEPARATOR)
-                # ("Output Images", (
+
+                # ("Output Images", (   # BJS - NB. End parentheses are messed up by my hack and slash here.
                 #     ("Mask to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_MOSAIC),
                 #     ("Fits to Mosaic", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.FITS_TO_MOSAIC),
                 #     ("Mask to Strip",  main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.MASK_TO_STRIP),
@@ -147,10 +148,6 @@ def _get_menu_data(main):
                 #     ("Plot to SVG", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_SVG),
                 #     ("Plot to EPS", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_EPS),
                 #     ("Plot to PDF", main.on_menu_view_output, wx.ITEM_NORMAL, ViewIds.VIEW_TO_PDF))),
-                # ("Output Results", (
-                #     ("to CSV File by Slice", main.on_menu_output_by_slice, wx.ITEM_NORMAL, ViewIds.VIEW_TO_CSV1),
-                #     ("to CSV File by Voxel", main.on_menu_output_by_voxel, wx.ITEM_NORMAL, ViewIds.VIEW_TO_CSV2),
-                #     ("to DICOM by Slice",    main.on_menu_output_to_dicom, wx.ITEM_NORMAL, ViewIds.VIEW_TO_DICOM)  )))
 
     help = (
                 ("&User Manual",          main.on_user_manual),

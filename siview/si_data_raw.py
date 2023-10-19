@@ -77,6 +77,8 @@ class SiDataRaw(BaseTransform):
 
             voxel_dimensions (list, floats): default [20.0, 20.0, 20.0], in [mm]
 
+            fov (list, floats): default [240.0, 240.0, 180.0], in [mm]
+
             headers (list of string(s)): default [], header (metadata) from
                 the data_sources file(s)
 
@@ -99,7 +101,8 @@ class SiDataRaw(BaseTransform):
         self.nucleus           = '1H'
         self.seqte             = 110.0                  # [ms]
         self.seqtr             = 2000.0                 # [ms]
-        self.voxel_dimensions  = [100.0, 100.0, 20.0]     # [mm] for x, y z dims
+        self.voxel_dimensions  = [100.0, 100.0, 20.0]   # [mm] for x, y z dims
+        self.fov               = [240.0, 240.0, 180.0]  # [mm] for x, y z dims
         self.headers           = []
 
         self.data = np.zeros([1, 1, 1, 512], dtype=np.complex64)
@@ -171,6 +174,7 @@ class SiDataRaw(BaseTransform):
         lines.append("Sequence TE                   : %f" % self.seqte)
         lines.append("Sequence TR                   : %f" % self.seqtr)
         lines.append("Voxel dimensions              : "+str(self.voxel_dimensions))
+        lines.append("FOV                           : "+str(self.fov))
         lines.append("Data shape                    : "+str(self.data.shape))
         lines.append("Data type                     : %s" % self.data_type)
         lines.append("Data length                   : %d" % self.data.size)
@@ -215,6 +219,9 @@ class SiDataRaw(BaseTransform):
                 
                 for dim in self.voxel_dimensions:
                     util_xml.TextSubElement(e, "voxel_dimensions", dim)
+
+                for val in self.fov:
+                    util_xml.TextSubElement(e, "fov", val)
 
                 e.append(util_xml.numpy_array_to_element(self.transform, "transform"))
                 e.append(util_xml.numpy_array_to_element(self.data, "data"))
@@ -266,7 +273,8 @@ class SiDataRaw(BaseTransform):
                 self.nucleus = source.findtext("nucleus")
 
                 self.voxel_dimensions = [float(val.text) for val in source.getiterator("voxel_dimensions")]
-                
+                self.fov              = [float(val.text) for val in source.getiterator("fov")]
+
                 if source.findtext("transform") is not None:
                     self.transform = util_xml.element_to_numpy_array(source.find("transform"))
 

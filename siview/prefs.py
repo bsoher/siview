@@ -47,13 +47,15 @@ class PrefsMain(SiviewPrefs):
         # Add my custom stuff
         for name in ("sash_position",
                      "line_color_baseline",
-                     "line_color_imaginary", 
+                     "line_color_imaginary",
                      "line_color_magnitude",
                      "line_color_metabolite", 
                      "line_color_real", 
                      "zero_line_plot_color", 
                      "zero_line_plot_style", 
-                     "line_width", 
+                     "zero_line_color",
+                     "zero_line_style",
+                     "line_width",
                     ):
             d[name] = getattr(self, name)
 
@@ -75,7 +77,9 @@ class PrefsMain(SiviewPrefs):
                      "line_color_real", 
                      "zero_line_plot_color", 
                      "zero_line_plot_style",
-                    ):
+                     "zero_line_color",
+                     "zero_line_style",
+                     ):
             setattr(self, name, source[name])
 
         for name in ("line_width", ):

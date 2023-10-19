@@ -3,16 +3,16 @@ from functools import reduce
 
 # 3rd party modules
 import numpy as np
+import cElementTree
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.block_spectral_identity as block_spectral_identity
-import vespa.analysis.chain_spectral as chain_spectral
-import vespa.analysis.svd_output as svd_output_module
-import vespa.analysis.functors.funct_water_filter as funct_water
-import vespa.common.util.xml_ as util_xml
-import vespa.common.util.generic_spectral as util_spectral
-from vespa.common.constants import Deflate
+import siview.block_spectral_identity as block_spectral_identity
+import siview.chain_spectral as chain_spectral
+import siview.common.svd_output as svd_output_module
+import siview.common.funct_water_filter as funct_water
+import siview.common.util.xml_ as util_xml
+from siview.common.constants import Deflate
 
 
 
@@ -546,7 +546,6 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
     def set_phase_1(self, phase_1, xyz):
         """ Sets 1st order phase for the voxel at the xyz tuple """
         x, y, z = xyz
-#        phase_1  = util_spectral.clip(phase_1, -1e5, 1e5)
         phase_1  = np.clip(phase_1, -1e5, 1e5)
 
         if self.phase_lock:
@@ -878,17 +877,17 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
 
 def _test():
 
-    import vespa.common.util.time_ as util_time
+    import siview.common.time_ as util_time
 
     test = BlockSpectral([128,1,1,1])
 
     class_name = test.__class__.__name__
     filename = "_test_output_"+class_name+".xml"
     element = test.deflate()
-    root = ElementTree.Element("_test_"+class_name, { "version" : "1.0.0" })
+    root = Element("_test_"+class_name, { "version" : "1.0.0" })
     util_xml.TextSubElement(root, "timestamp", util_time.now().isoformat())
     root.append(element)
-    tree = ElementTree.ElementTree(root)
+    tree = cElementTree.ElementTree(root)
     tree.write(filename, "utf-8")
 
     tom = 10
