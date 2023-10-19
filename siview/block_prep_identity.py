@@ -5,9 +5,9 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.chain_prep_identity as chain_prep_identity
-import vespa.analysis.block as block
-from vespa.common.constants import Deflate
+import siview.chain_prep_identity as chain_prep_identity
+import siview.block as block
+from siview.common.constants import Deflate
 
 
 

@@ -4,9 +4,9 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.chain_spectral_identity as chain_spectral_identity
-import vespa.analysis.block as block
-from vespa.common.constants import Deflate
+import siview.chain_spectral_identity as chain_spectral_identity
+import siview.block as block
+from siview.common.constants import Deflate
 
 
 

@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 # Our modules
-from vespa.common.util.math_ import safe_exp
+from siview.common.math_ import safe_exp
 
 
 

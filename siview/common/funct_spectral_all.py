@@ -4,16 +4,13 @@
 import numpy as np
 
 # Our modules
-import vespa.analysis.constants as constants
-import vespa.analysis.svd_output as svd_output_module
-import vespa.analysis.functors.funct_ecc as funct_ecc
-import vespa.analysis.functors.funct_water_filter as funct_water
-from vespa.common.util.math_ import safe_exp
+import siview.constants as constants
+import siview.svd_output as svd_output_module
+import siviewfunctors.funct_ecc as funct_ecc
+import siviewfunctors.funct_water_filter as funct_water
+from siview.common.util.math_ import safe_exp
 
-if constants.HLSVDPRO_AVAILABLE:
-    import hlsvdpro
-else:
-    import vespa.common.hlsvdpropy as hlsvdpro
+import siview.common.hlsvdpropy as hlsvdpro
 
 
 
@@ -151,7 +148,7 @@ def svd_filter(chain):
             # It will destroy performance and cause Vespa users to wail
             # and gnash their teeth.
             #
-            # import vespa.common.util.xml_ as util_xml
+            # import siview.common.xml_ as util_xml
             # import os.path
             #
             # input_ = {"dwell_time" : dwell_time,

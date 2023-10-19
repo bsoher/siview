@@ -3,7 +3,7 @@
 # 3rd party modules
 
 # Our modules
-from vespa.analysis.chain_base import Chain
+from siview.chain_base import Chain
 
 
 class ChainSpatialIdentity(Chain):

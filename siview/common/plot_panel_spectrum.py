@@ -76,7 +76,7 @@ from matplotlib.patches    import Rectangle
 #from matplotlib.lines      import Line2D
 
 # Our modules
-from vespa.common.constants import DEGREES_TO_RADIANS, RADIANS_TO_DEGREES
+from siview.common.constants import DEGREES_TO_RADIANS, RADIANS_TO_DEGREES
 
 
 
@@ -2769,7 +2769,7 @@ class MyFrame(wx.Frame):
 
     def make_data(self, lines=8, points=2048):
 
-        import vespa.common.util.generic_spectral as util_spectral
+        import siview.common.generic_spectral as util_spectral
 
         if lines > 18: lines = 18
         if lines < 1:  lines = 1

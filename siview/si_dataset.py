@@ -19,11 +19,11 @@ import siview.block_spectral as block_spectral
 
 import siview.mrs_user_prior as mrs_user_prior
 
-import vespa.common.util.misc as util_misc
-import vespa.common.util.xml_ as util_xml
-import vespa.common.constants as common_constants
+import siview.common.misc as util_misc
+import siview.common.xml_ as util_xml
+import siview.common.constants as common_constants
 
-from vespa.common.constants import Deflate
+from siview.common.constants import Deflate
 
 
 
