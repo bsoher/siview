@@ -3,7 +3,7 @@ from functools import reduce
 
 # 3rd party modules
 import numpy as np
-import cElementTree
+import xml.etree.cElementTree as cElementTree
 from xml.etree.cElementTree import Element
 
 # Our modules
@@ -11,7 +11,7 @@ import siview.block_spectral_identity as block_spectral_identity
 import siview.chain_spectral as chain_spectral
 import siview.common.svd_output as svd_output_module
 import siview.common.funct_water_filter as funct_water
-import siview.common.util.xml_ as util_xml
+import siview.common.xml_ as util_xml
 from siview.common.constants import Deflate
 
 

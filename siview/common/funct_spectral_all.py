@@ -5,10 +5,8 @@ import numpy as np
 
 # Our modules
 import siview.constants as constants
-import siview.svd_output as svd_output_module
-import siviewfunctors.funct_ecc as funct_ecc
-import siviewfunctors.funct_water_filter as funct_water
-from siview.common.util.math_ import safe_exp
+import siview.common.svd_output as svd_output_module
+from siview.common.math_ import safe_exp
 
 import siview.common.hlsvdpropy as hlsvdpro
 
@@ -375,48 +373,49 @@ def do_processing_all(chain):
     """
 
     """
-    set = chain._block.set
-
-    # eddy current correction
-    if chain._block.set.ecc_method != 'None':
-        if chain._block.set.ecc_dataset is not None:
-            funct_ecc.do_ecc_processing(chain)
-
-    # save current data as 'pre_roll'
-    chain.pre_roll = chain.data.copy()
-
-    # left shift data
-    if set.left_shift_value: left_shift(chain)
-
-    # frequency shift data
-    if chain.frequency_shift != 0.0: frequency_shift(chain)
-
-    # calculate svd filter
-    svd_filter(chain)
-
-    # apply water filter
-    if chain._block.set.water_filter_method != 'None':
-        funct_water.do_water_filter_processing(chain)
-
-    # apodize data
-    if set.apodization: apodization(chain)
-
-    # save current data as 'kodata'
-    chain.kodata = chain.data.copy()
-
-    # shift data by half
-    if set.chop: chop(chain)
-
-    fft(chain)
-
-    # physically flip data
-    if set.flip: flip_spectral_axis(chain)
-
-    # perform scaling or dc offset
-    chain.data = chain.data * set.amplitude + set.dc_offset
-
-    # save current data as 'freq'
-    chain.freq = chain.data.copy()
+    pass
+    # set = chain._block.set
+    #
+    # # eddy current correction
+    # if chain._block.set.ecc_method != 'None':
+    #     if chain._block.set.ecc_dataset is not None:
+    #         funct_ecc.do_ecc_processing(chain)
+    #
+    # # save current data as 'pre_roll'
+    # chain.pre_roll = chain.data.copy()
+    #
+    # # left shift data
+    # if set.left_shift_value: left_shift(chain)
+    #
+    # # frequency shift data
+    # if chain.frequency_shift != 0.0: frequency_shift(chain)
+    #
+    # # calculate svd filter
+    # svd_filter(chain)
+    #
+    # # apply water filter
+    # if chain._block.set.water_filter_method != 'None':
+    #     funct_water.do_water_filter_processing(chain)
+    #
+    # # apodize data
+    # if set.apodization: apodization(chain)
+    #
+    # # save current data as 'kodata'
+    # chain.kodata = chain.data.copy()
+    #
+    # # shift data by half
+    # if set.chop: chop(chain)
+    #
+    # fft(chain)
+    #
+    # # physically flip data
+    # if set.flip: flip_spectral_axis(chain)
+    #
+    # # perform scaling or dc offset
+    # chain.data = chain.data * set.amplitude + set.dc_offset
+    #
+    # # save current data as 'freq'
+    # chain.freq = chain.data.copy()
 
 
 

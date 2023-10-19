@@ -25,8 +25,9 @@ import siview.tab_base
 import siview.prefs as prefs
 import siview.util_menu as util_menu
 import siview.constants as constants
-from sivie.plot_panel_spectral import PlotPanelSpectral
-from siview.plot_panel_siview import ImagePanelSiview
+import siview.tab_base as tab_base
+from siview.plot_panel_spectral import PlotPanelSpectral
+from siview.image_panel_siview import ImagePanelSiview
 
 import siview.auto_gui.siview as siview_ui
 
@@ -228,8 +229,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.view.change_naxes(1)
         
         
-        self.image = image_panel_siview.ImagePanelSiview(  
-                                        self.PanelImage, 
+        self.image = ImagePanelSiview(  self.PanelImage,
                                         self,
                                         self.parent,
                                         naxes=2,
