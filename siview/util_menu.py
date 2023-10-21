@@ -123,9 +123,10 @@ def _get_menu_data(main):
                     ("Top",    main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_PLOT_TOP),
                     ("Middle", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_PLOT_MIDDLE),
                     ("Bottom", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_PLOT_BOTTOM))),
-                ("X-Axis", (
-                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW),
-                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW))),
+                ("Show X-Axis", main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW),
+#                ("X-Axis", (
+#                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW),
+#                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW))),
                 common_menu.SEPARATOR,
                 ("Colormap - Results", (
                     ("autumn", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_AUTUMN),

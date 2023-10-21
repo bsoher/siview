@@ -55,7 +55,13 @@ class PrefsMain(SiviewPrefs):
                      "zero_line_plot_style", 
                      "zero_line_color",
                      "zero_line_style",
+                     "zero_line_bottom",
+                     "zero_line_middle",
+                     "zero_line_top",
+                     "zero_line_show",
                      "line_width",
+                     "xaxis_ppm",
+                     "xaxis_hertz"
                     ):
             d[name] = getattr(self, name)
 
@@ -84,4 +90,17 @@ class PrefsMain(SiviewPrefs):
 
         for name in ("line_width", ):
             setattr(self, name, float(source[name]))
+
+        for name in (
+                    "zero_line_bottom",
+                    "zero_line_middle",
+                    "zero_line_top",
+                    "zero_line_show",
+                    "xaxis_ppm",
+                    "xaxis_hertz"
+                    ):
+            if source[name].lower() in ['true','1','yes']:
+                setattr(self, name, True)
+            else:
+                setattr(self, name, False)
 

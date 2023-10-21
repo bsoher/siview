@@ -105,16 +105,17 @@ class ImagePanelToolbar2(wx.Panel):
         self.naxes = naxes   
         self.axes  = []
 
-        
-        if naxes > 1:
-            iaxes = np.arange(naxes-1,dtype=np.uint16)+1
-            for i in iaxes:
-                if layout == 'vertical':
-                    self.axes.append(self.figure.add_subplot(naxes,1,1))
-                    self.axes.append(self.figure.add_subplot(naxes,1,i+1, sharex=self.axes[0], sharey=self.axes[0]))
-                else:
-                    self.axes.append(self.figure.add_subplot(1,naxes,1))
-                    self.axes.append(self.figure.add_subplot(1,naxes,i+1, sharex=self.axes[0], sharey=self.axes[0]))
+        if layout == 'vertical':
+            self.axes.append(self.figure.add_subplot(naxes,1,1))
+            if naxes>1:
+                for i in range(naxes-1):
+                    self.axes.append(self.figure.add_subplot(naxes,1,i+2, sharex=self.axes[0], sharey=self.axes[0]))
+        else:
+            self.axes.append(self.figure.add_subplot(1,naxes,1))
+            if naxes > 1:
+                for i in range(naxes - 1):
+                    self.axes.append(self.figure.add_subplot(1,naxes,i+2, sharex=self.axes[0], sharey=self.axes[0]))
+
         self.all_axes = list(self.axes)
  
         self.canvas = FigureCanvas(self, -1, self.figure)
@@ -662,7 +663,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         # turn off crosshair cursors when mouse outside canvas
         self._idAxLeave  = self.canvas.mpl_connect('axes_leave_event', self.leave)
         self._idFigLeave = self.canvas.mpl_connect('figure_leave_event', self.leave)
-        self._idRelease = self.canvas.mpl_connect('button_release_event', self.release)
+        self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
         self._idPress = None
         self._idDrag = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
         
@@ -695,7 +696,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
         NavigationToolbar2.zoom(self, *args)
         if self.parent.axes[0].get_navigate_mode() is None:
-            self._idRelease = self.canvas.mpl_connect('button_release_event', self.release)
+            self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
 
  
     def pan(self, *args):
@@ -712,7 +713,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
         NavigationToolbar2.pan(self, *args)
         if self.parent.axes[0].get_navigate_mode() is None:
-            self._idRelease = self.canvas.mpl_connect('button_release_event', self.release)
+            self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
 
 
     def drag_pan(self, event):
@@ -767,7 +768,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         self.set_message(self.mode)
  
         if self.parent.axes[0].get_navigate_mode() is None:
-            self._idRelease = self.canvas.mpl_connect('button_release_event', self.release)
+            self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
 
  
     def press_level(self, event):
@@ -792,7 +793,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
                 self.canvas.mpl_disconnect(self._idDrag)
                 self._idDrag = self.canvas.mpl_connect('motion_notify_event', self.drag_level)
         
-        self.press(event)
+        self.press_local(event)
  
  
     def drag_level(self, event):
@@ -848,7 +849,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         self._xypress = []
         self._button_pressed = None
         self.push_current()
-        self.release(event)
+        self.release_local(event)
         self.canvas.draw()
 
 
@@ -916,39 +917,40 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         cursor =wx.Cursor(cursord[cursor])
         self.canvas.SetCursor( cursor )
 
-    def press(self, event):
+    def press_local(self, event):
         
-        xloc, yloc = self.get_bounded_xyloc(event)        
-        item = self._xypress[0]
-        axes, iplot = item[0], item[1]
-        if self.mode == 'pan/zoom':
-            for line in self.vlines + self.hlines:
-                line.set_visible(False)
-            self.dynamic_update()
-            pass
-        elif self.mode == 'zoom rect':
-            for line in self.vlines + self.hlines:
-                line.set_visible(False)
-            self.dynamic_update()
-            pass
-        elif self.mode == 'width/level':
-            for line in self.vlines + self.hlines:
-                line.set_visible(False)
-            self.dynamic_update()
-            self.parent.on_level_press(xloc, yloc, iplot)
-        elif self.mode == '':
-            # no toggle buttons on
-            # but, maybe we want to show crosshair cursors
-            if self._cursors:
+        xloc, yloc = self.get_bounded_xyloc(event)
+        if len(self._xypress)>0:
+            item = self._xypress[0]
+            axes, iplot = item[0], item[1]
+            if self.mode == 'pan/zoom':
                 for line in self.vlines + self.hlines:
-                    line.set_visible(True)
-            self.dynamic_update()
-            pass
-        else:
-            # catch all
-            pass
+                    line.set_visible(False)
+                self.dynamic_update()
+                pass
+            elif self.mode == 'zoom rect':
+                for line in self.vlines + self.hlines:
+                    line.set_visible(False)
+                self.dynamic_update()
+                pass
+            elif self.mode == 'width/level':
+                for line in self.vlines + self.hlines:
+                    line.set_visible(False)
+                self.dynamic_update()
+                self.parent.on_level_press(xloc, yloc, iplot)
+            elif self.mode == '':
+                # no toggle buttons on
+                # but, maybe we want to show crosshair cursors
+                if self._cursors:
+                    for line in self.vlines + self.hlines:
+                        line.set_visible(True)
+                self.dynamic_update()
+                pass
+            else:
+                # catch all
+                pass
     
-    def release(self, event):
+    def release_local(self, event):
         # legacy code from NavigationToolbar2Wx
         try: 
             del self.lastrect
@@ -1487,19 +1489,26 @@ class MyFrame(wx.Frame):
         data1 = { 'data'  : self.dist(self.size_medium),
                   'alpha' : 1.0
                 }
- 
+
         data2 = { 'data'  : 100-self.dist(self.size_medium),
                   'alpha' : 0.5,
                   'cmap'  : cm.hsv,
                 }
-         
+
         data = [[data1], [data2]]
+
+        # data1 = {'data': self.dist(self.size_medium),
+        #          'alpha': 1.0
+        #          }
+        #
+        # data = [[data1],]
          
         self.nb = wx.Notebook(self, -1, style=wx.BK_BOTTOM)
          
         panel1 = wx.Panel(self.nb, -1)
          
         self.view = DemoImagePanel(panel1, self, self.statusbar, naxes=2, data=data)
+#        self.view = DemoImagePanel(panel1, self, self.statusbar, naxes=1, data=data)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.view, 1, wx.LEFT | wx.TOP | wx.EXPAND)

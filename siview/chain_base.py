@@ -26,7 +26,7 @@ class Chain(object, metaclass=abc.ABCMeta):
         self._block   = block
         self.data = [ ]
 
-        self.reset_results_arrays()
+        #self.reset_results_arrays()
 
 
     def reset_results_arrays(self):

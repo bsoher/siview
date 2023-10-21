@@ -80,6 +80,8 @@ zero_line_plot_middle = False
 zero_line_plot_show = False
 zero_line_plot_style = solid
 zero_line_plot_top = False
+zero_line_color = goldenrod
+zero_line_style = solid
 
 """ 
 

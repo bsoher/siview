@@ -34,7 +34,7 @@ class ChainSpectral(Chain):
         self.raw_dims             = self._dataset.raw_dims
         self.raw_dim0             = self._dataset.raw_dims[0]
         self.raw_hpp              = self._dataset.raw_hpp
-        
+
         # processing functor - provides entry points for chain
         self.functor_all = funct_spectral_all.do_processing_all
 

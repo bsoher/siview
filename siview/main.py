@@ -135,7 +135,7 @@ class Main(wx.Frame):
         ini_name = "import_data_crt"
         default_path = util_siview_config.get_path(ini_name)
         msg = 'Select file with Processed CRT Data'
-        filetype_filter = "Numpy (*.npy)"
+        filetype_filter = "(*.npy, *.*)|*.npy;*.*"
 
         fname = common_dialogs.pickfile(message=msg,
                                         default_path=default_path,
@@ -144,9 +144,11 @@ class Main(wx.Frame):
         if fname:
             try:
                 crt_dat = np.load(fname)
+                if crt_dat.shape == (512,24,24):
+                    crt_dat = np.swapaxes(crt_dat,0,2)
                 if len(crt_dat.shape) != 3:
                     msg = 'Error (import_data_crt): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
-                if crt_dat.dtype != np.complex64:
+                elif crt_dat.dtype not in [np.complex64, np.complex128]:
                     msg = 'Error (import_data_crt): Wrong Dtype, arr.dtype = '+str(crt_dat.dtype)
             except Exception as e:
                 msg = """Error (import_data_crt): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
@@ -155,6 +157,9 @@ class Main(wx.Frame):
                 common_dialogs.message(msg, default_content.APP_NAME+" - Add Node Nifti", common_dialogs.E_OK)
             else:
                 path, _ = os.path.split(fname)
+
+                # bjs hack
+                crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
 
                 raw = si_data_raw.SiDataRaw()
                 raw.data_sources = [fname,]

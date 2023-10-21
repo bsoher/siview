@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def dist(self, n, m=None):
+def dist( n, m=None):
     """
     Return a rectangular array in which each pixel = euclidian
     distance from the origin.

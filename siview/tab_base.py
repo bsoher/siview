@@ -31,7 +31,7 @@ class Tab(object):
         # value after data has been passed to the view. _scale_intialized
         # tracks whether or not this has happened. It's intialized to False,
         # set to True once the scale is intialized and never changes thereafter.
-        self._scale_intialized = False
+        self._scale_initialized = False
 
         # Every tab has a view attr. The ones that don't have a view (like the
         # raw tab) can just leave this set to None.
@@ -44,34 +44,7 @@ class Tab(object):
     def is_raw(self):
         return hasattr(self, "IS_RAW")
 
-    @property
-    def is_prep_fidsum(self):
-        return hasattr(self, "IS_PREP_FIDSUM")
 
-    @property
-    def is_prep_timeseries(self):
-        return hasattr(self, "IS_PREP_TIMESERIES")
-
-    @property
-    def is_voigt(self):
-        return hasattr(self, "IS_VOIGT")
-
-    @property
-    def is_giso(self):
-        return hasattr(self, "IS_GISO")
-
-    @property
-    def is_spectral(self):
-        return hasattr(self, "IS_SPECTRAL")
-
-    @property
-    def is_watref(self):
-        return hasattr(self, "IS_WATREF")
-
-
-    @property
-    def dataset(self):
-        return self._top.datasets.get(self._tab_dataset.indexAB[0], None)
 
     #=======================================================
     #

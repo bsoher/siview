@@ -198,6 +198,10 @@ class Dataset(object):
         # # Update the user prior spectrum and fid caches
         # self.user_prior.basis.update(self)
 
+    @property
+    def data_sources(self):
+        """Raw/All data sweep width. It's read only."""
+        return self.blocks["raw"].data_sources if self.blocks else []
 
     @property
     def raw_shape(self):

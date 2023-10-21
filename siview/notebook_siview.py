@@ -126,7 +126,7 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
     #
     #=======================================================
 
-    def add_siview_tab(self, dataset=None, out_dicom=None):
+    def add_siview_tab(self, dataset=None):
 
         # If the welcome tab is open, close it.
         if self.is_welcome_tab_open:
@@ -136,7 +136,7 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
         name = "SIView%d" % self.count
 
         # create new notebook tab with process controls 
-        tab = tab_siview.TabSiview(self, self.top, dataset, out_dicom=out_dicom)
+        tab = tab_siview.TabSiview(self, self.top, dataset)
         self.AddPage(tab, name, True)
 
 
