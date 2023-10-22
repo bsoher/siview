@@ -135,11 +135,19 @@ class PlotPanelSpectral(PlotPanelSpectrum):
             # 0 order phase
             delta = dy
             self.tab.set_phase_0(delta, voxel)
+            phase0 = self.tab.block.get_phase_0(voxel)
+            self.set_phase_0(phase0, index=[0], absolute=True, no_draw=True)
+            self.canvas.draw()
+            # r = self.tab.block.get_phase_0(voxel)
+            # print('phase0 = '+str(r))
         else:
-            pass
+            # pass
             # first order phase, x10 makes Phase1 changes more noticeable
             delta = dx*10
             self.tab.set_phase_1(delta, voxel)
+            phase1 = self.tab.block.get_phase_1(voxel)
+            self.set_phase_1(phase1, index=[0], absolute=True, no_draw=True)
+            self.canvas.draw()
 
         # Calculate the new area after phasing
         area, rms = self.calculate_area()

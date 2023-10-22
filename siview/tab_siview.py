@@ -35,7 +35,15 @@ import siview.common.wx_util as wx_util
 from siview.common.dist import dist
 
 
+#------------------------------------------------------------------------------
 
+def _configure_combo(control, choices, selection=''):
+    lines = list(choices.values())
+    control.SetItems(lines)
+    if selection in lines:
+        control.SetStringSelection(selection)
+    else:
+        control.SetStringSelection(lines[0])
 
 #------------------------------------------------------------------------------
 
@@ -148,10 +156,16 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         wx_util.configure_spin(self.FloatCalcCeil,  60, 3, None, min_max=(-1000,1000))
         # wx_util.configure_spin(self.SpinMriFloor,     60, min_max=(-1000,1000))
         # wx_util.configure_spin(self.SpinMriCeil,      60, min_max=(-1000,1000))
-
         self.ButtonCalcReset.SetSize(wx.Size(40,-1))
         # self.ButtonMriReset.SetSize(wx.Size(40,-1))
 
+        wx_util.configure_spin(self.FloatWidth,       70, 3, 0.5, (0.0, 100.0))
+        wx_util.configure_spin(self.FloatFrequency,   70, 3, 0.5, (-10000, 10000))
+        wx_util.configure_spin(self.FloatPhase0,      70, 3, 1.0, (-180.0, 180.0))
+        wx_util.configure_spin(self.FloatPhase1,      70, 3, 10.0, (-1e5, 1e5))
+        wx_util.configure_spin(self.FloatPhase1Pivot, 70, 3, 0.5, (-1000.0, 1000.0))
+
+        _configure_combo(self.ComboApodization, constants.Apodization.choices)
 
 
     def populate_controls(self):
@@ -164,14 +178,15 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         controls, no questions asked. 
         
         """
-        dataset = self.dataset
-        dims = dataset.spectral_dims[::-1]
+        ds = self.dataset
+        dims = ds.spectral_dims[::-1]
+        voxel = self.voxel
 
         #############################################################
         # Global controls            
         #############################################################
         
-        self.TextSource.SetValue(self.dataset.data_sources[0])
+        self.TextSource.SetValue(ds.data_sources[0])
 
         self.ChoiceModel.SetStringSelection('Integral')
 
@@ -180,6 +195,17 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.FloatCalcCeil.SetValue(self.ranges_calc['Integral'][1])
         # self.SpinMriFloor.SetValue(self.ranges_mri[0])
         # self.SpinMriCeil.SetValue(self.ranges_mri[1])
+
+        # Apodization width is disabled if there's no method chosen
+        apodize = constants.Apodization.choices[self.block.set.apodization]
+        self.ComboApodization.SetStringSelection(apodize)
+        self.FloatWidth.SetValue(self.block.set.apodization_width)
+        self.FloatWidth.Enable(bool(self.block.set.apodization))
+        self.FloatFrequency.SetValue(ds.get_frequency_shift(voxel))
+        self.FloatPhase0.SetValue(ds.get_phase_0(voxel))
+        self.FloatPhase1.SetValue(ds.get_phase_1(voxel))
+        self.CheckZeroPhase1.SetValue(self.block.phase_1_lock_at_zero)
+        self.FloatPhase1Pivot.SetValue(self.block.set.phase_1_pivot)
 
 
         #############################################################
@@ -435,27 +461,29 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
     def on_phase0(self, event):
         # phase 0 respects the sync A/B setting
         value = event.GetEventObject().GetValue()
-        voxel = self._tab_dataset.voxel
-        orig = self.dataset.get_phase_0(voxel)
-        self.set_phase_0(value-orig, voxel)         # sets delta change
+        orig = self.dataset.get_phase_0(self.voxel)
+        self.set_phase_0(value-orig, self.voxel)         # sets delta change
+        self.view.set_phase_0(self.block.get_phase_0(self.voxel), index=[0], absolute=True, no_draw=True)
+        self.view.canvas.draw()
 
     def on_phase1(self, event):
         # phase 1 respects the sync A/B setting
         value = event.GetEventObject().GetValue()
-        voxel = self._tab_dataset.voxel
-        orig = self.dataset.get_phase_1(voxel)
-        self.set_phase_1(value-orig, voxel)         # sets delta change
+        orig = self.dataset.get_phase_1(self.voxel)
+        self.set_phase_1(value-orig, self.voxel)         # sets delta change
+        self.view.set_phase_1(self.block.get_phase_1(self.voxel), index=[0], absolute=True, no_draw=True)
+        self.view.canvas.draw()
 
     def on_phase1_zero(self, event):
         # phase 1 zero respects the sync A/B setting
         value = event.GetEventObject().GetValue()
-        voxel = self._tab_dataset.voxel
         self.block.phase_1_lock_at_zero = value
         if value:
-            self.dataset.set_phase_1(0.0, voxel)    # value is NULL here since method checks the 'lock' flag
+            self.dataset.set_phase_1(0.0, self.voxel)    # value is NULL here since method checks the 'lock' flag
             self.FloatPhase1.SetValue(0.0)
         self.CheckZeroPhase1.SetValue(value)
-        self.process_and_plot( )
+        self.view.set_phase_1(self.block.get_phase_1(self.voxel), index=[0], absolute=True, no_draw=True)
+        self.view.canvas.draw()
 
     def on_phase1_pivot(self, event):
         # phase 1 pivot respects the sync A/B setting
@@ -509,7 +537,9 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
 
         '''
         phase_0 = self.block.get_phase_0(voxel)
-        phase_0 = (phase_0  + delta) # % 360
+        phase_0 = (phase_0 + delta) 
+        phase_0 = (phase_0+180)%360-180
+        
         self.block.set_phase_0(phase_0,voxel)
         self.FloatPhase0.SetValue(phase_0)
 

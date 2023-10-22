@@ -119,11 +119,11 @@ class MetInfo(object):
             self.source    = source.findtext("source")
             self.source_id = source.findtext("source_id")
 
-            self.full_names     = [full.text         for full  in source.getiterator("full_name")]
-            self.abbreviations  = [abbr.text         for abbr  in source.getiterator("abbreviation")]
-            self.spins          = [float(spins.text) for spins in source.getiterator("spins")]
-            self.concentrations = [float(conc.text)  for conc  in source.getiterator("concentration")]
-            self.t2decays       = [float(t2.text)    for t2    in source.getiterator("t2decay")]
+            self.full_names     = [full.text         for full  in source.iter("full_name")]
+            self.abbreviations  = [abbr.text         for abbr  in source.iter("abbreviation")]
+            self.spins          = [float(spins.text) for spins in source.iter("spins")]
+            self.concentrations = [float(conc.text)  for conc  in source.iter("concentration")]
+            self.t2decays       = [float(t2.text)    for t2    in source.iter("t2decay")]
             if not self.t2decays:
                 # older metinfo did not have t2decay, so set default values if
                 # this inflate returns an empty list
