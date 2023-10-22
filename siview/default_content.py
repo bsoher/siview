@@ -82,6 +82,12 @@ zero_line_plot_style = solid
 zero_line_plot_top = False
 zero_line_color = goldenrod
 zero_line_style = solid
+zero_line_bottom = False
+zero_line_middle = True
+zero_line_top = False
+zero_line_show = True
+xaxis_ppm = True
+xaxis_hertz = False
 
 """ 
 

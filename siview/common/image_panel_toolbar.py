@@ -193,6 +193,7 @@ class ImagePanelToolbar2(wx.Panel):
         self.keypress_id   = self.canvas.mpl_connect('key_press_event',   self.on_key_press)
         self.keyrelease_id = self.canvas.mpl_connect('key_release_event', self.on_key_release)
         self.shift_is_held = False
+        self.select_is_held = False
 
 
     #=======================================================
@@ -664,7 +665,8 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         self._idAxLeave  = self.canvas.mpl_connect('axes_leave_event', self.leave)
         self._idFigLeave = self.canvas.mpl_connect('figure_leave_event', self.leave)
         self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
-        self._idPress = None
+        self._idPress = self.canvas.mpl_connect('button_press_event', self.press_select)
+        #self._idPress = None
         self._idDrag = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
         
         # set up control params for cursor crosshair functionality
@@ -694,9 +696,11 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
 
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+            self._idPress = self.canvas.mpl_disconnect(self._idPress)
         NavigationToolbar2.zoom(self, *args)
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
+            self._idPress = self.canvas.mpl_connect('button_press_event', self.press_select)
 
  
     def pan(self, *args):
@@ -711,9 +715,11 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
 
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+            self._idPress = self.canvas.mpl_disconnect(self._idPress)
         NavigationToolbar2.pan(self, *args)
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
+            self._idPress = self.canvas.mpl_connect('button_press_event', self.press_select)
 
 
     def drag_pan(self, event):
@@ -725,6 +731,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         """Activate the width/level tool. change values with right button"""
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+            self._idPress = self.canvas.mpl_disconnect(self._idPress)
 
         
         if self.parent.axes[0].get_navigate_mode() == 'LEVEL':
@@ -769,6 +776,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
  
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
+            self._idPress = self.canvas.mpl_connect('button_press_event', self.press_select)
 
  
     def press_level(self, event):
@@ -949,6 +957,17 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
             else:
                 # catch all
                 pass
+
+    def press_select(self, event):
+
+        xloc, yloc = self.get_bounded_xyloc(event)
+        if self.mode == '':
+            # no toggle buttons on
+            self.parent.select_is_held = True
+            pass
+        else:
+            # catch all
+            pass
     
     def release_local(self, event):
         # legacy code from NavigationToolbar2Wx
@@ -973,6 +992,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
             self.parent.on_level_release(xloc, yloc)
         elif self.mode == '':
             # no toggle buttons on
+            self.parent.select_is_held = False
             self.parent.on_select(xloc, yloc, iplot)
         else:
             # catch all

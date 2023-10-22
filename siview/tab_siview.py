@@ -18,7 +18,7 @@ import time
 import wx
 import numpy as np
 import matplotlib.cm as cm
-
+from scipy.fft import fft, fftshift
 
 # Our modules
 import siview.tab_base
@@ -81,13 +81,17 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.populate_controls()
 
         self.on_calc_reset(None)
-        self.on_mri_reset(None)
+#        self.on_mri_reset(None)
 
         self.plotting_enabled = True
 
         self.process_and_display(initialize=True)
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy, self)
+
+        # bjs hack - for now process all data into 'spectral' block here
+        dat = self.dataset.blocks['raw'].data
+        self.dataset.blocks['spectral'].data = fftshift(fft(dat, axis=-1), axes=-1)
 
         # If the sash position isn't recorded in the INI file, we use the
         # arbitrary-ish value of 400.
@@ -123,10 +127,14 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         # calculate a few useful values
         
         dataset  = self.dataset
+        dims = dataset.spectral_dims[::-1]
 
         # The many controls on various tabs need configuration of
         # their size, # of digits displayed, increment and min/max. 
 
+        wx_util.configure_spin(self.SpinX, 50, min_max=(1, dims[2]))
+        wx_util.configure_spin(self.SpinY, 50, min_max=(1, dims[1]))
+        wx_util.configure_spin(self.SpinZ, 50, min_max=(1, dims[0]))
         wx_util.configure_spin(self.FloatScale, 70, 4, None, (0.0001, 1000))
         self.FloatScale.multiplier = 1.1
         
@@ -135,9 +143,9 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.ChoiceModel.Clear()
         self.ChoiceModel.AppendItems( vals )
 
-        wx_util.configure_spin(self.SpinSliceIndex,   60, min_max=(1, 1))
-        wx_util.configure_spin(self.SpinCalcFloor,    60, min_max=(-1000,1000))
-        wx_util.configure_spin(self.SpinCalcCeil,     60, min_max=(-1000,1000))
+        wx_util.configure_spin(self.SpinSliceIndex,   60, min_max=(1, dims[0]))
+        wx_util.configure_spin(self.FloatCalcFloor, 60, 3, None, min_max=(-1000,1000))
+        wx_util.configure_spin(self.FloatCalcCeil,  60, 3, None, min_max=(-1000,1000))
         # wx_util.configure_spin(self.SpinMriFloor,     60, min_max=(-1000,1000))
         # wx_util.configure_spin(self.SpinMriCeil,      60, min_max=(-1000,1000))
 
@@ -157,6 +165,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         
         """
         dataset = self.dataset
+        dims = dataset.spectral_dims[::-1]
 
         #############################################################
         # Global controls            
@@ -167,8 +176,8 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         self.ChoiceModel.SetStringSelection('Integral')
 
         self.SpinSliceIndex.SetValue(1)
-        self.SpinCalcFloor.SetValue(self.ranges_calc['Integral'][0])
-        self.SpinCalcCeil.SetValue(self.ranges_calc['Integral'][1])
+        self.FloatCalcFloor.SetValue(self.ranges_calc['Integral'][0])
+        self.FloatCalcCeil.SetValue(self.ranges_calc['Integral'][1])
         # self.SpinMriFloor.SetValue(self.ranges_mri[0])
         # self.SpinMriCeil.SetValue(self.ranges_mri[1])
 
@@ -258,14 +267,32 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         event_id = event.GetId()
 
         if self._prefs.handle_event(event_id):
-            if event_id in (util_menu.ViewIds.ZERO_LINE_PLOT_SHOW,
-                            util_menu.ViewIds.ZERO_LINE_PLOT_TOP,
-                            util_menu.ViewIds.ZERO_LINE_PLOT_MIDDLE,
-                            util_menu.ViewIds.ZERO_LINE_PLOT_BOTTOM,
+            if event_id in (util_menu.ViewIds.ZERO_LINE_SHOW,
+                            util_menu.ViewIds.ZERO_LINE_TOP,
+                            util_menu.ViewIds.ZERO_LINE_MIDDLE,
+                            util_menu.ViewIds.ZERO_LINE_BOTTOM,
                             util_menu.ViewIds.XAXIS_SHOW,
                            ):
                 self.view.update_axes()
                 self.view.canvas.draw()
+
+
+
+            elif event_id in (util_menu.ViewIds.DATA_TYPE_REAL,
+                              util_menu.ViewIds.DATA_TYPE_IMAGINARY,
+                              util_menu.ViewIds.DATA_TYPE_MAGNITUDE,
+                             ):
+                if event_id == util_menu.ViewIds.DATA_TYPE_REAL:
+                    self.view.set_data_type_real()
+                elif event_id == util_menu.ViewIds.DATA_TYPE_IMAGINARY:
+                    self.view.set_data_type_imaginary()
+                elif event_id == util_menu.ViewIds.DATA_TYPE_MAGNITUDE:
+                    self.view.set_data_type_magnitude()
+
+                self.view.update(no_draw=True)
+                self.view.set_phase_0(0.0, no_draw=True)
+                self.view.canvas.draw()
+
 
         formats = { util_menu.ViewIds.CMAP_AUTUMN : cm.autumn,
                     util_menu.ViewIds.CMAP_BLUES  : cm.Blues, 
@@ -283,7 +310,25 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
 
 
     ########## Widget Event Handlers ####################    
-    
+
+    def on_voxel(self, event):
+        self.set_voxel()
+
+    def set_voxel(self):
+        tmpx = self.SpinX.GetValue()-1
+        tmpy = self.SpinY.GetValue()-1
+        tmpz = self.SpinZ.GetValue()-1
+        dims = self.dataset.spectral_dims[::-1]
+        tmpx = max(0, min(dims[2]-1, tmpx))  # clip to range
+        tmpy = max(0, min(dims[1]-1, tmpy))
+        tmpz = max(0, min(dims[0]-1, tmpz))
+        self.SpinX.SetValue(tmpx+1)
+        self.SpinY.SetValue(tmpy+1)
+        self.SpinZ.SetValue(tmpz+1)
+        self.voxel = [tmpx, tmpy, tmpz]
+        self.process()
+        self.plot()
+
     def on_scale(self, event):
         view = self.view
         scale = self.FloatScale.GetValue()
@@ -318,18 +363,19 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         indx = self.ChoiceCalcImage.GetSelection()
         key  = self.ChoiceCalcImage.GetString(indx)
         self.iresult = key
-        self.SpinCalcCeil.SetValue(self.ranges_calc[key][1])
-        self.SpinCalcFloor.SetValue(self.ranges_calc[key][0])
+        self.FloatCalcCeil.SetValue(self.ranges_calc[key][1])
+        self.FloatCalcFloor.SetValue(self.ranges_calc[key][0])
+        self.process_image()
         self.show()
 
     def on_calc_range(self, event):
         indx = self.ChoiceCalcImage.GetSelection()
         key  = self.ChoiceCalcImage.GetString(indx)
-        ceil_val  = self.SpinCalcCeil.GetValue()
-        floor_val = self.SpinCalcFloor.GetValue()
+        ceil_val  = self.FloatCalcCeil.GetValue()
+        floor_val = self.FloatCalcFloor.GetValue()
         self.ranges_calc[key] = [floor_val, ceil_val] if floor_val<ceil_val else [ceil_val, floor_val]
-        self.SpinCalcFloor.SetValue(self.ranges_calc[key][0])
-        self.SpinCalcCeil.SetValue(self.ranges_calc[key][1])
+        self.FloatCalcFloor.SetValue(self.ranges_calc[key][0])
+        self.FloatCalcCeil.SetValue(self.ranges_calc[key][1])
         self.show()
 
     def on_calc_reset(self, event):
@@ -339,8 +385,8 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         ceil_val  = np.nanmax(dat)
         floor_val = np.nanmin(dat)
         self.ranges_calc[key] = [floor_val, ceil_val] if floor_val<ceil_val else [ceil_val, floor_val]
-        self.SpinCalcFloor.SetValue(self.ranges_calc[key][0])
-        self.SpinCalcCeil.SetValue(self.ranges_calc[key][1])
+        self.FloatCalcFloor.SetValue(self.ranges_calc[key][0])
+        self.FloatCalcCeil.SetValue(self.ranges_calc[key][1])
         self.show()
         
     # def on_mri_range(self, event):
@@ -529,7 +575,31 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         #     entry = 'all'
         #     self.plot_results = self.dataset.chain.run(voxel, entry=entry, status=self.chain_status)
 
-                        
+    def process_image(self):
+        """
+        Currently this is just an First FID point or Sum across ref lines in plot
+
+        """
+        voxel = [self.voxel]
+        if self.iresult == 'Integral':
+            dat = self.dataset.blocks['spectral'].data
+            istr = 360 #0
+            iend = 400 #dat.shape[-1]
+            if self.view.data_type[0] == 'magnitude':
+                dat = np.sum(np.abs(dat[:,:,:,istr:iend]),axis=-1)
+            elif self.view.data_type[0] == 'real':
+                dat = np.sum(dat[:,:,:,istr:iend].real, axis=-1)
+            elif  self.view.data_type[0] == 'imaginary':
+                dat = np.sum(dat[:,:,:,istr:iend].imag, axis=-1)
+            else:
+                dat = dat[:,:,:,0].real * 0
+            self.image_calc[self.iresult] = dat
+
+        elif self.iresult == 'First Point':
+            dat = (np.abs(self.dataset.blocks['raw'].data[:,:,:,0]))
+            self.image_calc[self.iresult] = dat
+
+
     def plot(self, is_replot=False, initialize=False):
 
         if self.dataset == None:
@@ -572,7 +642,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         voxel = self.voxel
         
 #        dat1 = self.image_mri[:,:, self.itime]
-        dat2 = self.image_calc[self.iresult][:,:, voxel[2]]
+        dat2 = self.image_calc[self.iresult][voxel[2],:,:]
 
         data2 =  [{'data'      : dat2,
                    'cmap'      : self.cmap_results,
@@ -598,14 +668,14 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
 
     def default_mri(self):
         r = dist(24)
-        r.shape = r.shape[0], r.shape[1], 1
+        r.shape = 1, r.shape[0], r.shape[1]
         return r
 
     def default_calc(self):
         ri = dist(24)
-        ri.shape = ri.shape[0], ri.shape[1], 1
+        ri.shape = 1, ri.shape[0], ri.shape[1]
         rf = dist(24)
-        rf.shape = rf.shape[0], rf.shape[1], 1
+        rf.shape = 1, rf.shape[0], rf.shape[1]
 
         return {'Integral':ri, 'First Point':rf}
 

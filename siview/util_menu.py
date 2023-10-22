@@ -28,12 +28,16 @@ class ViewIds(common_menu.IdContainer):
     """A container for the ids of all of the menu items to which we need 
     explicit references.
     """
-    ZERO_LINE_PLOT_SHOW = "replace me"
-    ZERO_LINE_PLOT_TOP = "replace me"
-    ZERO_LINE_PLOT_MIDDLE = "replace me"
-    ZERO_LINE_PLOT_BOTTOM = "replace me"
+    ZERO_LINE_SHOW = "replace me"
+    ZERO_LINE_TOP = "replace me"
+    ZERO_LINE_MIDDLE = "replace me"
+    ZERO_LINE_BOTTOM = "replace me"
 
     XAXIS_SHOW = "replace me"
+
+    DATA_TYPE_REAL      = "replace me"
+    DATA_TYPE_IMAGINARY = "replace me"
+    DATA_TYPE_MAGNITUDE = "replace me"
 
     CMAP_AUTUMN = "replace me"
     CMAP_BLUES  = "replace me"
@@ -118,15 +122,21 @@ def _get_menu_data(main):
 
     view = (    
                 ("Zero Line", (
-                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.ZERO_LINE_PLOT_SHOW),
+                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.ZERO_LINE_SHOW),
                     common_menu.SEPARATOR,
-                    ("Top",    main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_PLOT_TOP),
-                    ("Middle", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_PLOT_MIDDLE),
-                    ("Bottom", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_PLOT_BOTTOM))),
+                    ("Top",    main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_TOP),
+                    ("Middle", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_MIDDLE),
+                    ("Bottom", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.ZERO_LINE_BOTTOM))),
                 ("Show X-Axis", main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW),
 #                ("X-Axis", (
 #                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW),
 #                    ("Show",   main.on_menu_view_option, wx.ITEM_CHECK, ViewIds.XAXIS_SHOW))),
+                common_menu.SEPARATOR,
+                ("Data Type", (
+                    ("Real",      main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.DATA_TYPE_REAL),
+                    ("Imaginary", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.DATA_TYPE_IMAGINARY),
+                    ("Magnitude", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.DATA_TYPE_MAGNITUDE),
+                )),
                 common_menu.SEPARATOR,
                 ("Colormap - Results", (
                     ("autumn", main.on_menu_view_option, wx.ITEM_RADIO, ViewIds.CMAP_AUTUMN),

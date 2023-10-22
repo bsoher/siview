@@ -26,9 +26,12 @@ class ImagePanelSiview(image_panel_toolbar.ImagePanelToolbar2):
         # in resize events, the tab attribute is the AUI Notebook tab
         # that contains this plot_panel
 
-        self.tab   = tab  
+        self.tab = tab
+        self.top = wx.GetApp().GetTopWindow()
         self.tab_siview = tab_siview
-        self.top   = wx.GetApp().GetTopWindow()
+
+        self.last_x = 0
+        self.last_y = 0
         
         self.set_color( (255,255,255) )
 
@@ -42,12 +45,20 @@ class ImagePanelSiview(image_panel_toolbar.ImagePanelToolbar2):
         yloc  = int(yloc)
         iplot = int(iplot)
         value = self.data[iplot][0]['data'][yloc][xloc]
-        self.top.statusbar.SetStatusText( " Cursor X,Y,Slc=%i,%i,%i" % (round(xloc),round(yloc),zvox), 0)
+        self.top.statusbar.SetStatusText( " iCursor X,Y,Slc=%i,%i,%i" % (round(xloc),round(yloc),zvox), 0)
         self.top.statusbar.SetStatusText( " Cursor Value = %s" % (str(value), ), 1)
         self.top.statusbar.SetStatusText( " " , 2)
         self.top.statusbar.SetStatusText( " Plot X,Y,Slc=%i,%i,%i" % (xvox,yvox,zvox), 3)
-        
-    
+
+        if self.select_is_held:
+            if xloc == self.last_x and yloc == self.last_y:  # minimize event calls
+                return
+            self.tab.SpinX.SetValue(xloc+1)
+            self.tab.SpinY.SetValue(yloc+1)
+            self.last_x = xloc
+            self.last_y = yloc
+            self.tab.set_voxel()
+
     def on_scroll(self, button, step, iplot):
 
         xvox, yvox, zvox = self.tab.voxel
@@ -66,11 +77,16 @@ class ImagePanelSiview(image_panel_toolbar.ImagePanelToolbar2):
 
 
     def on_select(self, xloc, yloc, iplot):
-        self.tab.voxel[0] = int(round(xloc))
-        self.tab.voxel[1] = int(round(yloc))
-        self.tab.process()
-        self.tab.plot()
-       
+        xloc = int(round(xloc))
+        yloc = int(round(yloc))
+        if xloc==self.last_x and yloc==self.last_y:  # minimize event calls
+            return
+        self.tab.SpinX.SetValue(xloc+1)
+        self.tab.SpinY.SetValue(yloc+1)
+        self.last_x = xloc
+        self.last_y = yloc
+        self.tab.set_voxel()
+
             
     def on_panzoom_release(self, xloc, yloc):
         xvox, yvox, zvox = self.tab.voxel
