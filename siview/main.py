@@ -64,8 +64,8 @@ Mondrian = PyEmbeddedImage(
 
     
 
-class Main(wx.Frame):    
-    def __init__(self, position, size):
+class Main(wx.Frame):
+    def __init__(self, position, size, fname=None):
         # Create a frame using values from our INI file.
         self._left,  self._top    = position
         self._width, self._height = size
@@ -94,6 +94,10 @@ class Main(wx.Frame):
 
         self.build_panes()
         self.bind_events()
+
+        if fname is not None:
+            self.load_on_start(fname)
+            #wx.CallAfter(self.load_on_start, fname)
 
         
     def build_panes(self):
@@ -154,7 +158,7 @@ class Main(wx.Frame):
                 msg = """Error (import_data_crt): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
 
             if msg:
-                common_dialogs.message(msg, default_content.APP_NAME+" - Add Node Nifti", common_dialogs.E_OK)
+                common_dialogs.message(msg, default_content.APP_NAME+" - Import CRT Data", common_dialogs.E_OK)
             else:
                 path, _ = os.path.split(fname)
 
@@ -263,7 +267,56 @@ class Main(wx.Frame):
         self.notebook_siview.close_siview()
 
 
-    
+    def load_on_start(self, fname):
+
+        msg=''
+        if isinstance(fname, np.ndarray):
+            crt_dat = fname
+        elif isinstance(fname, str):
+            if os.path.exists(fname):
+                try:
+                    crt_dat = np.load(fname)
+                except Exception as e:
+                    msg = """Error (load_on_start): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
+                if msg:
+                    common_dialogs.message(msg, default_content.APP_NAME+" - Load on Start", common_dialogs.E_OK)
+                    return
+        else:
+            # TODO bjs - better error/warning reporting
+            return
+
+        if crt_dat.shape == (512,24,24):
+            crt_dat = np.swapaxes(crt_dat,0,2)
+        if len(crt_dat.shape) != 3:
+            msg = 'Error (load_on_start): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
+        elif crt_dat.dtype not in [np.complex64, np.complex128]:
+            msg = 'Error (load_on_start): Wrong Dtype, arr.dtype = '+str(crt_dat.dtype)
+		
+        if msg:
+            common_dialogs.message(msg, default_content.APP_NAME+" - Load on Start", common_dialogs.E_OK)
+        else:
+            path, _ = os.path.split(fname)
+
+            # bjs hack
+            crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
+
+            raw = si_data_raw.SiDataRaw()
+            raw.data_sources = [fname,]
+            raw.data = crt_dat
+            raw.sw = 1250.0
+            raw.frequency = 123.9
+            raw.resppm = 4.7
+            raw.seqte = 110.0
+            raw.seqtr = 2000.0
+
+            dataset = si_dataset.dataset_from_raw(raw)
+
+            self.notebook_siview.Freeze()
+            self.notebook_siview.add_siview_tab(dataset=dataset)
+            self.notebook_siview.Thaw()
+            self.notebook_siview.Layout()
+            self.update_title()
+
 
 
     ############    View  menu
@@ -394,9 +447,12 @@ class Main(wx.Frame):
 
 #------------------------------------------------------------------------------
 
-def main():
+def main(fname=None):
 
     # This function is for profiling with cProfile
+
+    fname = r'D:\Users\bsoher\code\repo_github\siview\siview\test_data\2023_10_12_bjsDev_oct12_slasr_crt\dat_metab_post_hlsvd.npy'
+    fname = None
 
     app = wx.App(0)
     
@@ -415,7 +471,7 @@ def main():
     config = util_siview_config.Config()
     position, size = config.get_window_coordinates("main")
 
-    frame = Main(position, size)
+    frame = Main(position, size, fname=fname)
     app.SetTopWindow(frame)
     frame.Show()
     app.MainLoop()    
