@@ -87,7 +87,7 @@ class SiviewMenuBar(common_menu.TemplateMenuBar):
         siview, view, help = _get_menu_data(main)
 
         # Build the top-level menus that are always present. 
-        siview   = common_menu.create_menu(main, "Timeseries", siview)
+        siview   = common_menu.create_menu(main, "File", siview)
         view     = common_menu.create_menu(main, "&View", view)
         help     = common_menu.create_menu(main, "&Help", help)
 

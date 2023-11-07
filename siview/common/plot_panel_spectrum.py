@@ -761,7 +761,9 @@ class PlotPanelSpectrum(wx.Panel):
             else:
                 old_xmin, old_xmax = axes.get_xlim()
 
-            axes.lines.clear()
+            for item in axes.lines:
+                item.remove()
+
             width  = self.line_width[i]
 
             dlist = self.data[i]
@@ -1543,7 +1545,8 @@ class ZoomSpan:
         # remove the dynamic artist(s) from background bbox(s)
         for axes, rect in zip(self.axes, self.rect):
             if rect in axes.patches:
-                axes.patches.remove(rect)
+                #axes.patches.remove(rect)
+                rect.remove()
                 self.canvas.draw()
 
         for rect in self.rect:
@@ -1798,7 +1801,8 @@ class CursorSpan:
         # remove the dynamic artist(s) from background bbox(s)
         for axes, rect in zip(self.axes, self.rect):
             if rect in axes.patches:
-                axes.patches.remove(rect)
+                #axes.patches.remove(rect)
+                rect.remove()
                 self.canvas.draw()
         
         for rect in self.rect:
