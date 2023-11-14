@@ -22,6 +22,7 @@ Update - 31 July 2022 - Py3 and Newer wx
 # Python modules
 
 import os
+from enum import Enum
 
 # third party modules
 import wx
@@ -44,6 +45,8 @@ LEVMIN = -127
 WIDMAX =  255
 WIDMIN =    0
 LEVSTR =  128
+
+
 
 
 # MPL widlev example
@@ -571,13 +574,21 @@ class ImagePanelToolbar2(wx.Panel):
             axis.spines['bottom'].set_color(clr)
             axis.spines['top'].set_color(clr) 
             axis.spines['right'].set_color(clr)
-            axis.spines['left'].set_color(clr)        
+            axis.spines['left'].set_color(clr)
 
 
 
+class _Mode(str, Enum):
+    NONE = ""
+    PAN = "pan/zoom"
+    ZOOM = "zoom rect"
 
+    def __str__(self):
+        return self.value
 
-
+    @property
+    def _navigate_mode(self):
+        return self.name if self is not _Mode.NONE else None
 
 
 #------------------------------------------------------------------------------
@@ -678,7 +689,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         if vertOn:  self.vlines = [ax.axvline(0, visible=False, color=lcolor, lw=lw) for ax in self.parent.axes]
         if horizOn: self.hlines = [ax.axhline(0, visible=False, color=lcolor, lw=lw) for ax in self.parent.axes]
 
-        
+
     def get_canvas(self, frame, fig):
         # saw this in NavigationToolbar2WxAgg, so included here
         return FigureCanvasWxAgg(frame, -1, fig)
@@ -809,8 +820,8 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         
         for a, indx, xprev, yprev in self._xypress:
             
-            xdelt = np.int((event.x-xprev))   
-            ydelt = np.int((event.y-yprev))  
+            xdelt = int((event.x-xprev))   
+            ydelt = int((event.y-yprev))  
         
             if abs(ydelt) >= abs(xdelt):    
                 self.parent.level[indx] += ydelt
@@ -1065,9 +1076,9 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         NavigationToolbar2.mouse_move(self, event)
 
         if event.inaxes and self.parent.axes[0].get_navigate_mode():
-            if (self.parent.axes[0].get_navigate_mode() == 'LEVEL' and self._lastCursor != 4):
+            if (self.parent.axes[0].get_navigate_mode() == 'LEVEL' and self._last_cursor != 4):
                 self.set_cursor(4)
-                self._lastCursor = 4
+                self._last_cursor = 4
         
         # call additional event
         self.on_motion(event)
