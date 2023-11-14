@@ -41,9 +41,9 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
     WELCOME_TAB_TEXT = """
     <html><body>
     <h1>Welcome to "%s"</h1>
-    <img src="%s" alt="Time Series Plots" />
-    <p><b>Currently there are no Timeseries loaded.</b></p>
-    <p>You can use the Timeseries menu to browse for data.</p>
+    <img src="%s" alt="Spectroscopic Imaging Viewer" />
+    <p><b>Currently there are no SI datasets loaded.</b></p>
+    <p>You can use the File menu to browse for data.</p>
     </body></html>
     """ % (default_content.APP_NAME, _path)
     # I tidy up my namespace by deleting this temporary variable.

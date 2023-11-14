@@ -17,6 +17,12 @@ Update - 31 July 2022 - Py3 and Newer wx
 - all .patches = [] to .patches.clear()
 - all .images = [] to .images.clear()
 
+Update - 7 November 2023
+
+- all .lines/patches/images.clear() to
+  for item in axes.patches:
+      item.remove()
+
 
 """
 # Python modules
@@ -467,9 +473,10 @@ class ImagePanelToolbar2(wx.Panel):
                 yold, xold = axes.images[0].get_array().shape
             else:
                 yold, xold = -1,-1
-            
-            axes.images.clear()
-            
+
+            for item in axes.images:
+                item.remove()
+
             ddict    = self.data[i][0]
             data     = ddict['data'].copy() 
             alpha    = ddict['alpha']
@@ -495,8 +502,9 @@ class ImagePanelToolbar2(wx.Panel):
                 for patch in patches:
                     self.imageid[i].axes.add_patch(patch)
             else:
-                self.imageid[i].axes.patches.clear()
-            
+                for item in self.imageid[i].axes.patches:
+                    item.remove()
+
             if len(self.imageid[i].axes.lines) > 2:
                 # should be two lines in here for cursor tracking
                 self.imageid[i].axes.lines = self.imageid[i].axes.lines[0:2]

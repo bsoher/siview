@@ -18,22 +18,14 @@
 
 
 # Python modules
-
 import os
-import sys
-import webbrowser
 import struct
 
 # 3rd party modules
 import wx
 import wx.adv as wx_adv
 import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit
-import pydicom
 import numpy as np
-
-#import wx.lib.agw.multidirdialog as MDD
-import siview.common.multidirdialog as MDD
-import siview.common.dcmstack.dcmstack as dcmstack
 
 # Our modules
 import siview.util_menu as util_menu
@@ -48,12 +40,9 @@ import siview.util_siview_config as util_siview_config
 import siview.common.misc as misc
 import siview.common.export as export
 import siview.common.wx_util as wx_util
-#import siview.common.local_nrrd as nrrd
 import siview.common.common_dialogs as common_dialogs
 
 from wx.lib.embeddedimage import PyEmbeddedImage
-
-IS_WX2X = False
 
 Mondrian = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAHFJ"
@@ -164,6 +153,7 @@ class Main(wx.Frame):
 
                 # bjs hack
                 crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
+                crt_dat *= 1e9
 
                 raw = si_data_raw.SiDataRaw()
                 raw.data_sources = [fname,]
