@@ -158,7 +158,6 @@ class ImagePanelToolbar2(wx.Panel):
         self.sizer.Add(self.sizer_canvas, 1, wx.TOP | wx.LEFT | wx.EXPAND)
 
         # Capture the paint message
-#        wx.EVT_PAINT(self, self.on_paint)
         wx.EvtHandler.Bind(self, wx.EVT_PAINT, self.on_paint)
 
         self.toolbar = NavigationToolbar3Wx(self.canvas, 
@@ -167,9 +166,6 @@ class ImagePanelToolbar2(wx.Panel):
                                             horizOn=horizOn,
                                             lcolor=lcolor,
                                             lw=lw)
-
-        #self.toolbar = NavigationToolbar2Wx(self.canvas)
-
         self.toolbar.Realize()
         if wx.Platform == '__WXMAC__':
             # Mac platform (OSX 10.3, MacPython) does not seem to cope with
@@ -185,8 +181,6 @@ class ImagePanelToolbar2(wx.Panel):
             # of the frame - so appearance is closer to GTK version.
             # As noted above, doesn't work for Mac.
 #            self.toolbar.SetSize(wx.Size(fw, th))
-            #self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-            #self.sizer.Add(self.toolbar, 0, wx.ALIGN_CENTER | wx.EXPAND)
             self.sizer.Add(self.toolbar, 0, wx.EXPAND)
 
         # update the axes menu on the toolbar
@@ -221,7 +215,7 @@ class ImagePanelToolbar2(wx.Panel):
 
     def _dprint(self, a_string):
         if self._EVENT_DEBUG:
-            print( a_string)
+            print(a_string)
 
     def _on_scroll(self, event):
         """
@@ -252,22 +246,17 @@ class ImagePanelToolbar2(wx.Panel):
 
         """
         n1 = n
-
-        if not m:
-            m1 = n
-        else:
-            m1 = m
+        m1 = n if m is None else m
 
         x = np.arange(n1)
         x = np.array([val**2 if val < (n1-val) else (n1-val)**2 for val in x ])
+        a = np.ndarray((n1,m1),float)
 
-        a = np.ndarray((n1,m1),float)   #Make array
-
-        for i in range(int((m1/2)+1)):       #Row loop
-            y = np.sqrt(x + i**2.0)      #Euclidian distance
-            a[i,:] = y              #Insert the row
+        for i in range(int((m1/2)+1)):      # Row loop
+            y = np.sqrt(x + i**2.0)         # Euclidian distance
+            a[i,:] = y                      # Insert the row
             if i != 0:
-                a[m1-i,:] = y      #Symmetrical
+                a[m1-i,:] = y               # Symmetrical
 
         return a
         
@@ -590,6 +579,7 @@ class _Mode(str, Enum):
     NONE = ""
     PAN = "pan/zoom"
     ZOOM = "zoom rect"
+    LEVEL = 'width/level'
 
     def __str__(self):
         return self.value
@@ -685,7 +675,6 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         self._idFigLeave = self.canvas.mpl_connect('figure_leave_event', self.leave)
         self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
         self._idPress = self.canvas.mpl_connect('button_press_event', self.press_select)
-        #self._idPress = None
         self._idDrag = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
         
         # set up control params for cursor crosshair functionality
@@ -708,15 +697,12 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         for item in ['Pan', 'Level']:
             if item in list(self.wx_ids.keys()): self.ToggleTool(self.wx_ids[item], False)
 
-        # if 'Pan' in list(self.wx_ids.keys()):
-        #     self.ToggleTool(self.wx_ids['Pan'], False)
-        # if 'Level' in list(self.wx_ids.keys()):
-        #     self.ToggleTool(self.wx_ids['Level'], False)
-
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
             self._idPress = self.canvas.mpl_disconnect(self._idPress)
+
         NavigationToolbar2.zoom(self, *args)
+
         if self.parent.axes[0].get_navigate_mode() is None:
             self._idRelease = self.canvas.mpl_connect('button_release_event', self.release_local)
             self._idPress = self.canvas.mpl_connect('button_press_event', self.press_select)
@@ -1026,8 +1012,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
             
 
     def on_motion(self, event):
-        
-        # The following limit when motion events are triggered 
+        # The following limit when motion events are triggered
         
         if not event.inaxes and self.mode == '': 
             return
