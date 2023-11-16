@@ -31,7 +31,6 @@ to provide a property that tells the class which INI file to use.
 The tab-specific prefs mostly exist to provide the _ini_section_name property
 and inflate/deflate specifics.
 
-
 BJS - additional comments 
 ----------------------------------
 
@@ -55,6 +54,7 @@ trial and error, I deduced that you HAVE to add a value here if you are going
 to put the prefs attribute in the inflate() method.  If you are setting the
 value in the util_menu module, you can set a default here, or just let the 
 menu handling code default on its own.   
+
 
 """
 
@@ -231,6 +231,5 @@ class Prefs(object, metaclass=abc.ABCMeta):
         config = self._ConfigClass()
         config[self._ini_section_name] = self.deflate()
         config.write()
-
 
 
