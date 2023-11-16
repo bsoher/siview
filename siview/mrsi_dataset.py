@@ -69,7 +69,7 @@ DEFAULT_BLOCK_CLASSES = {
 
 def dataset_from_raw(raw, block_classes={ }, zero_fill_multiplier=0):
     """
-    Given an SiDataRaw object and some optional params, returns a dataset
+    Given an MrsiDataRaw object and some optional params, returns a dataset
     containing the minimal set of operational blocks for use in Analysis: raw
     and spectral. Other block slots (prep, spatial and fit) contain identity
     blocks.
@@ -618,7 +618,7 @@ class Dataset(object):
     def deflate(self, flavor=Deflate.ETREE, is_main_dataset=True):
 
         if flavor == Deflate.ETREE:
-            e = ElementTree.Element("si_dataset",
+            e = ElementTree.Element("mrsi_dataset",
                                       { "id" : self.id,
                                         "version" : self.XML_VERSION})
 

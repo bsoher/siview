@@ -31,8 +31,8 @@ import numpy as np
 import siview.util_menu as util_menu
 import siview.util_import as util_import
 import siview.dialog_export as dialog_export
-import siview.si_dataset as si_dataset
-import siview.si_data_raw as si_data_raw
+import siview.mrsi_dataset as mrsi_dataset
+import siview.mrsi_data_raw as mrsi_data_raw
 import siview.default_content as default_content
 import siview.notebook_siview as notebook_siview
 import siview.util_siview_config as util_siview_config
@@ -155,7 +155,7 @@ class Main(wx.Frame):
                 crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
                 crt_dat *= 1e9
 
-                raw = si_data_raw.SiDataRaw()
+                raw = mrsi_data_raw.MrsiDataRaw()
                 raw.data_sources = [fname,]
                 raw.data = crt_dat
                 raw.sw = 1250.0
@@ -164,7 +164,7 @@ class Main(wx.Frame):
                 raw.seqte = 110.0
                 raw.seqtr = 2000.0
 
-                dataset = si_dataset.dataset_from_raw(raw)
+                dataset = mrsi_dataset.dataset_from_raw(raw)
 
                 self.notebook_siview.Freeze()
                 self.notebook_siview.add_siview_tab(dataset=dataset)
@@ -189,7 +189,7 @@ class Main(wx.Frame):
         if filename:
             msg = ""
             try:
-                importer = util_import.SiDatasetImporter(filename)
+                importer = util_import.MrsiDatasetImporter(filename)
             except IOError:
                 msg = """I can't read the file "%s".""" % filename
             except SyntaxError:
@@ -290,7 +290,7 @@ class Main(wx.Frame):
             # bjs hack
             crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
 
-            raw = si_data_raw.SiDataRaw()
+            raw = mrsi_data_raw.MrsiDataRaw()
             raw.data_sources = [fname,]
             raw.data = crt_dat
             raw.sw = 1250.0
@@ -299,7 +299,7 @@ class Main(wx.Frame):
             raw.seqte = 110.0
             raw.seqtr = 2000.0
 
-            dataset = si_dataset.dataset_from_raw(raw)
+            dataset = mrsi_dataset.dataset_from_raw(raw)
 
             self.notebook_siview.Freeze()
             self.notebook_siview.add_siview_tab(dataset=dataset)

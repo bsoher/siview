@@ -13,23 +13,23 @@
 
 
 # Our modules
-import siview.si_dataset as si_dataset
+import siview.mrsi_dataset as mrsi_dataset
 
 from siview.common.import_ import Importer
 
 
 
-class SiDatasetImporter(Importer):
+class MrsiDatasetImporter(Importer):
     def __init__(self, source):
         Importer.__init__(self, source, None, False)
 
     def go(self, add_history_comment=False):
-        for element in self.root.getiterator("si_dataset"):
+        for element in self.root.getiterator("mrsi_dataset"):
             self.found_count += 1
 
-            dataset = si_dataset.Dataset(element)
+            dataset = mrsi_dataset.Dataset(element)
             
-            self.imported.append(si_dataset)
+            self.imported.append(dataset)
 
         self.post_import()
         

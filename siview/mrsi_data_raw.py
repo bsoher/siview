@@ -1,6 +1,6 @@
 ﻿"""
 # -----------------------------------------------------------------------------
-# SiDataRaw object - Discussion on Data Dimensions
+# MrsiDataRaw object - Discussion on Data Dimensions
 # -----------------------------------------------------------------------------
 
 Data are stored in numpy arrays. There are 4 dimensions, one spectral and three
@@ -30,7 +30,7 @@ from siview.common.base_transform import BaseTransform, transformation_matrix, r
 
 
 
-class SiDataRaw(BaseTransform):
+class MrsiDataRaw(BaseTransform):
     """ 
     A container for 'raw' magnetic resonance spectroscopy k-space data.
     - Can be subclassed to create specific raw MRS containers.
@@ -196,7 +196,7 @@ class SiDataRaw(BaseTransform):
     def deflate(self, flavor=Deflate.ETREE, tag='', version=''):
 
         if flavor == Deflate.ETREE:
-            tag = 'si_data_raw' if tag == '' else tag
+            tag = 'mrsi_data_raw' if tag == '' else tag
             version = self.XML_VERSION if version == '' else version
 
             e = ElementTree.Element(tag, {"version" : version})
