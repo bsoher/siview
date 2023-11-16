@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014-2019 Brian J Soher - All Rights Reserved
+# Copyright (c) 2014-2023 Brian J Soher - All Rights Reserved
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are not permitted without explicit permission.
@@ -14,10 +14,10 @@ import wx
 import os
 
 # Our modules
-import siview.auto_gui.export as gui_export
-import common.common_dialogs as common_dialogs
-import common.wx_util as wx_util
-import siview.config as config
+import siview.common.auto_gui.export as gui_export
+import siview.common.wx_gravy.common_dialogs as common_dialogs
+import siview.common.wx_gravy.util as wx_util
+import siview.common.util.config as util_config
 
 #------------------------------------------------------------------------------
 # Note. GUI Architecture/Style
@@ -74,7 +74,7 @@ class DialogExport(gui_export.MyDialog):
         else:
             self.default_filename = "siview_%s_export.xml" % wx.GetApp().GetAppName()
         self.default_filename = self.default_filename.lower()        
-        path = config.get_last_export_path()
+        path = util_config.get_last_export_path()
         self.LabelFilename.SetLabel(os.path.join(path, self.default_filename))
         
         if show_warning:
@@ -100,7 +100,7 @@ class DialogExport(gui_export.MyDialog):
         # Show the file picker dialog
         filename = self.default_filename
                 
-        default_path = config.get_last_export_path()
+        default_path = util_config.get_last_export_path()
         
         if self.CheckboxCompress.GetValue():
             filename += ".gz"
@@ -115,7 +115,7 @@ class DialogExport(gui_export.MyDialog):
         if filename:
             self.LabelFilename.SetLabel(filename)
             path, _ = os.path.split(filename)
-            config.set_last_export_path(path)
+            util_config.set_last_export_path(path)
 
 
     def on_check_compress(self, event):
