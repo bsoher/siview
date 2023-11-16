@@ -12,7 +12,7 @@
 # 3rd party imports
 
 # Our imports
-import common.misc as util_misc
+import common.util.misc as util_misc
 
 
 class Functor(object):

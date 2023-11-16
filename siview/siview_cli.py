@@ -20,7 +20,7 @@ except ImportError:
 import common.dcmstack.dcmstack as dcmstack
 
 # Our modules
-import common.export as export
+import common.util.export as export
 
 
 DESC =  \

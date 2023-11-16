@@ -6,10 +6,10 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import common.xml_ as util_xml
-import common.time_ as util_time
+import common.util.xml_ as util_xml
+import common.util.time_ as util_time
 from common.constants import Deflate
-from common.util_generic_spectral import create_fid
+from common.util.generic_spectral import create_fid
 
 
 

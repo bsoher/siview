@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 # 3rd party modules
 
 # Our modules
-import common.misc as util_misc
+import common.util.misc as util_misc
 from common.constants import Deflate
 
 

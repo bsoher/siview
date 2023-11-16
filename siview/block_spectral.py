@@ -10,8 +10,8 @@ from xml.etree.cElementTree import Element
 import siview.block_spectral_identity as block_spectral_identity
 import siview.chain_spectral as chain_spectral
 import common.svd_output as svd_output_module
-import common.funct_water_filter as funct_water
-import common.xml_ as util_xml
+import siview.functors.funct_water_filter as funct_water
+import common.util.xml_ as util_xml
 from common.constants import Deflate
 
 
@@ -877,7 +877,7 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
 
 def _test():
 
-    import common.time_ as util_time
+    import common.util.time_ as util_time
 
     test = BlockSpectral([128,1,1,1])
 

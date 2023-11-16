@@ -15,8 +15,8 @@ import wx
 import configobj
 
 # Our modules
-import siview.default_content_washsim as default_content
-import common.misc as misc
+import common.default_content as default_content
+import common.util.misc as misc
 
 
 

@@ -7,9 +7,9 @@ import gzip
 
 # Our modules
 import common.constants as constants
-import common.xml_ as util_xml
-import common.time_ as util_time
-import common.misc as misc
+import common.util.xml_ as util_xml
+import common.util.time_ as util_time
+import common.util.misc as misc
 
 # The text below is added as an XML comment to each of our export files. 
 # It's meant to help anyone who is unfamiliar with VIFF and somehow gets

@@ -13,7 +13,7 @@
 import wx
 
 # Our modules
-import common.plot_panel_points as plot_panel_points
+import common.wx_gravy.plot_panel_points as plot_panel_points
         
 
 class PlotPanelSiview(plot_panel_points.PlotPanelPoints):

@@ -7,9 +7,9 @@ import gzip
 # 3rd party modules
 
 # Our modules
-import common.misc as misc
-import common.time_ as util_time
-import common.logging_ as util_logging
+import common.util.misc as misc
+import common.util.time_ as util_time
+import common.util.logging_ as util_logging
 import common.constants as constants
 
 

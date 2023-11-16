@@ -13,8 +13,8 @@
 import numpy as np
 
 # Our modules
-import siview.funct_siview_fit as funct_siview_fit
-import siview.functor as functor
+import siview.functors.funct_siview_fit as funct_siview_fit
+import siview.functors.functor as functor
 
 
 

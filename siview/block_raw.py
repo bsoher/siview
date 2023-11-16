@@ -6,8 +6,8 @@ from xml.etree.cElementTree import Element
 # Our modules
 import siview.chain_raw as chain_raw
 import siview.block as block
-import siview.mrsi_data_raw as mrsi_data_raw
-import common.xml_ as util_xml
+import common.mrsi_data_raw as mrsi_data_raw
+import common.util.xml_ as util_xml
 from common.constants import Deflate
 
 

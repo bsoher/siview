@@ -12,7 +12,7 @@ import itertools
 
 # Our modules
 import common.constants as constants
-import common.misc as misc
+import common.util.misc as misc
 
 
 

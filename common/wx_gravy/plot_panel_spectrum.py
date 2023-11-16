@@ -2776,7 +2776,7 @@ class MyFrame(wx.Frame):
 
     def make_data(self, lines=8, points=2048):
 
-        import common.util_generic_spectral as util_spectral
+        import common.util.generic_spectral as util_spectral
 
         if lines > 18: lines = 18
         if lines < 1:  lines = 1
