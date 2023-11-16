@@ -30,9 +30,9 @@ import numpy as np
 # Our modules
 import siview.util_menu as util_menu
 import siview.util_import as util_import
-import siview.dialog_export as dialog_export
+import common.dialog_export as dialog_export
 import siview.mrsi_dataset as mrsi_dataset
-import siview.mrsi_data_raw as mrsi_data_raw
+import common.mrsi_data_raw as mrsi_data_raw
 import siview.notebook_siview as notebook_siview
 import siview.util_siview_config as util_siview_config
 
@@ -40,7 +40,7 @@ import common.default_content as default_content
 import common.util.misc as misc
 import common.util.export as export
 import common.wx_gravy.util as wx_util
-import siview.common.wx_gravy.common_dialogs as common_dialogs
+import common.wx_gravy.common_dialogs as common_dialogs
 
 from wx.lib.embeddedimage import PyEmbeddedImage
 

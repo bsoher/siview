@@ -14,7 +14,7 @@ import os
 
 # Our modules
 import common.util.config as config
-import siview.default_content as default_content
+import common.default_content as default_content
 import common.util.misc as misc
 
 

@@ -19,7 +19,7 @@ import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets ex
 
 
 # Our modules
-import siview.default_content as default_content
+import common.default_content as default_content
 import siview.tab_siview as tab_siview
 import common.wx_gravy.util as wx_util
 import common.wx_gravy.notebook_base as notebook_base

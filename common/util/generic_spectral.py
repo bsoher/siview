@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 # Our modules
-from common.uitl.math_ import safe_exp
+from common.util.math_ import safe_exp
 
 
 
