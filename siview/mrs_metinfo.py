@@ -4,8 +4,8 @@
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import siview.common.xml_ as util_xml
-from siview.common.constants import Deflate
+import common.xml_ as util_xml
+from common.constants import Deflate
 
 
 
@@ -372,7 +372,7 @@ class MetInfo(object):
 
 def _test():
 
-    import siview.common.time_ as util_time
+    import common.time_ as util_time
     test = MetInfo()
 
     class_name = test.__class__.__name__

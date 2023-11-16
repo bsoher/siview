@@ -37,10 +37,10 @@ import siview.default_content as default_content
 import siview.notebook_siview as notebook_siview
 import siview.util_siview_config as util_siview_config
 
-import siview.common.misc as misc
-import siview.common.export as export
-import siview.common.wx_util as wx_util
-import siview.common.common_dialogs as common_dialogs
+import common.misc as misc
+import common.export as export
+import common.wx_util as wx_util
+import common.common_dialogs as common_dialogs
 
 from wx.lib.embeddedimage import PyEmbeddedImage
 

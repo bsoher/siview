@@ -11,8 +11,8 @@ import itertools
 # 3rd party modules
 
 # Our modules
-import siview.common.constants as constants
-import siview.common.misc as misc
+import common.constants as constants
+import common.misc as misc
 
 
 

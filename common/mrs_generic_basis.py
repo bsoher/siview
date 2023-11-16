@@ -6,10 +6,10 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import siview.common.xml_ as util_xml
-import siview.common.time_ as util_time
-from siview.common.constants import Deflate
-from siview.common.util_generic_spectral import create_fid
+import common.xml_ as util_xml
+import common.time_ as util_time
+from common.constants import Deflate
+from common.util_generic_spectral import create_fid
 
 
 

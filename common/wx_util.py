@@ -10,7 +10,7 @@ import wx
 import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit
 
 # Our modules
-import siview.common.misc as misc
+import common.misc as misc
 
 # wx.GetStockLabel() returns the label associated with a wx stock button 
 # id (like wx.ID_CANCEL). There's no function to do the reverse (map a label

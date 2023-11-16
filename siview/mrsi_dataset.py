@@ -19,11 +19,11 @@ import siview.block_spectral as block_spectral
 
 import siview.mrs_user_prior as mrs_user_prior
 
-import siview.common.misc as util_misc
-import siview.common.xml_ as util_xml
-import siview.common.constants as common_constants
+import common.misc as util_misc
+import common.xml_ as util_xml
+import common.constants as common_constants
 
-from siview.common.constants import Deflate
+from common.constants import Deflate
 
 
 

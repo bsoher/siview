@@ -21,10 +21,10 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import siview.common.xml_ as util_xml
-import siview.common.constants as common_constants
-from siview.common.constants import Deflate
-from siview.common.base_transform import BaseTransform, transformation_matrix, rotation_matrix, requires_transform
+import common.xml_ as util_xml
+import common.constants as common_constants
+from common.constants import Deflate
+from common.base_transform import BaseTransform, transformation_matrix, rotation_matrix, requires_transform
 
 
 

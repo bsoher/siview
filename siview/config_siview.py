@@ -16,7 +16,7 @@ import configobj
 
 # Our modules
 import siview.default_content_washsim as default_content
-import siview.common.misc as misc
+import common.misc as misc
 
 
 

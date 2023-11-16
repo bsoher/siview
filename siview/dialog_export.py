@@ -15,8 +15,8 @@ import os
 
 # Our modules
 import siview.auto_gui.export as gui_export
-import siview.common.common_dialogs as common_dialogs
-import siview.common.wx_util as wx_util
+import common.common_dialogs as common_dialogs
+import common.wx_util as wx_util
 import siview.config as config
 
 #------------------------------------------------------------------------------

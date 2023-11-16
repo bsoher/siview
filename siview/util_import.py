@@ -15,7 +15,7 @@
 # Our modules
 import siview.mrsi_dataset as mrsi_dataset
 
-from siview.common.import_ import Importer
+from common.import_ import Importer
 
 
 

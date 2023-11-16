@@ -14,7 +14,7 @@ import wx
 
 # Our modules
 import siview.util_siview_config as util_siview_config
-import siview.common.menu as common_menu
+import common.menu as common_menu
 
 
 ########################################################################

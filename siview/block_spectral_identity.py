@@ -6,7 +6,7 @@ from xml.etree.cElementTree import Element
 # Our modules
 import siview.chain_spectral_identity as chain_spectral_identity
 import siview.block as block
-from siview.common.constants import Deflate
+from common.constants import Deflate
 
 
 

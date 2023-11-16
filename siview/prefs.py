@@ -15,7 +15,7 @@ import abc
 # Our modules
 import siview.util_menu as util_menu
 import siview.util_siview_config as util_siview_config
-import siview.common.prefs_base as prefs_base
+import common.prefs_base as prefs_base
 
 
 """See common/prefs_base.py for info on the classes below."""

@@ -5,7 +5,7 @@ import numpy as np
 from scipy.fft import fft, fftshift
 
 # Our modules
-import siview.common.funct_spectral_all as funct_spectral_all
+import common.funct_spectral_all as funct_spectral_all
 from siview.chain_base import Chain
 
 

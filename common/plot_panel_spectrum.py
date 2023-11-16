@@ -76,7 +76,7 @@ from matplotlib.patches    import Rectangle
 #from matplotlib.lines      import Line2D
 
 # Our modules
-from siview.common.constants import DEGREES_TO_RADIANS, RADIANS_TO_DEGREES
+from common.constants import DEGREES_TO_RADIANS, RADIANS_TO_DEGREES
 
 
 
@@ -761,8 +761,11 @@ class PlotPanelSpectrum(wx.Panel):
             else:
                 old_xmin, old_xmax = axes.get_xlim()
 
-            for item in axes.lines:
-                item.remove()
+            # for item in axes.lines:
+            #     item.remove()
+
+            for ii in reversed(range(len(axes.lines))):
+                axes.lines[ii].remove()
 
             width  = self.line_width[i]
 
@@ -2773,7 +2776,7 @@ class MyFrame(wx.Frame):
 
     def make_data(self, lines=8, points=2048):
 
-        import siview.common.util_generic_spectral as util_spectral
+        import common.util_generic_spectral as util_spectral
 
         if lines > 18: lines = 18
         if lines < 1:  lines = 1

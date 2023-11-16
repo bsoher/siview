@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 # Our modules
-from siview.common.math_ import safe_exp
+from common.math_ import safe_exp
 
 
 

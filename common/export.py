@@ -6,10 +6,10 @@ import gzip
 # 3rd party modules
 
 # Our modules
-import siview.common.constants as constants
-import siview.common.xml_ as util_xml
-import siview.common.time_ as util_time
-import siview.common.misc as misc
+import common.constants as constants
+import common.xml_ as util_xml
+import common.time_ as util_time
+import common.misc as misc
 
 # The text below is added as an XML comment to each of our export files. 
 # It's meant to help anyone who is unfamiliar with VIFF and somehow gets

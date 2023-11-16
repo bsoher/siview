@@ -5,9 +5,9 @@ import xml.etree.cElementTree as ElementTree
 
 # Our modules
 from siview.mrs_metinfo import MetInfo
-from siview.common.constants import Deflate
-from siview.common.xml_ import TextSubElement
-from siview.common.mrs_generic_basis import GenericBasis
+from common.constants import Deflate
+from common.xml_ import TextSubElement
+from common.mrs_generic_basis import GenericBasis
 
 
 

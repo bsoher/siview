@@ -77,7 +77,7 @@ from matplotlib.patches    import Rectangle
 from matplotlib.lines      import Line2D
 
 # Our modules
-from siview.common.constants import DEGREES_TO_RADIANS, RADIANS_TO_DEGREES
+from common.constants import DEGREES_TO_RADIANS, RADIANS_TO_DEGREES
 
 
 

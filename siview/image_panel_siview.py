@@ -11,7 +11,7 @@
 
 # 3rd party modules
 import wx
-import siview.common.image_panel_toolbar as image_panel_toolbar
+import common.image_panel_toolbar as image_panel_toolbar
         
 
 class ImagePanelSiview(image_panel_toolbar.ImagePanelToolbar2):

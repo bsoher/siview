@@ -22,6 +22,10 @@ Update - 7 November 2023
 - all .lines/patches/images.clear() to
   for item in axes.patches:
       item.remove()
+      
+- in some cases the above did not work so substituted
+  for i in reversed(range(len(axes.patches))):
+  	axes.patches[i].remove()
 
 
 """

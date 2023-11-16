@@ -31,8 +31,8 @@ from siview.image_panel_siview import ImagePanelSiview
 
 import siview.auto_gui.siview as siview_ui
 
-import siview.common.wx_util as wx_util
-from siview.common.dist import dist
+import common.wx_util as wx_util
+from common.dist import dist
 
 
 #------------------------------------------------------------------------------

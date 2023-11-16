@@ -7,10 +7,10 @@ import gzip
 # 3rd party modules
 
 # Our modules
-import siview.common.misc as misc
-import siview.common.time_ as util_time
-import siview.common.logging_ as util_logging
-import siview.common.constants as constants
+import common.misc as misc
+import common.time_ as util_time
+import common.logging_ as util_logging
+import common.constants as constants
 
 
 def get_element_tree(filename):

@@ -5,7 +5,7 @@
 import wx
 
 # Our modules
-import siview.common.misc as misc
+import common.misc as misc
 
 # Some shortcut styles for message boxes
 Q_OK_CANCEL = wx.ICON_QUESTION | wx.OK | wx.CANCEL
