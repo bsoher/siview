@@ -143,7 +143,7 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
         wx_util.configure_spin(self.SpinX, 50, min_max=(1, dims[2]))
         wx_util.configure_spin(self.SpinY, 50, min_max=(1, dims[1]))
         wx_util.configure_spin(self.SpinZ, 50, min_max=(1, dims[0]))
-        wx_util.configure_spin(self.FloatScale, 70, 4, None, (0.0001, 1000))
+        wx_util.configure_spin(self.FloatScale, 70, 4, None, (0.0001, 1000000))
         self.FloatScale.multiplier = 1.1
         
         # Settings Tab values
@@ -644,10 +644,13 @@ class TabSiview(tab_base.Tab, siview_ui.SiviewUI):
 
             data = [[data1], ]
             self.view.set_data(data)
-            self.view.update(no_draw=True, set_scale=not self._scale_initialized)
-
-            if not self._scale_initialized:
+            if self._scale_initialized:
+                self.view.update(no_draw=True)
+            else:
+                ymax = np.max(np.abs(fft(self.dataset.get_source_data('spectral'))))
+                self.view.update(no_draw=True, set_scale=True, force_ymax=ymax)
                 self._scale_initialized = True
+
 
             # we take this opportunity to ensure that our phase values reflect
             # the values in the block.

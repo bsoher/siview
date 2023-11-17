@@ -405,7 +405,7 @@ class PlotPanelSpectrum(wx.Panel):
     #
     #=======================================================
             
-    def _calculate_scale(self):
+    def _calculate_scale(self, force_ymax=None):
         """ 
         This is usually a one time call to set up various ylim values on the
         plot_panel. Subsequently, the menu_events take care of setting
@@ -415,7 +415,12 @@ class PlotPanelSpectrum(wx.Panel):
         xx = self.all_axes[0].lines[0].get_xdata()
         xmin = min(xx)
         xmax = max(xx)
-        ymax = max(np.abs(self.data[0][0]['data'].flatten()))
+
+        if force_ymax is None:
+            ymax = max(np.abs(self.data[0][0]['data'].flatten()))
+        else:
+            ymax = force_ymax
+
         ymin = -ymax
         if ymin == ymax == 0: ymax = 1.0
         self.dataymax = ymax
@@ -506,6 +511,11 @@ class PlotPanelSpectrum(wx.Panel):
         external user defined event handler for scroll events. In here we 
         determine which axis we are in, then call the (hopefully) overloaded 
         on_scroll() method
+
+        Note. event.step was reporting wildly large values in wxpython 4.1.1 and mpl 3.5.x
+        see link for details: https://github.com/wxWidgets/Phoenix/issues/1707
+        bjs was a contributor to this link!  The solution is to NOT use wxpython 4.1.1 but
+        rather an earlier or later version ...
         
         """
         iaxis = None
@@ -668,7 +678,7 @@ class PlotPanelSpectrum(wx.Panel):
             self.data = data
 
 
-    def update(self, set_scale=False, no_draw=False):
+    def update(self, set_scale=False, no_draw=False, force_ymax=None):
         """
         Convenience function that runs through all the typical steps needed
         to refresh the screen after a set_data().
@@ -680,7 +690,7 @@ class PlotPanelSpectrum(wx.Panel):
         """
         self.update_plots()
         if set_scale:
-            self._calculate_scale()
+            self._calculate_scale(force_ymax=force_ymax)
         self.update_axes()
         if not no_draw:
             with warnings.catch_warnings():

@@ -783,7 +783,7 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
         x, y = event.x, event.y
         
         # push the current view to define home if stack is empty
-        if self._nav_stack.empty():
+        if self._nav_stack() is None:
             self.push_current()
         
         self._xypress = []

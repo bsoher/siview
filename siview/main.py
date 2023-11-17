@@ -153,7 +153,7 @@ class Main(wx.Frame):
 
                 # bjs hack
                 crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
-                crt_dat *= 1e9
+                crt_dat *= 1e12
 
                 raw = mrsi_data_raw.MrsiDataRaw()
                 raw.data_sources = [fname,]

@@ -16,7 +16,7 @@ from scipy.optimize import minimize
 
 
 # Our modules
-import siview.functor as functor
+import siview.functors.functor as functor
 import siview.constrained_levenberg_marquardt as clm
 
 
