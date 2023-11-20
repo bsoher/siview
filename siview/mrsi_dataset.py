@@ -123,8 +123,9 @@ class Dataset(object):
     A Dataset object has a 'blocks' attribute which is an ordered dictionary of
     Block objects. Taken together, the 'blocks' comprise the entire processing
     workflow for the MRS data. The 'blocks' dict is keyed with the names "raw",
-    "prep", "spatial", "spectral", "fit", and "quant" in that order. These represent
-    "slots", each of which can be filled with one block of the appropriate type.
+    "grid", "spatial", "prep", "spectral", "fit", and "quant" in that order. 
+    These represent "slots", each of which can be filled with one block of the 
+    appropriate type.
 
     The first slot, 'raw', is a Block containg the raw Data. It does no
     processing, but just holds the incoming data and information about the data
@@ -189,7 +190,7 @@ class Dataset(object):
         # order in which these are added drives the order of the blocks and
         # tabs in the application as a whole.
         self.blocks = collections.OrderedDict()
-        for name in ("raw", "prep", "spectral", "fit", "quant"):
+        for name in ("raw", "grid", "spatial", "prep", "spectral", "fit", "quant"):
             self._create_block( (name, DEFAULT_BLOCK_CLASSES[name]) )
 
         if attributes is not None:

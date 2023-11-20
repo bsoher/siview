@@ -3,13 +3,16 @@
 # MrsiDataRaw object - Discussion on Data Dimensions
 # -----------------------------------------------------------------------------
 
-Data are stored in numpy arrays. There are 4 dimensions, one spectral and three
-'other'. This base class is subclassed to indicate to SIView what the
-other dimensions contain, as shown below:
+Data are stored in numpy arrays. There are 7 dimensions, one spectral, three
+'spatial' and two 'other' (typically for edits or reps). This base class is 
+subclassed to indicate to SIView what the other dimensions contain, as shown 
+below:
 
-3D/4D data subclasses:
-    DataRaw : shape = [ 1, ny, nx, npts]
-    DataRaw : shape = [nz, ny, nx, npts]
+3D/4D spatial data subclasses:
+    DataRaw : shape = [nedit, nrep, mcyc,  1, ny, nx, npts]
+    DataRaw : shape = [nedit, nrep, mcyc, nz, ny, nx, npts]
+
+nb. 'mcyc' is metabolite cycling for combined water and metab acquisitions
 
 """
 
@@ -105,7 +108,7 @@ class MrsiDataRaw(BaseTransform):
         self.fov               = [240.0, 240.0, 180.0]  # [mm] for x, y z dims
         self.headers           = []
 
-        self.data = np.zeros([1, 1, 1, 512], dtype=np.complex64)
+        self.data = np.zeros([1, 1, 1, 1, 1, 1, 512], dtype=np.complex64)
 
         if attributes is not None:
             self.inflate(attributes)
@@ -251,11 +254,7 @@ class MrsiDataRaw(BaseTransform):
                 self.block_prep_flavor = val
 
             if not self.behave_as_preset:
-                if source.findtext("data_source") is not None:
-                    self.data_sources = [item.text for item in source.findall("data_source") if item.text]
-                else:
-                    # Vespa <= 0.6.0 thought of data sources exclusively as files
-                    self.data_sources = [item.text for item in source.findall("filename") if item.text]
+                self.data_sources = [item.text for item in source.findall("data_source") if item.text]
 
                 if source.findtext("sweep_width") is not None:
                     self.sw = float(source.findtext("sweep_width"))
@@ -340,8 +339,8 @@ class MrsiDataRaw(BaseTransform):
 
 
     def normalize_dims(self):
-        """ Like normalize_data_dims() above, adds 1's to data.shape til 4D """
-        while len(self.data.shape) < 4:
+        """ Like normalize_data_dims() above, adds 1's to data.shape til 6D """
+        while len(self.data.shape) < 6:
             tmp = list(self.data.shape)
             tmp.insert(0,1)
             self.data.shape = tmp
