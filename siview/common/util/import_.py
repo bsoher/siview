@@ -120,7 +120,7 @@ class Importer(object):
             logger.addHandler(self.file_handler)
 
             # Write some metadata to the log
-            logger.info("Vespa Import Log")
+            logger.info("SIView Import Log")
             logger.info("-" * 60)
             logger.info("Started at %s (%s)" % \
                         (util_time.now(util_time.DISPLAY_TIMESTAMP_FORMAT),
@@ -145,8 +145,7 @@ class Importer(object):
     def is_primary(self):
         """True if this Importer is dealing with objects that are 
         children of the XML root, False otherwise."""
-        # Explicit test for None required here. See:
-        # http://scion.duhs.duke.edu/vespa/project/ticket/35
+        # Explicit test for None required here. 
         return (self.root is not None) and \
                (self.root.tag == constants.Export.ROOT_ELEMENT_NAME)
 

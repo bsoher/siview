@@ -469,7 +469,7 @@ def optimize_model(chain):
     the chain object has the info needed by the LMFIT Jacobian function to deal
     with this variability. One example might be the following:
 
-    Example. The vespa model might initially have 48 parameters, but only 42
+    Example. The SIView model might initially have 48 parameters, but only 42
     are independent parameters while the other 6 are dependent expressions (e.g.
     freq_naag = freq_naa + 0.04). The LMFIT algorithm only passes in the 42
     'free' params to the Jacobian function , and I need to expand that into the
@@ -870,7 +870,7 @@ def cramer_rao_bounds(chain):
 
     """
      NB. pder returns a fltarr(dim0*2,nparam), the dim0*2 is because the
-           representation of complex numbers in the VeSPA program is to
+           representation of complex numbers in the SIView program is to
            append the imag portion to the real portion in one long fltarr
 
      We are estimating the Fisher information matrix here using the covariance

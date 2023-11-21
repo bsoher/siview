@@ -19,7 +19,7 @@ MINUTES_TO_SECONDS = 60
 #
 # As of 2019-12-2 we are using Numpy 'save()' format to encode numpy arrays
 # for saving to xml because it reads/writes much faster than the decode_xdr
-# methods in xdrlib. Vespa can still read in the 'xdr' encoded data, but it
+# methods in xdrlib. SIView can still read in the 'xdr' encoded data, but it
 # will subsequently save it using 'npy' formatting.
 #
 # This constant used to be in siview.common.util.xml_ module
@@ -51,7 +51,7 @@ class Export(object):
     # have a version number embedded in our exported files.
     VERSION = "1.0.0"
     
-    ROOT_ELEMENT_NAME = "vespa_export"
+    ROOT_ELEMENT_NAME = "siview_export"
     
 
 # These are used as default attribute values in a number of data objects

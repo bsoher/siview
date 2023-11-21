@@ -163,7 +163,7 @@ class Prefs(object, metaclass=abc.ABCMeta):
         (not just automatic ones). Attributes that start with underscore
         are ignored.
 
-        Unlike many other objects in Vespa, there is no option for deflating
+        Unlike many other objects in SIView, there is no option for deflating
         prefs to XML.
         """
         return dict( (key, value) for key, value in self.__dict__.items()
@@ -175,7 +175,7 @@ class Prefs(object, metaclass=abc.ABCMeta):
         dict is a ConfigObj instance, automatic attributes will be 
         converted to boolean during inflation.
 
-        Unlike many other objects in Vespa, there is no option for inflating
+        Unlike many other objects in SIView, there is no option for inflating
         prefs from XML.
         """
         is_configobj = (hasattr(source, "as_bool"))

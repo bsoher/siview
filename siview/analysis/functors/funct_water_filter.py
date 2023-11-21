@@ -5,7 +5,7 @@
 import numpy as np
 import scipy
 
-# Vespa imports
+# Our imports
 
 
 

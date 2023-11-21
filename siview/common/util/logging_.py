@@ -44,7 +44,7 @@ class NullHandler(logging.FileHandler):
 class ImportFileHandler(logging.FileHandler):
     def __init__(self):
         # Create a unique filename for this import.
-        self._filename = "vespa_import."
+        self._filename = "siview_import."
         self._filename += util_time.filename_timestamp()
         self._filename += ".txt"
         

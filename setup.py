@@ -47,9 +47,9 @@ setuptools.setup(name=NAME,
                  long_description=LONG_DESCRIPTION,
                  platforms=PLATFORMS,
                  keywords=KEYWORDS,
-                 # setuptools should be installed along with Vespa; the latter requires the
-                 # former to run. (Vespa uses setuptools' pkg_resources in get_vespa_version()
-                 # to get the package version.) Since Vespa is distributed as a wheel which can
+                 # setuptools should be installed along with SIView; the latter requires the
+                 # former to run. (SIView uses setuptools' pkg_resources in get_siview_version()
+                 # to get the package version.) Since SIView is distributed as a wheel which can
                  # only be installed by pip, and pip installs setuptools, this 'install_requires'
                  # is probably superfluous and just serves as documentation.
                  install_requires=['setuptools'],

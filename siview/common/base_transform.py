@@ -22,7 +22,7 @@ def requires_transform(func):
 class BaseTransform(object):
     """
     Base class for objects that require an affine tranform to make their days
-    happy. In Vespa this is mainly the mrs_data_raw and mri_data classes.
+    happy. In SIView this is mainly the mrsi_data_raw and mri_data classes.
 
     """
     def __init__(self, transform=None):

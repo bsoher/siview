@@ -118,7 +118,7 @@ def exception_hook(exception_type, value, traceback):
     
     # Next step is to log it to disk. I don't have any particular plans for
     # this file. I just write it to be thorough.
-    filename = "vespa_exception.%s.txt" % util_time.filename_timestamp()
+    filename = "siview_exception.%s.txt" % util_time.filename_timestamp()
     filename = os.path.join(util_misc.get_data_dir(), "logs", filename)
 
     f = open(filename, "w")
@@ -246,7 +246,7 @@ def _get_platform_info():
 
 
 def _get_version_info():
-    """Returns version info for Vespa and SQLite. Also attempts to return
+    """Returns version info for SIView and SQLite. Also attempts to return
     version info for all loaded Python modules.
 
     Info is returned in a list of 2-tuples of (name, value).
@@ -254,7 +254,7 @@ def _get_version_info():
     import sqlite3
     lines = [ ]
 
-    lines.append( ("vespa version", util_misc.get_vespa_version()) )
+    lines.append( ("siview version", util_misc.get_vespa_version()) )
     lines.append( ("sqlite3.sqlite_version", sqlite3.sqlite_version) )
 
     # Here I build a list of the currently loaded modules. The bulk of this

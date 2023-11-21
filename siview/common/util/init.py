@@ -32,7 +32,7 @@ _ONE_YEAR = 365 * 24 * 60 * 60
 
 def init_app(app_name):
     """
-    The function that all Vespa apps must call to create their wx.App
+    The function that all SIView apps must call to create their wx.App
     object (which this function returns). The caller must pass the app name.
     The app name will be used in messages displayed to the user by this code,
     so it should be something user-friendly like RFPulse, Simulation or
@@ -46,10 +46,10 @@ def init_app(app_name):
     - Ensures only one copy of this application is running. It displays a
       message and quits if the app is already running.
     - Sets the wx app name
-    - Creates the .vespa object that hangs off of the wx.App object
-    - Ensures that Vespa data dir exists. If not it creates it and a new
+    - Creates the .siview object that hangs off of the wx.App object
+    - Ensures that SIView data dir exists. If not it creates it and a new
       database as well.
-    - Ensures that Vespa log dir exists, creates it if not.
+    - Ensures that SIView log dir exists, creates it if not.
     - (Re)creates any of our INI files that might be missing.
     - Optionally sets a custom exception hook.
     - If the database is missing, gives the user the option of recreating it
@@ -70,10 +70,10 @@ def init_app(app_name):
 
     app.SetAppName(app_name)
 
-    # Create the Vespa data directory if necessary
+    # Create the SIView data directory if necessary
     data_dir = util_misc.get_data_dir()
     if not os.path.exists(data_dir):
-        # This looks like the first time a Vespa app has been run on this
+        # This looks like the first time a SIView app has been run on this
         # computer.
         first_run = True
         os.mkdir(data_dir)

@@ -3,7 +3,7 @@ import scipy.optimize
 
 # import suspect
 
-# NB. BJS, 2020, to adapt this for Vespa, I have commented out code that makes
+# NB. BJS, 2020, to adapt this for SIView, I have commented out code that makes
 #     use of imports from the suspect package.
 
 

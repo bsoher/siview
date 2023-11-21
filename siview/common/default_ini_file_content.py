@@ -38,8 +38,8 @@ DEFAULT_INI_FILE_CONTENT = {
 
 [general]
 last_export_path=
-# If cpu_limit is set to a positive integer, Vespa will use no more than that
-# many CPUs simultaneously. When cpu_limit is set to 0 or left blank, Vespa
+# If cpu_limit is set to a positive integer, SIView will use no more than that
+# many CPUs simultaneously. When cpu_limit is set to 0 or left blank, SIView
 # will use as many CPUs as it thinks are available.
 cpu_limit=
 

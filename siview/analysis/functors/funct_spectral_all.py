@@ -145,7 +145,7 @@ def svd_filter(chain):
             # generating test data with which to exercise HLSVD outside
             # of Vespa, but not useful otherwise.
             # DON'T EVER COMMIT THIS FILE WITH THIS CODE ACTIVE!
-            # It will destroy performance and cause Vespa users to wail
+            # It will destroy performance and cause users to wail
             # and gnash their teeth.
             #
             # import siview.common.util.xml_ as util_xml
