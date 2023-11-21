@@ -11,14 +11,6 @@ from pubsub import pub as pubsub
 # Our modules
 import siview.analysis.util_menu as util_menu
 import siview.analysis.tab_dataset as tab_dataset
-import siview.analysis.block_prep_fidsum as block_prep_fidsum
-import siview.analysis.block_raw_probep as block_raw_probep
-import siview.analysis.block_prep_wbnaa as block_prep_wbnaa
-import siview.analysis.block_raw_edit as block_raw_edit
-import siview.analysis.block_raw_cmrr_slaser as block_raw_cmrr_slaser
-import siview.analysis.block_raw_edit as block_raw_edit
-import siview.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
-import siview.analysis.block_prep_timeseries as block_prep_timeseries
 
 import siview.common.util.misc as util_misc
 import siview.common.wx_gravy.util as wx_util
@@ -123,12 +115,8 @@ class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
         event will also fire.  event.GetPageCound()
 
         """
-        assoc_classes = (block_raw_edit.BlockRawEdit,
-                         block_raw_edit_fidsum.BlockRawEditFidsum,
-                         block_raw_cmrr_slaser.BlockRawCmrrSlaser,
-                         block_raw_probep.BlockRawProbep)
-        
-        
+        assoc_classes = ( )
+
         raw = self.active_tab.dataset.blocks['raw']
         if isinstance(raw, assoc_classes):
             if not self.associated_close:
@@ -156,36 +144,6 @@ class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
                         self.activate_tab(tab=tab)
                         self.close_active_dataset()
                         self.associated_close = []
-                        
-#        elif isinstance(raw, block_raw_cmrr_slaser.BlockRawCmrrSlaser):
-#            # "CMRR sLaser" blocks have multiple datasets that are all opened
-#            #  from the same twix file. We want to close them all at the same time.
-#            if not self.associated_close:
-#                if not self.top.close_all:
-#                    # This is not a menu close_all event ...
-#                    # give them a chance to back out of it
-#                    msg = "Are you sure you want to close this dataset and all associated datasets?"
-#                    if wx.MessageBox(msg, "Close Dataset", wx.YES_NO, self) != wx.YES:
-#                        event.Veto()
-#                    else:
-#                        # check if there are any other tabs to close
-#                        tabs = self.global_poll_associated_tabs(self.active_tab.dataset)
-#                        self.associated_close = []
-#                        for tab in tabs:
-#                            self.associated_close = [tab,]
-#                            self.activate_tab(tab=tab)
-#                            self.close_active_dataset()
-#                            self.associated_close = []
-#                else:
-#                    # This is a menu close_all event ...
-#                    # check if there are any other tabs to close
-#                    tabs = self.global_poll_associated_tabs(self.active_tab.dataset)
-#                    self.associated_close = []
-#                    for tab in tabs:
-#                        self.associated_close = [tab,]
-#                        self.activate_tab(tab=tab)
-#                        self.close_active_dataset()
-#                        self.associated_close = []                    
         else:
             if not self.top.close_all:
                 # Not a close_all menu event ...
@@ -286,10 +244,7 @@ class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
         
         
         """
-        assoc_classes = (block_raw_edit.BlockRawEdit,
-                         block_raw_edit_fidsum.BlockRawEditFidsum,
-                         block_raw_cmrr_slaser.BlockRawCmrrSlaser,
-                         block_raw_probep.BlockRawProbep)
+        assoc_classes = ( )
         tabs = []
         raw = dataset.blocks['raw']
 
@@ -623,129 +578,9 @@ class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
 
         dataset = datasets[0] if util_misc.is_iterable(datasets) else datasets
 
-        if isinstance(dataset.blocks['raw'], block_raw_probep.BlockRawProbep):
+        names = []
+        for dataset in datasets:
             count += 1
-            names = []
-            for dataset in datasets:
-                fname = dataset.blocks['raw'].data_sources[0]
-                if ".water" in fname:
-                    names.append("Probe%d.Water" % count)
-                elif ".metab" in fname:
-                    names.append("Probe%d.Metab" % count)
-                else:
-                    names.append("Probe%d.Unknown" % count)
-
-        elif isinstance(dataset.blocks['raw'], block_raw_edit.BlockRawEdit):
-            base = "Edit%d." % count
-            ndatasets = len(datasets)
-            if ndatasets == 2:
-                names = [base+"On", base+"Off"]
-            elif ndatasets==4:
-                names = [base+"On", base+"Off", base+"Sum", base+"Dif"]
-            elif ndatasets>4:
-                # generally should not happen
-                names = [base+"On", base+"Off", base+"Sum"]
-                for i in range(len(datasets)-4):
-                    names.append("Dataset%d_%d." % (count, i))
-                names.append(base+"Dif")
-            count += 1
-
-        elif isinstance(dataset.blocks['raw'], block_raw_edit_fidsum.BlockRawEditFidsum):
-            ds = datasets[0]
-            raw = ds.blocks['raw']
-            ndatasets = len(datasets)
-            base = "Edit%d." % count
-
-            ids = {}
-            ids['On'] = raw.data_on_id
-            ids['Off'] = raw.data_off_id
-            ids['Sum'] = raw.data_sum_id
-            ids['Dif'] = raw.data_dif_id
-            ids['SumIndiv'] = raw.data_sum_indiv_id
-            ids['DifIndiv'] = raw.data_dif_indiv_id
-
-            labels = {}
-            labels[raw.data_on_id] = 'On'
-            labels[raw.data_off_id] = 'Off'
-            labels[raw.data_sum_id] = 'Sum'
-            labels[raw.data_dif_id] = 'Dif'
-            labels[raw.data_sum_indiv_id] = 'SumIndiv'
-            labels[raw.data_dif_indiv_id] = 'DifIndiv'
-
-            nids = 0
-            for val in list(ids.values()):
-                if val != '':
-                    nids+=1
-
-            if nids > 0:
-                # Set names from Associated datasets info, others set to 'DataseN'
-
-                names = []
-                other_count = 0
-                for dset in datasets:
-                    if dset.id in labels.keys():
-                        names.append(base+labels[dset.id])
-                    else:
-                        names.append(base+'OtherData%d'%(other_count,))
-
-
-            else:
-                # Set name from dataset position
-
-                if ndatasets == 2:
-                    names = [base+"On", base+"Off"]
-                elif ndatasets==4:
-                    names = [base+"On", base+"Off", base+"SumIndiv", base+"DifIndiv"]
-                elif ndatasets>4:
-                    # generally should not happen
-                    names = [base+"On", base+"Off", base+"SumIndiv"]
-                    for i in range(len(datasets)-4):
-                        names.append("Dataset%d_%d." % (count, i))
-                    names.append(base+"DifIndiv")
-            count += 1
-
-        elif isinstance(dataset.blocks['raw'], block_raw_cmrr_slaser.BlockRawCmrrSlaser):
-            count += 1
-            iother = 1
-            names = []
-            for dataset in datasets:
-                fname = dataset.blocks['raw'].data_sources[0]
-                if ".combine" in fname:
-                    names.append("CMRR%d." % count + "Coil")
-                elif ".ecc1" in fname:
-                    names.append("CMRR%d." % count + "Ecc1")
-                elif ".water1" in fname:
-                    names.append("CMRR%d." % count + "Water1")
-                elif ".metab64" in fname:
-                    names.append("CMRR%d." % count + "Metab64")
-                elif ".ecc2" in fname:
-                    names.append("CMRR%d." % count + "Ecc2")
-                elif ".water2" in fname:
-                    names.append("CMRR%d." % count + "Water2")
-                else:
-                    names.append("CMRR%d." % count + "Other" + str(iother))  # typically for MMol Basis dataset, but unknowns too.
-                    iother += 1
-
-        elif isinstance(dataset.blocks['prep'], block_prep_fidsum.BlockPrepFidsum):
-            names = []
-            for dataset in datasets:
-                count += 1
-                names.append("Fidsum%d" % count)
-
-        elif isinstance(dataset.blocks['prep'], block_prep_timeseries.BlockPrepTimeseries):
-            names = []
-            for dataset in datasets:
-                count += 1
-                names.append("Timeseries%d" % count)
-
-        elif isinstance(dataset.blocks['prep'], block_prep_wbnaa.BlockPrepWbnaa):
-            count += 1
-            names = ["Wbnaa %d" % count,]
-
-        else:
-            names = []
-            for dataset in datasets:
-                count += 1
-                names.append("Dataset%d" % count)
+            names.append("Dataset%d" % count)
 
         return names, count
