@@ -41,7 +41,7 @@ class NotebookSiview(notebook_base.BaseAuiNotebook):
     WELCOME_TAB_TEXT = """
     <html><body>
     <h1>Welcome to "%s"</h1>
-    <img src="%s" alt="Spectroscopic Imaging Viewer" />
+    <img src="%s" alt="SIView - Analysis" />
     <p><b>Currently there are no SI datasets loaded.</b></p>
     <p>You can use the File menu to browse for data.</p>
     </body></html>

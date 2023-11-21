@@ -1,46 +1,36 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014-2019 Brian J Soher - All Rights Reserved
+# Copyright (c) 2022-2023 Brian J Soher - All Rights Reserved
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are not permitted without explicit permission.
 
-# Dependencies
-#
-# numpy
-# scipy
-# nibabel
-# wxpython
-# matplotlib
-# - pyparsing (for Matplotlib)
-# - python-dateutil (for Matplotlib)
-# pydicom 
-
-
 # Python modules
 import os
+import sys
+import webbrowser
 import struct
 
 # 3rd party modules
 import wx
 import wx.adv as wx_adv
-import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit
+import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit  ?? Not anymore in wxPython 4.0.6 ??
 import numpy as np
 
 # Our modules
-import siview.util_menu as util_menu
-import siview.util_import as util_import
-import common.dialog_export as dialog_export
-import siview.mrsi_dataset as mrsi_dataset
-import common.mrsi_data_raw as mrsi_data_raw
-import siview.notebook_siview as notebook_siview
-import siview.util_siview_config as util_siview_config
+import siview.analysis.mrsi_dataset as mrsi_dataset
+import siview.analysis.notebook_siview as notebook_siview
+import siview.analysis.util_menu as util_menu
+import siview.analysis.util_import as util_import
+import siview.analysis.util_siview_config as util_siview_config
 
-import common.default_content as default_content
-import common.util.misc as misc
-import common.util.export as export
-import common.wx_gravy.util as wx_util
-import common.wx_gravy.common_dialogs as common_dialogs
+import siview.common.mrsi_data_raw as mrsi_data_raw
+import siview.common.dialog_export as dialog_export
+import siview.common.default_content as default_content
+import siview.common.util.misc as misc
+import siview.common.util.export as export
+import siview.common.wx_gravy.util as wx_util
+import siview.common.wx_gravy.common_dialogs as common_dialogs
 
 from wx.lib.embeddedimage import PyEmbeddedImage
 

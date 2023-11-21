@@ -11,12 +11,17 @@
 import os
 
 # 3rd party modules
-import wx
+# need for inline processing - no wx
 import configobj
 
+try:
+    import wx
+except:
+    wx = None
+
 # Our modules
+import common.util.misc as util_misc
 import common.default_content as default_content
-import common.util.misc as misc
 
 
 
@@ -60,7 +65,7 @@ class BaseConfig(configobj.ConfigObj):
         
         # Since I initialized my base class with a list instead of providing
         # a filename, self.filename is still None. That needs to be corrected.
-        filename = os.path.join(misc.get_data_dir(), filename)
+        filename = os.path.join(util_misc.get_data_dir(), filename)
         self.filename = filename
         
         # Any settings the user provides trump the defaults
@@ -82,7 +87,7 @@ class BaseConfig(configobj.ConfigObj):
             path = self["general"].get("last_export_path", "")
 
         if not os.path.exists(path):
-            path = misc.get_documents_dir()
+            path = util_misc.get_documents_dir()
 
         return path
 
@@ -108,7 +113,7 @@ class BaseConfig(configobj.ConfigObj):
             path = self["general"].get("last_file_open_path", "")
 
         if not os.path.exists(path):
-            path = misc.get_documents_dir()
+            path = util_misc.get_documents_dir()
 
         return path
 
@@ -140,11 +145,15 @@ class BaseConfig(configobj.ConfigObj):
         top = self[window_name].as_float("top")
         width = self[window_name].as_float("width")
         height = self[window_name].as_float("height")
-        
-        # I sanity check these numbers. No part of the window should be
-        # off the screen
-        screen_width = wx.SystemSettings.GetMetric(wx.SYS_SCREEN_X)
-        screen_height = wx.SystemSettings.GetMetric(wx.SYS_SCREEN_Y)
+
+        if wx is None:
+            screen_width  = 1024
+            screen_height = 720
+        else:
+            # I sanity check these numbers. No part of the window should be
+            # off the screen
+            screen_width = wx.SystemSettings.GetMetric(wx.SYS_SCREEN_X)
+            screen_height = wx.SystemSettings.GetMetric(wx.SYS_SCREEN_Y)
                 
         # Ensure left & top are non-negative
         left = max(left, 0)
@@ -206,5 +215,15 @@ class BaseConfig(configobj.ConfigObj):
         return configobj.ConfigObj.write(self, outfile, section)
 
 
-
         
+
+class SIViewConfig(BaseConfig):
+    def __init__(self):
+        BaseConfig.__init__(self, "siview.ini")
+
+
+    @property
+    def show_wx_inspector(self):
+        return ("debug" in self) and                        \
+               ("show_wx_inspector" in self["debug"]) and   \
+               self["debug"].as_bool("show_wx_inspector")

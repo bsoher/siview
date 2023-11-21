@@ -5,10 +5,12 @@ import numpy as np
 
 # Our modules
 import siview.constants as constants
-import common.svd_output as svd_output_module
-from common.util.math_ import safe_exp
+import siview.siview.svd_output as svd_output_module
+import siview.siview.functors.funct_ecc as funct_ecc
+import siview.siview.functors.funct_water_filter as funct_water
+from siview.common.util.math_ import safe_exp
 
-import common.hlsvdpropy as hlsvdpro
+import siview.common.hlsvdpropy as hlsvdpro
 
 
 
@@ -146,7 +148,7 @@ def svd_filter(chain):
             # It will destroy performance and cause Vespa users to wail
             # and gnash their teeth.
             #
-            # import common.util.xml_ as util_xml
+            # import siview.common.util.xml_ as util_xml
             # import os.path
             #
             # input_ = {"dwell_time" : dwell_time,
