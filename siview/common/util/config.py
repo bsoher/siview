@@ -21,7 +21,7 @@ except:
 
 # Our modules
 import siview.common.util.misc as util_misc
-import siview.common.default_content as default_content
+import siview.common.default_ini_file_content as default_content
 
 
 

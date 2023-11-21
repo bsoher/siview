@@ -1,13 +1,15 @@
 # Python modules
 
+
 # 3rd party modules
 import wx
 
 # Our modules
-from siview.common.wx_gravy.plot_panel_spectrum import PlotPanelSpectrum
+import vespa.common.wx_gravy.plot_panel_spectrum as plot_panel_spectrum
 
 
-class PlotPanelSpectral(PlotPanelSpectrum):
+
+class PlotPanelWatref(plot_panel_spectrum.PlotPanelSpectrum):
 
     def __init__(self, parent, tab, tab_dataset, **kwargs):
         '''
@@ -210,7 +212,7 @@ class PlotPanelSpectral(PlotPanelSpectrum):
             delta = dy
             self.tab.top.notebook_datasets.global_poll_phase(poll_labels, delta, voxel, do_zero=True)
         else:
-            # pass
+            pass
             # first order phase, x10 makes Phase1 changes more noticeable
             delta = dx*10
             self.tab.top.notebook_datasets.global_poll_phase(poll_labels, delta, voxel, do_zero=False)

@@ -4,10 +4,10 @@
 import wx
 
 # Our modules
-from siview.common.wx_gravy.plot_panel_spectrum import PlotPanelSpectrum
+import vespa.common.wx_gravy.plot_panel_spectrum as plot_panel_spectrum
 
 
-class PlotPanelSpectral(PlotPanelSpectrum):
+class PlotPanelVoigt(plot_panel_spectrum.PlotPanelSpectrum):
 
     def __init__(self, parent, tab, tab_dataset, **kwargs):
         '''
@@ -16,21 +16,39 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         contained in the base class, all we are doing here is overwriting the
         various canvas Event functions to mesh with our application.
 
-        parent      - the widget to which the PlotPanel is directly attached
-        tab         - the Spectral tab in which the PlotPanel resides
-        tab._dataset - the Dataset tab in which the Spectral tab resides
+        parent - the widget to which the PlotPanel is directly attached
+
+        tab    - the Notebook tab in which the PlotPanel resides, this gives
+                 access to tab.block, the processing block object for events
 
         '''
         tab.SizerSplitterWindow.Fit(tab)  # bugfix wxGlade 0.9.6 to 1.0.0
 
         super().__init__(parent, **kwargs)
 
+        # this section is specific to Voigt Prefs which is the only tab to have
+        # PlotA-D and thus a 'plotx' attribute.
+
+        if  hasattr(self.prefs,"plotx"):
+            for i in range(len(self.prefs.plotx)):
+                if self.prefs.plotx[i].data_type_imaginary:
+                    self.data_type[i] = 'imaginary'
+                elif self.prefs.plotx[i].data_type_magnitude:
+                    self.data_type[i] = 'magnitude'
+                elif self.prefs.plotx[i].data_type_real:
+                    self.data_type[i] = 'real'
+                self.data_type_summed[i] = self.prefs.plotx[i].data_type_summed
+
+        # re-initialize plots with initial data and format axes
+        self.set_data(self.data)
+        self.update(set_scale=False)
+
         self.tab = tab
         self.tab_dataset = tab_dataset
         self.top = wx.GetApp().GetTopWindow()
 
         # these are in points to facilitate area calculations
-        self.ref_locations = 0,self.tab.block.dims[0]-1
+        self.ref_locations = 0,self.tab.dataset.spectral_dims[0]-1
 
         self.set_color( (255,255,255) )
 
@@ -38,7 +56,8 @@ class PlotPanelSpectral(PlotPanelSpectrum):
     # EVENT FUNCTIONS -----------------------------------------------
 
     def on_motion(self, xdata, ydata, val, bounds, iaxis):
-        if self.tab.block.set.fft:
+        tdfd = self.tab.dataset.blocks["spectral"]
+        if tdfd.set.fft:
             if self.prefs.xaxis_hertz:
                 hz  = xdata
                 ppm = xdata / self.tab.dataset.frequency
@@ -55,6 +74,7 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         self.top.statusbar.SetStatusText(( " Value = "+str(val[0])), 2)
 
 
+
     def on_scroll(self, button, step, iaxis):
         self.set_vertical_scale(step)
         self.tab_dataset.FloatScale.SetValue(self.vertical_scale)
@@ -65,7 +85,8 @@ class PlotPanelSpectral(PlotPanelSpectrum):
 
 
     def on_zoom_motion(self, xmin, xmax, val, ymin, ymax, iplot=None):
-        if self.tab.block.set.fft:
+        tdfd = self.tab.dataset.blocks["spectral"]
+        if tdfd.set.fft:
             if self.prefs.xaxis_hertz:
                 hz_str  = xmin
                 hz_end  = xmax
@@ -82,8 +103,8 @@ class PlotPanelSpectral(PlotPanelSpectrum):
             delta_ppm = -1*(ppm_str - ppm_end)  # keeps delta positive
             delta_hz  = delta_ppm * self.tab.dataset.frequency
             self.top.statusbar.SetStatusText(( " PPM Range = %.2f to %.2f" % (ppm_str, ppm_end)), 0)
-            self.top.statusbar.SetStatusText(( " Hz Range = %.1f to %.1f"  % (hz_str, hz_end)), 1)
-            self.top.statusbar.SetStatusText(( " dPPM = %.2f  dHz = %.1f"  % (delta_ppm, delta_hz)), 2)
+            self.top.statusbar.SetStatusText(( " Hz Range = %.1f to %.1f" % (hz_str, hz_end)), 1)
+            self.top.statusbar.SetStatusText(( " dPPM = %.2f  dHz = %.1f" % (delta_ppm, delta_hz)), 2)
         else:
             self.top.statusbar.SetStatusText(( " Time Range [ms] = %.2f to %.2f" % (xmin, xmax)), 0)
             self.top.statusbar.SetStatusText(  " " , 1)
@@ -95,19 +116,19 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         area, rms = self.calculate_area()
         if self.prefs.area_calc_plot_a:
             index = 0
-            labl = 'A'
         elif self.prefs.area_calc_plot_b:
             index = 1
-            labl = 'B'
         elif self.prefs.area_calc_plot_c:
             index = 2
-            labl = 'C'
+        elif self.prefs.area_calc_plot_d:
+            index = 3
 
-        self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index], plot_label=labl), 3)
+        self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index]), 3)
 
 
     def on_refs_motion(self, xmin, xmax, val, iplot=None):
-        if self.tab.block.set.fft:
+        tdfd = self.tab.dataset.blocks["spectral"]
+        if tdfd.set.fft:
             if self.prefs.xaxis_hertz:
                 hz_str  = xmin
                 hz_end  = xmax
@@ -134,14 +155,15 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         area, rms = self.calculate_area()
         if self.prefs.area_calc_plot_a:
             index = 0
-            labl = 'A'
         elif self.prefs.area_calc_plot_b:
             index = 1
-            labl = 'B'
         elif self.prefs.area_calc_plot_c:
             index = 2
-            labl = 'C'
-        self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index], plot_label=labl), 3)
+        elif self.prefs.area_calc_plot_d:
+            index = 3
+
+        self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index]), 3)
+
 
 
     def on_middle_select(self, xstr, ystr, xend, yend, iplot):
@@ -182,7 +204,6 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         each plot_panel_spectrum derived class.
 
         '''
-        if iplot not in (0,1): return
         voxel = self.tab_dataset.voxel
 
         # The mouse probably moved in both the X and Y directions, but to
@@ -193,39 +214,31 @@ class PlotPanelSpectral(PlotPanelSpectrum):
         dx = xcur - xprev
 
         # determine label(s) of dataset(s) being phased
-        if self.tab.do_sync:
-            poll_labels = [self.tab_dataset.indexAB[0],self.tab_dataset.indexAB[1]]
-        else:
-            if iplot==0:
-                poll_labels = [self.tab_dataset.indexAB[0]]
-            else:
-                poll_labels = [self.tab_dataset.indexAB[1]]
-
-        index = [iplot]
-        if self.tab.do_sync:
-            index = [0,1]
+        poll_labels = [self.tab_dataset.indexAB[0]]
 
         if abs(dy) > abs(dx):
             # 0 order phase
             delta = dy
             self.tab.top.notebook_datasets.global_poll_phase(poll_labels, delta, voxel, do_zero=True)
         else:
-            # pass
             # first order phase, x10 makes Phase1 changes more noticeable
             delta = dx*10
             self.tab.top.notebook_datasets.global_poll_phase(poll_labels, delta, voxel, do_zero=False)
 
-        # Calculate the new area after phasing
+        self.canvas.draw()
+
+        # Calculate area of span
         area, rms = self.calculate_area()
         if self.prefs.area_calc_plot_a:
             index = 0
-            labl = 'A'
         elif self.prefs.area_calc_plot_b:
             index = 1
-            labl = 'B'
         elif self.prefs.area_calc_plot_c:
             index = 2
-            labl = 'C'
-        self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index], plot_label=labl), 3)
+        elif self.prefs.area_calc_plot_d:
+            index = 3
+
+        self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index]), 3)
+
 
 
