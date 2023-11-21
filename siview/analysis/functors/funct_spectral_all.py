@@ -4,10 +4,10 @@
 import numpy as np
 
 # Our modules
-import siview.constants as constants
-import siview.siview.svd_output as svd_output_module
-import siview.siview.functors.funct_ecc as funct_ecc
-import siview.siview.functors.funct_water_filter as funct_water
+import siview.analysis.constants as constants
+import siview.analysis.svd_output as svd_output_module
+import siview.analysis.functors.funct_ecc as funct_ecc
+import siview.analysis.functors.funct_water_filter as funct_water
 from siview.common.util.math_ import safe_exp
 
 import siview.common.hlsvdpropy as hlsvdpro

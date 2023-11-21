@@ -2,10 +2,10 @@
 BJS - Sept 8, 2020. This was a start at amalgamating a number of files
   and classes into one module including:
   
-  util.generic_spectral
-  common.mrs_generic_basis
-  analysis.mrs_user_prior
-  analysis.mrs_user_prior_spectrum
+  siview.common.util.generic_spectral
+  siview.common.mrs_generic_basis
+  siview.analysis.mrs_user_prior
+  siview.analysis.mrs_user_prior_spectrum
   
   and maybe more.
   
@@ -24,10 +24,10 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import vespa.common.util.xml_ as util_xml
-import vespa.common.util.time_ as util_time
-from vespa.common.util.math_ import safe_exp
-from vespa.common.constants import Deflate
+import siview.common.util.xml_ as util_xml
+import siview.common.util.time_ as util_time
+from siview.common.util.math_ import safe_exp
+from siview.common.constants import Deflate
 
 
 def calculate_peakppm(fid, sw, freq, zfmult=1, zfnew=4, resppm=4.7):

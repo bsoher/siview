@@ -13,9 +13,9 @@ import os
 # 3rd party modules
 
 # Our modules
-import common.util.config as config
-import common.default_content as default_content
-import common.util.misc as misc
+import siview.common.util.config as config
+import siview.common.default_content as default_content
+import siview.common.util.misc as misc
 
 
 

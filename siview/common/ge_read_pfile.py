@@ -40,8 +40,8 @@ import ctypes
 import numpy as np
 
 # Our Modules
-#import vespa.common.ge_util as utilge
-#import vespa.common.ge_pfile_mapper as pfile_mapper
+#import siview.common.ge_util as utilge
+#import siview.common.ge_pfile_mapper as pfile_mapper
 
 from ctypes import *
 from collections import namedtuple

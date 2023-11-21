@@ -5,9 +5,9 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import siview.chain_fit_identity as chain_fit_identity
-import siview.block as block
-from common.constants import Deflate
+import siview.analysis.chain_fit_identity as chain_fit_identity
+import siview.analysis.block as block
+from siview.common.constants import Deflate
 
 
 

@@ -7,11 +7,11 @@ import copy
 
 
 # Our modules
-from vespa.common.constants import Deflate
-import vespa.common.mrs_spin as mrs_spin
-import vespa.common.mrs_j_coupling as mrs_j_coupling
-import vespa.common.util.time_ as util_time
-import vespa.common.util.xml_ as util_xml
+from siview.common.constants import Deflate
+import siview.common.mrs_spin as mrs_spin
+import siview.common.mrs_j_coupling as mrs_j_coupling
+import siview.common.util.time_ as util_time
+import siview.common.util.xml_ as util_xml
 
 
 class Metabolite(object):

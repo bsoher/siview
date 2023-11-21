@@ -125,10 +125,10 @@ def init_app(app_name):
     # Here we deal with the [debug] section of siview.ini.
     
     # We set our custom exception hook as early as possible. Note that it
-    # depends on the directory for log files and the existence of vespa.ini,
+    # depends on the directory for log files and the existence of siview.ini,
     # so we can't set the exception hook before those exist.
     # The exception hook is on by default but can be turned off by a flag in
-    # vespa.ini.
+    # siview.ini.
     hook_exceptions = True
     if ("debug" in config) and ("hook_exceptions" in config["debug"]):
         hook_exceptions = config["debug"].as_bool("hook_exceptions")

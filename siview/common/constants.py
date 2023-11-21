@@ -22,7 +22,7 @@ MINUTES_TO_SECONDS = 60
 # methods in xdrlib. Vespa can still read in the 'xdr' encoded data, but it
 # will subsequently save it using 'npy' formatting.
 #
-# This constant used to be in common.util.xml_ module
+# This constant used to be in siview.common.util.xml_ module
 NUMERIC_LIST_ENCODING = "npy zlib base64"
 
 

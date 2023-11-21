@@ -4,11 +4,11 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import siview.chain_raw as chain_raw
-import siview.block as block
-import common.mrsi_data_raw as mrsi_data_raw
-import common.util.xml_ as util_xml
-from common.constants import Deflate
+import siview.analysis.chain_raw as chain_raw
+import siview.analysis.block as block
+import siview.common.mrsi_data_raw as mrsi_data_raw
+import siview.common.util.xml_ as util_xml
+from siview.common.constants import Deflate
 
 
 

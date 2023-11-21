@@ -4,9 +4,9 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import siview.chain_spatial_identity as chain_spatial_identity
-import siview.block as block
-from common.constants import Deflate
+import siview.analysis.chain_spatial_identity as chain_spatial_identity
+import siview.analysis.block as block
+from siview.common.constants import Deflate
 
 
 

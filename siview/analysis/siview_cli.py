@@ -17,10 +17,10 @@ try:
     import pydicom
 except ImportError:
     import dicom as pydicom
-import common.dcmstack.dcmstack as dcmstack
+import siview.common.dcmstack.dcmstack as dcmstack
 
 # Our modules
-import common.util.export as export
+import siview.common.util.export as export
 
 
 DESC =  \

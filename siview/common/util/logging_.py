@@ -7,9 +7,9 @@ import os
 import wx
 
 # Our modules
-import common.util.time_ as util_time
-import common.util.xml_ as util_xml
-import common.util.misc as misc
+import siview.common.util.time_ as util_time
+import siview.common.util.xml_ as util_xml
+import siview.common.util.misc as misc
 
 # Set up the app-wide logger
 logger = logging.getLogger()

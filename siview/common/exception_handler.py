@@ -11,10 +11,10 @@ import traceback as traceback_module
 import wx
 
 # Our modules
-import vespa.common.auto_gui.exception_report as gui_exception_report
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.util.misc as util_misc
-import vespa.common.util.time_ as util_time
+import siview.common.auto_gui.exception_report as gui_exception_report
+import siview.common.wx_gravy.util as wx_util
+import siview.common.util.misc as util_misc
+import siview.common.util.time_ as util_time
 
 """A specialized module that contains our exception hook and the functions
 that support it. An exception hook allows us to execute arbitrary code when
