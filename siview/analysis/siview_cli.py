@@ -13,10 +13,7 @@ import sys
 import platform
 
 # 3rd party modules
-try:
-    import pydicom
-except ImportError:
-    import dicom as pydicom
+import pydicom
 import siview.common.dcmstack.dcmstack as dcmstack
 
 # Our modules

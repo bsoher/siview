@@ -36,6 +36,9 @@ import sys
 import csv
 import ctypes
 
+from ctypes import *
+from collections import namedtuple
+
 # Third party packages
 import numpy as np
 
@@ -43,8 +46,6 @@ import numpy as np
 #import siview.common.ge_util as utilge
 #import siview.common.ge_pfile_mapper as pfile_mapper
 
-from ctypes import *
-from collections import namedtuple
 
 StructInfo = namedtuple("StructInfo", ["label", "depth", "value", "field_type", "size", "offset"])
 

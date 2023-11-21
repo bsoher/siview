@@ -4,7 +4,7 @@
 import wx
 
 # Our modules
-import siview.util_menu as util_menu
+import siview.analysis.util_menu as util_menu
 
 
 #------------------------------------------------------------------------------

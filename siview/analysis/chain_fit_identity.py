@@ -3,7 +3,7 @@
 # 3rd party modules
 
 # Our modules
-from siview.chain_base import Chain
+from siview.analysis.chain_base import Chain
 
 
 class ChainFitIdentity(Chain):

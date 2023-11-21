@@ -10,12 +10,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
     
-try:
-    import pydicom
-    from pydicom.datadict import keyword_for_tag
-except ImportError:
-    import dicom as pydicom
-    from dicom.datadict import keyword_for_tag
+import pydicom
+from pydicom.datadict import keyword_for_tag
 from nibabel.nicom import csareader
 try:
     import chardet

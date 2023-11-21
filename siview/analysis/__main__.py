@@ -10,5 +10,5 @@
 """siview.__main__: executed when washout directory is called as script."""
 
 
-from .siview import main
+from siview.analyis import main
 main()

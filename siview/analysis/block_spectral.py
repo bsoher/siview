@@ -9,9 +9,9 @@ from xml.etree.cElementTree import Element
 # Our modules
 import siview.analysis.block_spectral_identity as block_spectral_identity
 import siview.analysis.chain_spectral as chain_spectral
-import siview.common.svd_output as svd_output_module
 import siview.analysis.functors.funct_water_filter as funct_water
 import siview.common.util.xml_ as util_xml
+import siview.common.svd_output as svd_output_module
 from siview.common.constants import Deflate
 
 

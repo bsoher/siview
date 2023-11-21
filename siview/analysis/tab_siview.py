@@ -21,15 +21,14 @@ import matplotlib.cm as cm
 from scipy.fft import fft, fftshift
 
 # Our modules
-import siview.tab_base
-import siview.prefs as prefs
-import siview.util_menu as util_menu
-import siview.constants as constants
-import siview.tab_base as tab_base
-from siview.plot_panel_spectral import PlotPanelSpectral
-from siview.image_panel_siview import ImagePanelSiview
+import siview.analysis.prefs as prefs
+import siview.analysis.util_menu as util_menu
+import siview.analysis.constants as constants
+import siview.analysis.tab_base as tab_base
+from siview.analysis.plot_panel_spectral import PlotPanelSpectral
+from siview.analysis.image_panel_siview import ImagePanelSiview
 
-import siview.auto_gui.siview as siview_ui
+import siview.analysis.auto_gui.siview as siview_ui
 
 import siview.common.wx_gravy.util as wx_util
 from siview.common.dist import dist

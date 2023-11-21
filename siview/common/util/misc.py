@@ -11,8 +11,7 @@ import re
 import pkg_resources
 
 # Our Modules
-#import siview.default_content  # this does not create circular logic
-#import default_content  # this does not create circular logic
+
 
 # Beware -- lots of other modules import this one. If you import 
 # other modules here you will almost certainly create circular imports!

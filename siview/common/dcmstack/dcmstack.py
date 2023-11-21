@@ -11,10 +11,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 import numpy as np
-try:
-    import pydicom
-except ImportError:
-    import dicom as pydicom
+import pydicom
 import nibabel as nb
 from nibabel.nifti1 import Nifti1Extensions
 from nibabel.spatialimages import HeaderDataError

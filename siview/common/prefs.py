@@ -55,6 +55,29 @@ to put the prefs attribute in the inflate() method.  If you are setting the
 value in the util_menu module, you can set a default here, or just let the 
 menu handling code default on its own.   
 
+BJS - additional comments 
+----------------------------------
+
+So I admit that I do not completely understand how these Prefs work.  So what
+I write here is mostly empirical and some trial/error practicality.
+
+Most of the  Prefs attributes are filled by turning the ViewIdsXxxx values in 
+util_menu.py module from UPPER_CASE to lower_case and using these strings as
+argument to setattr().  The ViewIdsXxxx values specific to the Tab being
+instantiated are used (as listed in the __init__ call at the top of the tab's
+__init__ code).  Yes, double inits.  
+
+A second way to set a Prefs attribute is in the local prefs.py module in the
+inflate() method for whatever tab (e.g. PrefsSpectral class). The attributes
+listed in this location are NOT modified by a menu item, thus I consider them
+to be 'static' prefs. Modifiable in the INI file, but not dynamically in the 
+program.  But, can also be values other than Boolean, which is nice.
+
+So, when should we add something to the common/default_ini_file_content?  By
+trial and error, I deduced that you HAVE to add a value here if you are going
+to put the prefs attribute in the inflate() method.  If you are setting the
+value in the util_menu module, you can set a default here, or just let the 
+menu handling code default on its own.   
 
 """
 
@@ -72,6 +95,7 @@ class Prefs(object, metaclass=abc.ABCMeta):
     util_menu.ViewIdXxxx classes.
     """
     __metaclass__ = abc.ABCMeta
+#    __metaclass__ = abc.ABCMeta
 
 
     def __init__(self, menu_bar, id_class):
@@ -82,6 +106,9 @@ class Prefs(object, metaclass=abc.ABCMeta):
         # Create each auto name as an attr and initialize it to False.
         f = lambda name: setattr(self, name, False)
         list(map(f, self._auto_names))
+		
+		#for name in self._auto_names:
+        #    setattr(self, name, False)
 
         # In a few of my methods I need to map a menu item id to the name of
         # one of my automatic attributes. Here's where I build that map.
@@ -163,11 +190,10 @@ class Prefs(object, metaclass=abc.ABCMeta):
         (not just automatic ones). Attributes that start with underscore
         are ignored.
 
-        Unlike many other objects in SIView, there is no option for deflating
+        Unlike many other objects, there is no option for deflating
         prefs to XML.
         """
-        return dict( (key, value) for key, value in self.__dict__.items()
-                                                 if not key.startswith('_') )
+        return dict( (key, value) for key, value in list(self.__dict__.items()) if not key.startswith('_') )
 
 
     def inflate(self, source):
@@ -175,7 +201,7 @@ class Prefs(object, metaclass=abc.ABCMeta):
         dict is a ConfigObj instance, automatic attributes will be 
         converted to boolean during inflation.
 
-        Unlike many other objects in SIView, there is no option for inflating
+        Unlike many other objects, there is no option for inflating
         prefs from XML.
         """
         is_configobj = (hasattr(source, "as_bool"))
@@ -208,13 +234,12 @@ class Prefs(object, metaclass=abc.ABCMeta):
 
             # state maps menu item ids to their boolean values. I want attribute 
             # names as keys, not menu item ids. Remap!
-            state = dict( (self._id_name_map[key], value) for key, value 
-                                                          in  state.items() )
+            state = dict( (self._id_name_map[key], value) for key, value in  list(state.items()) )
 
             if state != self._state:
                 # State change ==> one of the menu items that I track was selected.
                 # Update my attributes.
-                for name, value in state.items():
+                for name, value in list(state.items()):
                     setattr(self, name, value)
                 return True
             else:

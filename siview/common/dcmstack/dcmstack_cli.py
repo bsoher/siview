@@ -7,11 +7,7 @@ Command line interface to dcmstack.
 
 import os, sys, argparse, string
 from glob import glob
-
-try:
-    import pydicom
-except ImportError:
-    import dicom as pydicom
+import pydicom
 
 from . import dcmstack
 from .dcmstack import (parse_and_group, stack_group, DicomOrdering,
