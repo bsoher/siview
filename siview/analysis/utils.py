@@ -8,7 +8,7 @@ import pydicom as dicom
 
 
 # Our modules
-import vespa.common.constants  as common_constants
+import siview.common.constants  as common_constants
 
 # List Classes then Methods ...
 # - keep 'em in alphabetical order, please, unless you have a better idea.

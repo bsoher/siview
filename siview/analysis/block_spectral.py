@@ -7,12 +7,12 @@ import xml.etree.cElementTree as cElementTree
 from xml.etree.cElementTree import Element
 
 # Our modules
-import siview.block_spectral_identity as block_spectral_identity
-import siview.chain_spectral as chain_spectral
-import common.svd_output as svd_output_module
-import siview.functors.funct_water_filter as funct_water
-import common.util.xml_ as util_xml
-from common.constants import Deflate
+import siview.analysis.block_spectral_identity as block_spectral_identity
+import siview.analysis.chain_spectral as chain_spectral
+import siview.common.svd_output as svd_output_module
+import siview.analysis.functors.funct_water_filter as funct_water
+import siview.common.util.xml_ as util_xml
+from siview.common.constants import Deflate
 
 
 
@@ -421,8 +421,6 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
         _frequency_shift    Frequency shift, -10000 <= frequency shift <= 10000
         data                Complex data after spectral processing
 
-        As of Vespa >= 0.6.0, the SVD filter is part of the spectral block.
-
         # Singular value decomposition filtering (SVD)
         # - original algorithm from Dutch Hankel-Lanczos HLSVD
         # - more recently from Laudadio/Sima/Munk HLSVD-PRO
@@ -765,10 +763,6 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
                 if temp is not None:
                     self._water_filter_do_fit = util_xml.element_to_numpy_array(temp)
 
-                # As of Vespa >= 0.6.0, there's always an SVD subtab, so SVD
-                # output info is always written to the XML. However, prior to
-                # that the SVD tab was optional. That means that we're not
-                # guaranteed to find SVD nodes in the XML.
                 frequencies = source.find("frequencies")
                 if frequencies is not None:
                     # If frequencies is present, so are all the others.
@@ -877,7 +871,7 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
 
 def _test():
 
-    import common.util.time_ as util_time
+    import siview.common.util.time_ as util_time
 
     test = BlockSpectral([128,1,1,1])
 

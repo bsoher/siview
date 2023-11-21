@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 # 3rd party modules
 
 # Our modules
-import common.util.misc as util_misc
-from common.constants import Deflate
+import siview.common.util.misc as util_misc
+from siview.common.constants import Deflate
 
 
 class Block(ABC):

@@ -8,22 +8,22 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import siview.block_raw as block_raw
-import siview.block_prep_identity as block_prep_identity
-import siview.block_spatial_identity as block_spatial_identity
-import siview.block_spectral_identity as block_spectral_identity
-import siview.block_fit_identity as block_fit_identity
-import siview.block_quant_identity as block_quant_identity
+import siview.analysis.block_raw as block_raw
+import siview.analysis.block_prep_identity as block_prep_identity
+import siview.analysis.block_spatial_identity as block_spatial_identity
+import siview.analysis.block_spectral_identity as block_spectral_identity
+import siview.analysis.block_fit_identity as block_fit_identity
+import siview.analysis.block_quant_identity as block_quant_identity
 
-import siview.block_spectral as block_spectral
+import siview.analysis.block_spectral as block_spectral
 
-import siview.mrs_user_prior as mrs_user_prior
+import siview.analysis.mrs_user_prior as mrs_user_prior
 
-import common.util.misc as util_misc
-import common.util.xml_ as util_xml
-import common.constants as common_constants
+import siview.common.util.misc as util_misc
+import siview.common.util.xml_ as util_xml
+import siview.common.constants as common_constants
 
-from common.constants import Deflate
+from siview.common.constants import Deflate
 
 
 

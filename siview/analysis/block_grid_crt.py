@@ -4,9 +4,9 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import siview.siview.block_grid_identity as block_grid_identity
-import siview.siview.block as block
-from siview.siview.chain_grid_crt import ChainGridCrt
+import siview.analysis.block_grid_identity as block_grid_identity
+import siview.analysis.block as block
+from siview.analysis.chain_grid_crt import ChainGridCrt
 from siview.common.constants import Deflate
 
 

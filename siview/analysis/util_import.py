@@ -13,9 +13,9 @@
 
 
 # Our modules
-import siview.mrsi_dataset as mrsi_dataset
+import siview.analysis.mrsi_dataset as mrsi_dataset
 
-from common.util.import_ import Importer
+from siview.common.util.import_ import Importer
 
 
 

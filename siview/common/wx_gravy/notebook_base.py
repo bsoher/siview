@@ -8,7 +8,7 @@ import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets ex
 
 
 # Our modules
-import common.wx_gravy.util as wx_util
+import siview.common.wx_gravy.util as wx_util
 
 
 

@@ -7,13 +7,13 @@ import importlib
 import numpy as np
 
 # Our modules
-import vespa.analysis.mrs_dataset as mrs_dataset
-import vespa.analysis.util_import as util_import
-import vespa.analysis.fileio.util_exceptions as util_exceptions
-import vespa.common.util.misc as util_misc
-import vespa.common.configobj as configobj
+import siview.analysis.mrs_dataset as mrs_dataset
+import siview.analysis.util_import as util_import
+import siview.analysis.fileio.util_exceptions as util_exceptions
+import siview.common.util.misc as util_misc
+import siview.common.configobj as configobj
 
-from vespa.common.mrs_data_raw import DataRawFidsum
+from siview.common.mrs_data_raw import DataRawFidsum
 
 
 
@@ -43,7 +43,7 @@ You can open these files, but first you have to close all currently open dataset
 """
  
 _MSG_UNSUPPORTED_DIMENSIONALITY = """
-The file(s) you opened contains SI datasets. Vespa doesn't support SI at this time.
+The file(s) you opened contains SI datasets. SIView doesn't support SI at this time.
 """
 
 _MSG_INCORRECT_DIMENSIONALITY = """
@@ -77,7 +77,7 @@ _MSG_INCOMPLETE_HEADER_PARAMETERS = """Import header missing a necessary paramet
 
 ########################################################################
 # This is a non-GUI based module that sets up a dictionary that maps
-# import data types to Python modules with parser classes/objects. Vespa
+# import data types to Python modules with parser classes/objects. SIView
 # Analysis used to have a few hard coded 'standard' formats (eg. siemens
 # DICOM, siemens *.rda, GE probe, etc.) but we have switched over to
 # map all formats through this Utility module. It also provides CLI
@@ -94,135 +94,135 @@ _MSG_INCOMPLETE_HEADER_PARAMETERS = """Import header missing a necessary paramet
 STANDARD_CLASSES_LOFL = [
 '[separator100]',
 '[import_bruker]',
-    'path=vespa.analysis.fileio.bruker',
+    'path=siview.analysis.fileio.bruker',
     'class_name=RawReaderBruker',
     'menu_item_text=Bruker',
     'ini_file_name=import_bruker',
 '[import_ge_probep]',
-    'path=vespa.analysis.fileio.ge_pfile',
+    'path=siview.analysis.fileio.ge_pfile',
     'class_name=RawReaderGeProbep',
     'menu_item_text=GE PROBE-P (*.7)',
     'ini_file_name=import_ge_probep',
 '[import_ge_oslaser_cmrr]',
-    'path=vespa.analysis.fileio.ge_pfile',
+    'path=siview.analysis.fileio.ge_pfile',
     'class_name=RawReaderGeOslaserCmrr',
     'menu_item_text=GE sLASER CMRR (*.7)',
     'ini_file_name=import_ge_oslaser_cmrr',
 '[import_philips_dicom]',
-    'path=vespa.analysis.fileio.dicom_philips',
+    'path=siview.analysis.fileio.dicom_philips',
     'class_name=RawReaderDicomPhilips',
     'menu_item_text=Philips DICOM',
     'ini_file_name=import_philips_dicom',
 '[import_philips_dicom_fidsum]',
-    'path=vespa.analysis.fileio.dicom_philips',
+    'path=siview.analysis.fileio.dicom_philips',
     'class_name=RawReaderDicomPhilipsFidsum',
     'menu_item_text=Philips DICOM Sum FIDs',
     'ini_file_name=import_philips_dicom_fidsum',
 '[import_philips_spar]',
-    'path=vespa.analysis.fileio.philips_spar',
+    'path=siview.analysis.fileio.philips_spar',
     'class_name=RawReaderPhilipsSpar',
     'menu_item_text=Philips (*.spar/sdat)',
     'ini_file_name=import_philips_spar',
 '[import_philips_fidsum]',
-    'path=vespa.analysis.fileio.philips_fidsum',
+    'path=siview.analysis.fileio.philips_fidsum',
     'class_name=RawReaderPhilipsFidsum',
     'menu_item_text=Philips Sum FIDs',
     'ini_file_name=import_philips_fidsum',
 '[import_siemens_dicom]',
-    'path=vespa.analysis.fileio.dicom_siemens',
+    'path=siview.analysis.fileio.dicom_siemens',
     'class_name=RawReaderDicomSiemens',
     'menu_item_text=Siemens DICOM',
     'ini_file_name=import_siemens_dicom',
 '[import_siemens_dicom_fidsum]',
-    'path=vespa.analysis.fileio.dicom_siemens',
+    'path=siview.analysis.fileio.dicom_siemens',
     'class_name=RawReaderDicomSiemensFidsum',
     'menu_item_text=Siemens DICOM Sum FIDs',
     'ini_file_name=import_siemens_dicom_fidsum',
 '[import_siemens_dicom_timeseries]',
-    'path=vespa.analysis.fileio.dicom_siemens_timeseries',
+    'path=siview.analysis.fileio.dicom_siemens_timeseries',
     'class_name=RawReaderDicomSiemensTimeseries',
     'menu_item_text=Siemens DICOM Timeseries',
     'ini_file_name=import_siemens_dicom_timeseries',
 '[import_siemens_rda]',
-    'path=vespa.analysis.fileio.siemens_rda',
+    'path=siview.analysis.fileio.siemens_rda',
     'class_name=RawReaderSiemensRda',
     'menu_item_text=Siemens Export (*.rda)',
     'ini_file_name=import_siemens_rda',
 
 '[siemens_twix_svs_se]',
-    'path=vespa.analysis.fileio.siemens_twix_svs_se',
+    'path=siview.analysis.fileio.siemens_twix_svs_se',
     'class_name=RawReaderSiemensTwixSvsSe',
     'menu_item_text=Siemens Twix svs_se',
     'ini_file_name=import_siemens_twix_svs_se',
 '[siemens_twix_svs_slaser_cmrr_vb]',
-    'path=vespa.analysis.fileio.siemens_twix_slaser_cmrr',
+    'path=siview.analysis.fileio.siemens_twix_slaser_cmrr',
     'class_name=RawReaderSiemensTwixSlaserCmrrVb',
     'menu_item_text=Siemens Twix sLASER CMRR VB',
     'ini_file_name=import_siemens_twix_slaser_cmrr_vb',
 '[siemens_twix_slaser_cmrr_ve]',
-    'path=vespa.analysis.fileio.siemens_twix_slaser_cmrr',
+    'path=siview.analysis.fileio.siemens_twix_slaser_cmrr',
     'class_name=RawReaderSiemensTwixSlaserCmrrVe',
     'menu_item_text=Siemens Twix sLASER CMRR VE',
     'ini_file_name=import_siemens_twix_slaser_cmrr_ve',
 '[siemens_twix_svs_edit]',
-    'path=vespa.analysis.fileio.siemens_twix_svs_edit',
+    'path=siview.analysis.fileio.siemens_twix_svs_edit',
     'class_name=RawReaderSiemensTwixSvsEdit',
     'menu_item_text=Siemens Twix svs_edit WIP529',
     'ini_file_name=import_siemens_twix_svs_edit',
 
 '[siemens_twix]',
-    'path=vespa.analysis.fileio.siemens_twix',
+    'path=siview.analysis.fileio.siemens_twix',
     'class_name=RawReaderSiemensTwix',
     'menu_item_text=Siemens Twix (generic)',
     'ini_file_name=import_siemens_twix_generic',
 '[import_varian]',
-    'path=vespa.analysis.fileio.varian',
+    'path=siview.analysis.fileio.varian',
     'class_name=RawReaderVarian',
     'menu_item_text=Varian',
     'ini_file_name=import_varian',
 '[import_vasf]',
-    'path=vespa.analysis.fileio.vasf',
+    'path=siview.analysis.fileio.vasf',
     'class_name=RawReaderVasf',
     'menu_item_text=VASF (*.rsd/rsp)',
     'ini_file_name=import_vasf',
 '[import_vasf_fidsum]',
-    'path=vespa.analysis.fileio.vasf',
+    'path=siview.analysis.fileio.vasf',
     'class_name=RawReaderVasfFidsum',
     'menu_item_text=VASF Sum FIDs (*.rsd/rsp)',
     'ini_file_name=import_vasf_fidsum',
 '[separator101]',
 # '[import_siemens_dicom_cmrr_mpress]',
-#     'path=vespa.analysis.fileio.dicom_siemens_cmrr_mpress',
+#     'path=siview.analysis.fileio.dicom_siemens_cmrr_mpress',
 #     'class_name=RawReaderDicomSiemensXaMpress',
 #     'menu_item_text=SiemensXA DICOM CMRR MPress',
 #     'ini_file_name=import_siemens_dicom_cmrr_mpress',
 # '[import_siemens_dicom_cmrr_mpress_fidsum]',
-#     'path=vespa.analysis.fileio.dicom_siemens_cmrr_mpress',
+#     'path=siview.analysis.fileio.dicom_siemens_cmrr_mpress',
 #     'class_name=RawReaderDicomSiemensFidsumXaMpress',
 #     'menu_item_text=SiemensXA DICOM CMRR MPress Fidsum',
 #     'ini_file_name=import_siemens_dicom_cmrr_mpress_fidsum',
 '[import_siemens_dicom_eja_svs_mpress]',
-    'path=vespa.analysis.fileio.dicom_siemens_eja_svs_mpress',
+    'path=siview.analysis.fileio.dicom_siemens_eja_svs_mpress',
     'class_name=RawReaderDicomSiemensXaEjaSvsMpress',
     'menu_item_text=SiemensXA DICOM eja_svs_mpress',
     'ini_file_name=import_siemens_dicom_eja_svs_mpress',
 '[import_siemens_dicom_eja_svs_mpress_onoff]',
-    'path=vespa.analysis.fileio.dicom_siemens_eja_svs_mpress',
+    'path=siview.analysis.fileio.dicom_siemens_eja_svs_mpress',
     'class_name=RawReaderDicomSiemensXaEjaSvsMpressOnOff',
     'menu_item_text=SiemensXA DICOM eja_svs_mpress - On/Off only',
     'ini_file_name=import_siemens_dicom_eja_svs_mpress_onoff',
 #'[import_siemens_dicom_eja_svs_mpress_onoff_indiv]',
-#    'path=vespa.analysis.fileio.dicom_siemens_eja_svs_mpress',
+#    'path=siview.analysis.fileio.dicom_siemens_eja_svs_mpress',
 #    'class_name=RawReaderDicomSiemensXaEjaSvsMpressOnOffIndiv',
 #    'menu_item_text=SiemensXA DICOM eja_svs_mpress (indiv) - On/Off only',
 #    'ini_file_name=import_siemens_dicom_eja_svs_mpress_onoff_indiv',
 '[import_siemens_dicom_eja_svs_mpress_fidsum]',
-    'path=vespa.analysis.fileio.dicom_siemens_eja_svs_mpress',
+    'path=siview.analysis.fileio.dicom_siemens_eja_svs_mpress',
     'class_name=RawReaderDicomSiemensFidsumXaEjaSvsMpress',
     'menu_item_text=SiemensXA DICOM eja_svs_mpress Fidsum',
     'ini_file_name=import_siemens_dicom_eja_svs_mpress_fidsum',
 '[import_siemens_dicom_eja_svs_mpress_fidsum_onoff]',
-    'path=vespa.analysis.fileio.dicom_siemens_eja_svs_mpress',
+    'path=siview.analysis.fileio.dicom_siemens_eja_svs_mpress',
     'class_name=RawReaderDicomSiemensFidsumXaEjaSvsMpressOnOff',
     'menu_item_text=SiemensXA DICOM eja_svs_mpress Fidsum - On/Off only',
     'ini_file_name=import_siemens_dicom_eja_svs_mpress_fidsum_onoff',
@@ -251,7 +251,7 @@ def set_import_data_classes(filename=''):
         if not'separator' in module_name.lower():
             section = full_cfg[module_name]
             path    = section["path"]
-            if 'vespa.analysis.fileio' in path:
+            if 'siview.analysis.fileio' in path:
                 module = importlib.import_module(path)
             else:
                 # to be polite we check to be sure that the path and file exists,
@@ -275,7 +275,7 @@ def set_import_data_classes(filename=''):
 def get_datasets_cli(datafnames, section_name, open_dataset=None):
     """
     This is only called by command line (CLI) scripts. It shortcuts all the GUI
-    complexity. It does assume that Vespa is installed and has INI files in 
+    complexity. It does assume that SIView is installed and has INI files in 
     their normal locations.
     
     """
@@ -348,23 +348,23 @@ def get_datasets(reader, open_dataset=None):
 
             # these associate multiple files in the Raw block (e.g. On/Off/Sum/Dif for edited data)
             if raw_class == 'DataRawProbep':
-                d["raw"] = getattr(importlib.import_module('vespa.analysis.block_raw_probep'), 'BlockRawProbep')
+                d["raw"] = getattr(importlib.import_module('siview.analysis.block_raw_probep'), 'BlockRawProbep')
             elif raw_class == 'DataRawEdit':
-                d["raw"] = getattr(importlib.import_module('vespa.analysis.block_raw_edit'), 'BlockRawEdit')
+                d["raw"] = getattr(importlib.import_module('siview.analysis.block_raw_edit'), 'BlockRawEdit')
             elif raw_class == 'DataRawEditFidsum':
-                d["raw"] = getattr(importlib.import_module('vespa.analysis.block_raw_edit_fidsum'), 'BlockRawEditFidsum')
+                d["raw"] = getattr(importlib.import_module('siview.analysis.block_raw_edit_fidsum'), 'BlockRawEditFidsum')
             elif raw_class == 'DataRawCmrrSlaser':
-                d["raw"] = getattr(importlib.import_module('vespa.analysis.block_raw_cmrr_slaser'), 'BlockRawCmrrSlaser')
+                d["raw"] = getattr(importlib.import_module('siview.analysis.block_raw_cmrr_slaser'), 'BlockRawCmrrSlaser')
 
             # these require a Preprocess tab to be included in the workflow
             if isinstance(raw, DataRawFidsum):
-                d["prep"] = getattr(importlib.import_module('vespa.analysis.block_prep_fidsum'), 'BlockPrepFidsum')
+                d["prep"] = getattr(importlib.import_module('siview.analysis.block_prep_fidsum'), 'BlockPrepFidsum')
 
             # these have special Preprocess tabs to include in workflow
             if raw_class == 'DataRawTimeseries':
-                d["prep"] = getattr(importlib.import_module('vespa.analysis.block_prep_timeseries'), 'BlockPrepTimeseries')
+                d["prep"] = getattr(importlib.import_module('siview.analysis.block_prep_timeseries'), 'BlockPrepTimeseries')
             elif raw_class == 'DataRawWbnaa':
-                d["prep"] = getattr(importlib.import_module('vespa.analysis.block_prep_wbnaa'), 'BlockPrepWbnaa')
+                d["prep"] = getattr(importlib.import_module('siview.analysis.block_prep_wbnaa'), 'BlockPrepWbnaa')
 
             block_class_specs.append(d)
 

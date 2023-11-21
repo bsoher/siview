@@ -10,8 +10,8 @@ import sys
 import numpy as np
 
 # Our modules
-import common.constants as constants
-import common.util.fileio as util_fileio
+import siview.common.constants as constants
+import siview.common.util.fileio as util_fileio
 from functools import reduce
 
 

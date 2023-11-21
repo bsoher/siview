@@ -773,7 +773,7 @@ if __name__ == '__main__':
     """
     
 
-#    from vespa.analysis import loess_1d     # from loess 2.0.11 on PyPI
+#    from siview.analysis import loess_1d     # from loess 2.0.11 on PyPI
 #    import statsmodels.api as sm
     
     import cProfile

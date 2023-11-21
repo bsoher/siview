@@ -9,30 +9,30 @@ import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets ex
 from pubsub import pub as pubsub
 
 # Our modules
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.tab_dataset as tab_dataset
-import vespa.analysis.block_prep_fidsum as block_prep_fidsum
-import vespa.analysis.block_raw_probep as block_raw_probep
-import vespa.analysis.block_prep_wbnaa as block_prep_wbnaa
-import vespa.analysis.block_raw_edit as block_raw_edit
-import vespa.analysis.block_raw_cmrr_slaser as block_raw_cmrr_slaser
-import vespa.analysis.block_raw_edit as block_raw_edit
-import vespa.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
-import vespa.analysis.block_prep_timeseries as block_prep_timeseries
+import siview.analysis.util_menu as util_menu
+import siview.analysis.tab_dataset as tab_dataset
+import siview.analysis.block_prep_fidsum as block_prep_fidsum
+import siview.analysis.block_raw_probep as block_raw_probep
+import siview.analysis.block_prep_wbnaa as block_prep_wbnaa
+import siview.analysis.block_raw_edit as block_raw_edit
+import siview.analysis.block_raw_cmrr_slaser as block_raw_cmrr_slaser
+import siview.analysis.block_raw_edit as block_raw_edit
+import siview.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
+import siview.analysis.block_prep_timeseries as block_prep_timeseries
 
-import vespa.common.util.misc as util_misc
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.wx_gravy.notebooks as vespa_notebooks
+import siview.common.util.misc as util_misc
+import siview.common.wx_gravy.util as wx_util
+import siview.common.wx_gravy.notebooks as vespa_notebooks
 
 
 class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
-    # I need the path to the welcome page image which is in vespa/common.
-    _path = util_misc.get_vespa_install_directory()
+    # I need the path to the welcome page image which is in siview/common.
+    _path = util_misc.get_siview_install_directory()
     _path = os.path.join(_path, "common", "resources", "analysis_welcome.png")
 
     WELCOME_TAB_TEXT = """
     <html><body>
-    <h1>Welcome to Vespa - Analysis</h1>
+    <h1>Welcome to SIView - Analysis</h1>
     <img src="%s" alt="Time-Freq Plots" />
     <p><b>Currently there are no datasets loaded.</b></p>
     <p>You can use the File menu to load data files.</p>
@@ -110,7 +110,7 @@ class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
             self.active_tab.on_add_watref_tab(event)
 
     def on_tab_changed(self, event):
-        wx.GetApp().vespa.update_title()
+        wx.GetApp().siview.update_title()
 
         if self.active_tab:
             self.active_tab.on_tab_changed()

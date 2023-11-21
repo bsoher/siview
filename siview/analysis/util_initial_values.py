@@ -4,30 +4,30 @@
 import numpy as np
 
 # Our modules
-import vespa.analysis.algos.lowess as lowess
-import vespa.common.constants             as common_constants
-import vespa.common.minf_parabolic_info   as minf
-import vespa.common.util.ppm              as util_ppm
-import vespa.common.util.generic_spectral as util_spectral
+import siview.analysis.algos.lowess as lowess
+import siview.common.constants             as common_constants
+import siview.common.minf_parabolic_info   as minf
+import siview.common.util.ppm              as util_ppm
+import siview.common.util.generic_spectral as util_spectral
 
-from vespa.analysis.algos.b0_correction  import b0_correction
-from vespa.analysis.algos.auto_correlate import auto_correlate
-from vespa.analysis.algos.savitzky_golay import savitzky_golay
-from vespa.analysis.algos.optimize_phase import optimize_phase0_correlation
-from vespa.analysis.algos.optimize_phase import optimize_phase1_correlation
-from vespa.analysis.algos.optimize_phase import optimize_phase0_integration
-from vespa.analysis.algos.optimize_phase import optimize_phase1_integration
+from siview.analysis.algos.b0_correction  import b0_correction
+from siview.analysis.algos.auto_correlate import auto_correlate
+from siview.analysis.algos.savitzky_golay import savitzky_golay
+from siview.analysis.algos.optimize_phase import optimize_phase0_correlation
+from siview.analysis.algos.optimize_phase import optimize_phase1_correlation
+from siview.analysis.algos.optimize_phase import optimize_phase0_integration
+from siview.analysis.algos.optimize_phase import optimize_phase1_integration
 
-from vespa.analysis.constants import FitLineshapeModel
-from vespa.analysis.constants import FitInitialSmallPeakFreqs
-from vespa.analysis.constants import FitInitialSmallPeakAreas
-from vespa.analysis.constants import FitInitialBaselineMethod
-from vespa.analysis.constants import FitInitialPhaseMethod
-from vespa.analysis.constants import FitOptimizeWeightsMethod
-from vespa.analysis.constants import FitInitialB0ShiftMethod
-from vespa.analysis.constants import FitInitialLinewidthMethod
-from vespa.analysis.constants import FitMacromoleculeMethod
-from vespa.analysis.constants import FitMacromoleculeMethodInitVal
+from siview.analysis.constants import FitLineshapeModel
+from siview.analysis.constants import FitInitialSmallPeakFreqs
+from siview.analysis.constants import FitInitialSmallPeakAreas
+from siview.analysis.constants import FitInitialBaselineMethod
+from siview.analysis.constants import FitInitialPhaseMethod
+from siview.analysis.constants import FitOptimizeWeightsMethod
+from siview.analysis.constants import FitInitialB0ShiftMethod
+from siview.analysis.constants import FitInitialLinewidthMethod
+from siview.analysis.constants import FitMacromoleculeMethod
+from siview.analysis.constants import FitMacromoleculeMethodInitVal
 
 DTOR = common_constants.DEGREES_TO_RADIANS
 RTOD = common_constants.RADIANS_TO_DEGREES

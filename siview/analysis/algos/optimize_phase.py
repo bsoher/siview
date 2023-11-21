@@ -4,10 +4,10 @@
 import numpy as np
 
 # Our modules
-import vespa.common.minf_parabolic_info as minf
-import vespa.common.constants as common_constants
+import siview.common.minf_parabolic_info as minf
+import siview.common.constants as common_constants
 
-from vespa.analysis.algos.b0_correction import b0_correction
+from siview.analysis.algos.b0_correction import b0_correction
 
 DTOR = common_constants.DEGREES_TO_RADIANS
 RTOD = common_constants.RADIANS_TO_DEGREES

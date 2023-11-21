@@ -12,7 +12,7 @@
 # 3rd party imports
 
 # Our imports
-import common.util.misc as util_misc
+import siview.common.util.misc as util_misc
 
 
 class Functor(object):

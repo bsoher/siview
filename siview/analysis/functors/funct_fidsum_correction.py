@@ -4,11 +4,11 @@
 import numpy as np
 from scipy.optimize import least_squares
 
-# Vespa imports
-from vespa.analysis.algos.b0_correction import b0_correction
-from vespa.analysis.algos.optimize_phase import optimize_phase0_correlation
+# Our imports
+from siview.analysis.algos.b0_correction import b0_correction
+from siview.analysis.algos.optimize_phase import optimize_phase0_correlation
 
-from vespa.analysis.algos.suspect_frequency_correction import spectral_registration, rats
+from siview.analysis.algos.suspect_frequency_correction import spectral_registration, rats
 
 
 PI = np.pi
@@ -351,8 +351,8 @@ def _test():
     import glob
     import numpy as np
     from matplotlib import pyplot as plt
-    from vespa.analysis.util_file_import import get_datasets_cli
-    from vespa.analysis.mrs_user_prior import UserPrior
+    from siview.analysis.util_file_import import get_datasets_cli
+    from siview.analysis.mrs_user_prior import UserPrior
 
     fpath = r"D:\Users\bsoher\code\repository_svn\sample_data\siemens_dicom_export_fids\*.ima"
     fnames = glob.glob(fpath)

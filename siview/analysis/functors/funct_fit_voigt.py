@@ -8,19 +8,19 @@ from scipy.stats import distributions
 from lmfit import Parameters, Minimizer
 
 # Our modules
-import vespa.analysis.constants as constants
-import vespa.analysis.algos.lowess as lowess
-import vespa.analysis.algos.splines as splines
-import vespa.analysis.algos.wavelet_filter as wavelet_filter
-import vespa.analysis.util_initial_values as util_initial_values
-import vespa.common.constants as common_constants
-import vespa.common.minf_parabolic_info as minf
-import vespa.common.util.generic_spectral as util_spectral
+import siview.analysis.constants as constants
+import siview.analysis.algos.lowess as lowess
+import siview.analysis.algos.splines as splines
+import siview.analysis.algos.wavelet_filter as wavelet_filter
+import siview.analysis.util_initial_values as util_initial_values
+import siview.common.constants as common_constants
+import siview.common.minf_parabolic_info as minf
+import siview.common.util.generic_spectral as util_spectral
 
-from vespa.analysis.constants import FitLineshapeModel, FitMacromoleculeMethod
-from vespa.analysis.algos.constrained_levenberg_marquardt import constrained_levenberg_marquardt
+from siview.analysis.constants import FitLineshapeModel, FitMacromoleculeMethod
+from siview.analysis.algos.constrained_levenberg_marquardt import constrained_levenberg_marquardt
 
-from vespa.analysis.constants import FitOptimizeMethod as optmeth
+from siview.analysis.constants import FitOptimizeMethod as optmeth
 
 
 def initial_values(chain):

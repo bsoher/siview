@@ -14,10 +14,10 @@ import wx
 import os
 
 # Our modules
-import common.auto_gui.export as gui_export
-import common.wx_gravy.common_dialogs as common_dialogs
-import common.wx_gravy.util as wx_util
-import common.util.config as util_config
+import siview.common.auto_gui.export as gui_export
+import siview.common.wx_gravy.common_dialogs as common_dialogs
+import siview.common.wx_gravy.util as wx_util
+import siview.common.util.config as util_config
 
 #------------------------------------------------------------------------------
 # Note. GUI Architecture/Style

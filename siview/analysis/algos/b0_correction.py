@@ -4,7 +4,7 @@
 import numpy as np
 
 # Our modules
-from vespa.analysis.algos.cross_correlate import cross_correlate
+from siview.analysis.algos.cross_correlate import cross_correlate
 
 
 

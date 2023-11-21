@@ -6,9 +6,9 @@ import xml.etree.cElementTree as ElementTree
 import numpy as np
 import scipy as sp
 
-# Vespa imports
+# Our imports
 
-import vespa.common.util.math_ as util_math
+import siview.common.util.math_ as util_math
 
 
 ECC_MENU_ITEMS = ['None','Klose','Quality','Quecc','Simple','Traf','FID-A']
@@ -587,7 +587,7 @@ def _test():
 
     import numpy as np
     from matplotlib import pyplot as plt
-    import vespa.analysis.util_file_import as util_file_import
+    import siview.analysis.util_file_import as util_file_import
 
     # testing phase()
 

@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 
 # Our modules
-import vespa.common.wavelet_1d as wave1d
+import siview.common.wavelet_1d as wave1d
 
 try:
     import pywt

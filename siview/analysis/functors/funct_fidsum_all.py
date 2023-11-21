@@ -4,12 +4,12 @@
 import numpy as np
 
 # Our modules
-import vespa.analysis.functors.funct_fidsum_coil_combine as funct_combine
-import vespa.analysis.functors.funct_fidsum_exclude      as funct_exclude
-import vespa.analysis.functors.funct_fidsum_correction   as funct_correct
+import siview.analysis.functors.funct_fidsum_coil_combine as funct_combine
+import siview.analysis.functors.funct_fidsum_exclude      as funct_exclude
+import siview.analysis.functors.funct_fidsum_correction   as funct_correct
 
-from vespa.common.util.math_ import safe_exp
-from vespa.common.constants import DEGREES_TO_RADIANS as DTOR
+from siview.common.util.math_ import safe_exp
+from siview.common.constants import DEGREES_TO_RADIANS as DTOR
 
 
 

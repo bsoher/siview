@@ -4,8 +4,8 @@
 # 3rd party imports
 import numpy as np
 
-# Vespa imports
-from vespa.analysis.algos.suspect_channel_combination import whiten, svd_weighting, combine_channels
+# Our imports
+from siview.analysis.algos.suspect_channel_combination import whiten, svd_weighting, combine_channels
 
 
 COILCOMBINE_MENU_ITEMS = ['Siemens',

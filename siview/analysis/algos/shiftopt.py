@@ -16,8 +16,8 @@
 import numpy as np
 
 # Our modules
-import vespa.common.minf_parabolic_info as minf
-import vespa.common.util.generic_spectral as util_generic_spectral
+import siview.common.minf_parabolic_info as minf
+import siview.common.util.generic_spectral as util_generic_spectral
 
 
 
@@ -164,7 +164,7 @@ def optimize_b0_shift_correlation(data_original, minhz, maxhz, acqsw, width=5.0)
 
 
 def _test():
-    import vespa.common.minf_parabolic_info as minf
+    import siview.common.minf_parabolic_info as minf
 #    import pylab
 
     xa = -0.1

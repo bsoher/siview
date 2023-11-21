@@ -7,12 +7,12 @@ import numpy as np
 import xml.etree.cElementTree as ElementTree
 
 # Our modules
-import vespa.common.util.ppm as util_ppm
-import vespa.common.util.generic_spectral as util_spectral
-import vespa.common.mrs_prior_metabolite as mrs_prior_metabolite
-import vespa.common.util.xml_ as util_xml
+import siview.common.util.ppm as util_ppm
+import siview.common.util.generic_spectral as util_spectral
+import siview.common.mrs_prior_metabolite as mrs_prior_metabolite
+import siview.common.util.xml_ as util_xml
 
-from vespa.common.constants import Deflate
+from siview.common.constants import Deflate
 
 class BasisSetItem(object):
     """Represents the basis set for one metab as calculated by 
@@ -216,8 +216,8 @@ class Prior(object):
 def _test():
 
     import util_import
-    import vespa.common.util.export as util_export
-    import vespa.common.wx_gravy.common_dialogs as common_dialogs
+    import siview.common.util.export as util_export
+    import siview.common.wx_gravy.common_dialogs as common_dialogs
     
     the_object = Prior()
     class_name = the_object.__class__.__name__

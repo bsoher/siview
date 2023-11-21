@@ -6,8 +6,8 @@ import xml.etree.cElementTree as ElementTree
 
 
 # Our modules
-from vespa.common.constants import Deflate
-import vespa.common.util.xml_ as util_xml
+from siview.common.constants import Deflate
+import siview.common.util.xml_ as util_xml
 
 
 class JCoupling(object):

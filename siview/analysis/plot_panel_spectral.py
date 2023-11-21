@@ -4,7 +4,7 @@
 import wx
 
 # Our modules
-from common.wx_gravy.plot_panel_spectrum import PlotPanelSpectrum
+from siview.common.wx_gravy.plot_panel_spectrum import PlotPanelSpectrum
 
 
 class PlotPanelSpectral(PlotPanelSpectrum):

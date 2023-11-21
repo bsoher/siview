@@ -174,9 +174,9 @@ def minf_parabolic_info(xa, xb, xc, func, info, maxit=100,
 
 
 def _test():
-    import vespa.analysis.algos.shiftopt
+    import siview.analysis.algos.shiftopt
     import pylab
-    import vespa.common.util.generic_spectral as util_generic_spectral
+    import siview.common.util.generic_spectral as util_generic_spectral
 
     xa = -11
     xb = -15

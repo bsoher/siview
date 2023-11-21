@@ -20,8 +20,8 @@ except:
     wx = None
 
 # Our modules
-import common.util.misc as util_misc
-import common.default_content as default_content
+import siview.common.util.misc as util_misc
+import siview.common.default_content as default_content
 
 
 
