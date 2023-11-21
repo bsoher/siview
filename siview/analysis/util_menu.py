@@ -13,8 +13,8 @@
 import wx
 
 # Our modules
-import siview.util_siview_config as util_siview_config
-import common.menu as common_menu
+import siview.analysis.util_analysis_config as util_analysis_config
+import siview.common.menu as common_menu
 
 
 ########################################################################
@@ -165,7 +165,7 @@ def _get_menu_data(main):
                 ("&About", main.on_about, wx.ITEM_NORMAL, wx.ID_ABOUT),
            )
 
-    if util_siview_config.Config().show_wx_inspector:
+    if util_analysis_config.Config().show_wx_inspector:
         help = list(help)
         help.append(common_menu.SEPARATOR)
         help.append( ("Show Inspection Tool", main.on_show_inspection_tool) )

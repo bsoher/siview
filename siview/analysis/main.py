@@ -19,16 +19,16 @@ import numpy as np
 
 # Our modules
 import siview.analysis.mrsi_dataset as mrsi_dataset
-import vespa.analysis.utils as utils
 import siview.analysis.notebook_datasets as notebook_datasets
+import siview.analysis.utils as utils
 import siview.analysis.util_menu as util_menu
 import siview.analysis.util_analysis_config as util_analysis_config
 import siview.analysis.util_import as util_import
-import vespa.analysis.util_file_import as util_file_import
+import siview.analysis.util_file_import as util_file_import
 
 import siview.common.mrsi_data_raw as mrsi_data_raw
-import vespa.common.constants as common_constants
-import vespa.common.util.init as util_init
+import siview.common.constants as common_constants
+import siview.common.util.init as util_init
 import siview.common.util.misc as misc
 import siview.common.util.export as export
 import siview.common.wx_gravy.common_dialogs as common_dialogs
@@ -99,8 +99,8 @@ class Main(wx.Frame):
 
         # I make the status bar and the update_title method globally available
         # because multiple places in the app want to use them.
-        wx.GetApp().vespa.statusbar = self.statusbar
-        wx.GetApp().vespa.update_title = self.update_title
+        wx.GetApp().siview.statusbar = self.statusbar
+        wx.GetApp().siview.update_title = self.update_title
 
         bar = util_menu.AnalysisMenuBar(self)
         self.SetMenuBar(bar)
@@ -614,7 +614,7 @@ class Main(wx.Frame):
 
                     dataset = [dataset,]
                 else:
-                    msg = """No Vespa raw data found in that VIFF file."""
+                    msg = """No SIView raw data found in that VIFF file."""
                     common_dialogs.message(msg, "Analysis - Import Data", common_dialogs.E_OK)
 
 
@@ -810,7 +810,7 @@ if __name__ == "__main__":
 
     # Having a function for app init is handy for profiling with cProfile
 
-    app, db_path = util_init.init_app("Analysis")
+    app = util_init.init_app("Analysis")
     
     if util_misc.get_platform() == "windows":
         # code to allow Windows to set Windows taskbar icon correctly
@@ -818,12 +818,12 @@ if __name__ == "__main__":
         # - bugfix from, https://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-7/1552105#1552105
 
         import ctypes
-        # myappid is an arbitrary string - but different for each Vespa App
+        # myappid is an arbitrary string - but different for each SIView App
         myappid = u'mycompany.myproduct.subproduct.analysis' 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)    
 
 
-    # import vespa.analysis.util_db as util_db
+    # import siview.analysis.util_db as util_db
 
     # db = util_db.Database(db_path, True)
 
