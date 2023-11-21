@@ -162,8 +162,8 @@ def get_data_dir():
       * Linux:   ~/.Templates
       * OS X:    ~/Library/Application Support/Templates
     """
-    APP_NAME = "SIView"  #default_content.APP_NAME
-
+    APP_NAME = "SIView"  
+    
     data_dir = None
     
     home = os.path.expanduser("~")
@@ -195,7 +195,6 @@ def get_data_dir():
         data_dir = os.path.join(home, "Library/Application Support", APP_NAME)
     elif platform == "windows":
         # Note that we use the local (non-roaming) application data directory.
-        # See http://scion.duhs.duke.edu/vespa/project/ticket/39
         data_dir = get_windows_special_folder_path(WindowsSpecialFolderIds.CSIDL_LOCAL_APPDATA)
         data_dir = os.path.join(data_dir, APP_NAME)
 
