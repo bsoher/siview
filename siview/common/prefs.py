@@ -95,7 +95,6 @@ class Prefs(object, metaclass=abc.ABCMeta):
     util_menu.ViewIdXxxx classes.
     """
     __metaclass__ = abc.ABCMeta
-#    __metaclass__ = abc.ABCMeta
 
 
     def __init__(self, menu_bar, id_class):
