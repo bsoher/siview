@@ -805,7 +805,6 @@ if __name__ == "__main__":
         myappid = u'mycompany.myproduct.subproduct.analysis' 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)    
 
-
     # import siview.analysis.util_db as util_db
 
     # db = util_db.Database(db_path, True)
