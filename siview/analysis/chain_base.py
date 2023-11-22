@@ -1,44 +1,42 @@
-#!/usr/bin/env python
-
-# Copyright (c) 2014-2019 Brian J Soher - All Rights Reserved
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are not permitted without explicit permission.
-
-
 # Python modules
+from abc import ABC, abstractmethod
 
-import abc
 
-
-class Chain(object, metaclass=abc.ABCMeta):
+class Chain(ABC):
     """
-    This is the (abstract) base class for all chain objects. It can't 
-    be instantiated, but all chains inherit from it and implement the interface
-    defined below.
+    An abstract base class for Chain objects. It can't be instantiated, but all
+    chains inherit from it and must have the abstract methods shown below.
+
+    Each Block object has a chain object reference, the set of Chain objects
+    perform the MRS worflow for a Dataset.
+
     """
-
-
-    @abc.abstractmethod
+    @abstractmethod
     def __init__(self, dataset, block):
-        # Subclassers may want to override this
+        """ all subclasses must include this method """
         self._dataset = dataset
         self._block   = block
-        self.data = [ ]
+        self.data     = []
 
-        #self.reset_results_arrays()
+        # Set local values for data acquisiton parameters.
+        #  - these do not change over time, so we can set them here
+        
+        self.sw        = dataset.sw
+        self.frequency = dataset.frequency
+        self.resppm    = dataset.resppm
+        self.echopeak  = dataset.echopeak
+        self.is_fid    = dataset.is_fid
+        self.seqte     = dataset.seqte
+        self.seqtr     = dataset.seqtr
+        self.nucleus   = dataset.nucleus
+
+
+    @abstractmethod
+    def run(self, voxels, entry='all'):
+        """ all subclasses must include this method """
+        pass
 
 
     def reset_results_arrays(self):
-        # Subclassers may want to override this
-        pass
-
-
-    def run(self, voxel, entry='all'):
-        # Subclassers may want to override this
-        pass
-
-
-    def update(self):
-        # Subclassers may want to override this
+        """ reminder that subclasses may want to override this method """
         pass

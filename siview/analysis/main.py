@@ -29,7 +29,7 @@ import siview.analysis.util_file_import as util_file_import
 import siview.common.mrsi_data_raw as mrsi_data_raw
 import siview.common.constants as common_constants
 import siview.common.util.init as util_init
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 import siview.common.util.export as export
 import siview.common.wx_gravy.common_dialogs as common_dialogs
 import siview.common.wx_gravy.util as wx_util
@@ -102,6 +102,19 @@ class Main(wx.Frame):
         wx.GetApp().siview.statusbar = self.statusbar
         wx.GetApp().siview.update_title = self.update_title
 
+        # TODO bjs - need to rework for MRSI here
+        #
+        # set up default and user import data classes
+        #
+        fname = os.path.join(util_misc.get_data_dir(), "analysis_import_menu_additions.ini")
+        classes, full_cfg, msg = util_file_import.set_import_data_classes(filename=fname)
+        if msg:
+            # some class was not found ... but we continue
+            common_dialogs.message(msg)
+        self._import_data_classes = classes
+
+        bar = util_menu.AnalysisMenuBar(self, full_cfg)
+
         bar = util_menu.AnalysisMenuBar(self)
         self.SetMenuBar(bar)
         util_menu.bar = bar
@@ -114,6 +127,11 @@ class Main(wx.Frame):
             #wx.CallAfter(self.load_on_start, fname)
 
 
+    ##############                                    ############
+    ##############     Internal helpers are below     ############
+    ##############       in alphabetical order        ############
+    ##############                                    ############
+    
     def bind_events(self):
         self.Bind(wx.EVT_CLOSE, self.on_self_close)
         self.Bind(wx.EVT_SIZE, self.on_self_coordinate_change)
@@ -123,7 +141,7 @@ class Main(wx.Frame):
         
     def build_panes(self):
         
-        self.notebook_datasets = notebook_datasets.NotebookDatasets(self)
+        self.notebook_datasets = notebook_datasets.NotebookDatasets(self, self)
 
         # Center pane
         self._mgr.AddPane(self.notebook_datasets, aui.AuiPaneInfo().CenterPane())
@@ -131,7 +149,6 @@ class Main(wx.Frame):
         # "commit" all changes made to AuiManager
         self._mgr.Update()                          
                         
-
 
     def on_erase_background(self, event):
         event.Skip()
@@ -191,7 +208,7 @@ class Main(wx.Frame):
     ##############             on the menu            ############
     ##############                                    ############
 
-    ############    Analysis menu
+    ############    File menu
 
     def on_import_data_crt(self, event):
 
@@ -336,7 +353,7 @@ class Main(wx.Frame):
         
     def on_close_dataset(self, event):
         if self.notebook_datasets:
-            self.notebook_datasets.close_analysis()
+            self.notebook_datasets.close_active_dataset()
 
     def on_close_all(self, event):
         msg = "This will close all open datasets with no opportunity to save results, continue?"
@@ -418,36 +435,39 @@ class Main(wx.Frame):
     def on_user_metabolite_info(self, event):
         self.notebook_datasets.on_user_metabolite_info(event)
 
+    def on_show_inspection_tool(self, event):
+        wx_util.show_wx_inspector(self)
 
-    ############    View  menu
-    
-    # View options affect only the dataset and so it's up to the
-    # experiment notebook to react to them.
+
+    ######  View  menu  ######
+
+    # View options affect plots in a dataset - we pass these events on to the
+    # specific dataset notebook tab that needs to react to them.
 
     def on_menu_view_option(self, event):
         self.notebook_datasets.on_menu_view_option(event)
         
-    # def on_menu_view_output(self, event):
-    #     self.notebook_datasets.on_menu_view_output(event)
-    #
-    # def on_menu_output_by_slice(self, event):
-    #     self.notebook_datasets.on_menu_output_by_slice(event)
-    #
-    # def on_menu_output_by_voxel(self, event):
-    #     self.notebook_datasets.on_menu_output_by_voxel(event)
-    #
-    # def on_menu_output_to_dicom(self, event):
-    #     self.notebook_datasets.on_menu_output_to_dicom(event)
+    def on_menu_view_output(self, event):
+        self.notebook_datasets.on_menu_view_output(event)
+
+    def on_menu_view_derived(self, event):
+        self.notebook_datasets.on_menu_view_derived(event)
+
+    def on_menu_view_results(self, event):
+        self.notebook_datasets.on_menu_view_results(event)
 
     def on_menu_view_debug(self, event):
         self.notebook_datasets.on_menu_view_debug(event)
 
+    def on_menu_plot_x(self, event):
+        self.notebook_datasets.on_menu_plot_x(event)
 
-    ############    Help menu
+
+    ######  Help menu  ######
 
     def on_user_manual(self, event):
         pass
-#        path = misc.get_install_directory()
+#        path = util_misc.get_install_directory()
 #        path = os.path.join(path, "docs", "siview_user_manual.pdf")
 #        wx_util.display_file(path)
 
@@ -458,18 +478,16 @@ class Main(wx.Frame):
 
     def on_about(self, event):
 
-        version = misc.get_application_version()
+        version = util_misc.get_application_version()
         
-        bit = str(8 * struct.calcsize('P')) + '-bit Python'
+        pyver = str(sys.version_info.major) + '.' + str(sys.version_info.minor)
+        bit = str(8 * struct.calcsize('P')) + '-bit Python ' + pyver
+
         info = wx_adv.AboutDialogInfo()
         info.SetVersion(version)  
         info.SetCopyright("Copyright 2023, Brian J. Soher. All rights reserved.")
-        info.SetDescription(default_content.APP_NAME+" - view and tweak SI data. \nRunning on "+bit)
+        info.SetDescription("SIView-Analysis: view and tweak SI data. \nRunning on "+bit)
         wx_adv.AboutBox(info)
-
-
-    def on_show_inspection_tool(self, event):
-        wx_util.show_wx_inspector(self)
 
 
 
@@ -763,41 +781,6 @@ class Main(wx.Frame):
             dataset.dataset_filename = filename
 
         self.update_title()
-
-
-
-
-
-#------------------------------------------------------------------------------
-
-def main(fname=None):
-
-    # This function is for profiling with cProfile
-
-    fname = r'D:\Users\bsoher\code\repo_github\siview\test_data\2023_10_12_bjsDev_oct12_slasr_crt\dat_metab_post_hlsvd.npy'
-    fname = None
-
-    app = wx.App(0)
-    
-    # The app name must be set before the call to GetUserDataDir() below.
-    app.SetAppName(default_content.APP_NAME)
-    
-    # Create the data directory if necessary - this version creates it in 
-    # the Windows 'AppData/Local' location as opposed to the call to
-    # wx.StandardPaths.Get().GetUserDataDir() which returns '/Roaming'
-     
-    data_dir = misc.get_data_dir()
-    if not os.path.exists(data_dir):
-        os.mkdir(data_dir)
-    
-    # My settings are in the INI filename defined in 'default_content.py'
-    config = util_analysis_config.Config()
-    position, size = config.get_window_coordinates("main")
-
-    frame = Main(position, size, fname=fname)
-    app.SetTopWindow(frame)
-    frame.Show()
-    app.MainLoop()    
 
 
 

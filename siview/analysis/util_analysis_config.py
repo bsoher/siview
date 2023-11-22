@@ -34,29 +34,6 @@ def set_path(type_, path):
     config.set_path(type_, path)
     config.write()
     
-def get_last_export_path():
-    """A shortcut for the Config object method of the same name."""
-    config = Config()
-    return config.get_last_export_path()
-
-def set_last_export_path(path):
-    """A shortcut for the Config object method of the same name."""
-    config = Config()
-    config.set_last_export_path(path)
-    config.write()
-    
-def get_last_import_path():
-    """A shortcut for the Config object method of the same name."""
-    config = Config()
-    return config.get_last_import_path()
-
-def set_last_import_path(path):
-    """A shortcut for the Config object method of the same name."""
-    config = Config()
-    config.set_last_import_path(path)
-    config.write()
-
-   
 
 
 class Config(util_config.BaseConfig):
@@ -75,61 +52,7 @@ class Config(util_config.BaseConfig):
         return ("debug" in self) and                        \
                ("show_wx_inspector" in self["debug"]) and   \
                self["debug"].as_bool("show_wx_inspector")
-
-
-    def get_last_export_path(self):
-        """
-        Returns the last path from which the user exported a file via this
-        application. The path is always fully-qualified and is never blank.
-        """
-        path = ""
-        
-        if "general" in self:
-            path = self["general"].get("last_export_path", "")
-
-        if not os.path.exists(path):
-            path = misc.get_documents_dir()
-
-        return path
-
-
-    def set_last_export_path(self, path):
-        """
-        Sets the last path to which the user exported a file via this
-        application.
-        """
-        path = os.path.abspath(path)
-        if "general" not in self:
-            self["general"] = { }
-        self["general"]["last_export_path"] = path
-
-
-    def get_last_import_path(self):
-        """
-        Returns the last path from which the user imported a file via this
-        application. The path is always fully-qualified and is never blank.
-        """
-        path = ""
-        
-        if "general" in self:
-            path = self["general"].get("last_import_path", "")
-
-        if not os.path.exists(path):
-            path = misc.get_documents_dir()
-
-        return path
-
-
-    def set_last_import_path(self, path):
-        """
-        Sets the last path from which the user imported a file via this
-        application.
-        """
-        path = os.path.abspath(path)
-        if "general" not in self:
-            self["general"] = { }
-        self["general"]["last_import_path"] = path
-        
+       
         
     def get_path(self, type_):
         """

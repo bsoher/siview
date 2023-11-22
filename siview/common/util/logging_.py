@@ -1,10 +1,8 @@
 # Python modules
-
 import logging
 import os
 
 # 3rd party modules
-import wx
 
 # Our modules
 import siview.common.util.time_ as util_time

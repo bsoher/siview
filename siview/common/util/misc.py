@@ -318,13 +318,27 @@ def get_install_directory():
         # Looks like this is being used in a PyInststaller bundle. 
         path = sys._MEIPASS
     else:
-        # This is the normal case.
-        try:
-            path = os.path.abspath(sys.modules['__main__'].__file__)
-        except:
-            path = sys.executable
+#        # This is the normal case - from Washout.
+#        try:
+#            path = os.path.abspath(sys.modules['__main__'].__file__)
+#        except:
+#            path = sys.executable
+#
+#        path = os.path.dirname(path)        
 
-        path = os.path.dirname(path)        
+        # This is the normal case in Vespa.
+
+        # Strange but true -- we can 'import siview', although it's meaningless
+        # to do so in a practical sense. However, we can then use siview.__file__
+        # to see where that module resides.
+
+        import siview
+        path = os.path.abspath(siview.__file__)
+        # path is now a fully-qualified pathname with "__init__.pyc"
+        # dangling from the end.
+        # Trim the filename
+        path = os.path.dirname(path)
+
     
     return path
 

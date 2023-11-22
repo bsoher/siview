@@ -5,6 +5,7 @@ import zlib
 import base64
 import datetime
 import sys
+import io
 
 # 3rd party modules
 import numpy as np
@@ -15,15 +16,9 @@ import siview.common.util.fileio as util_fileio
 from functools import reduce
 
 
-# We encode numeric lists (also numpy arrays) in a three step process.
-# First is XDR (http://en.wikipedia.org/wiki/External_Data_Representation),
-# second is zlib to save space, third is base64 to make the output of
-# zlib palatable to XML.
-NUMERIC_LIST_ENCODING = "xdr zlib base64"
-
 # ENCODING_ATTR is a convenience constant. It's the encoding as dict suitable
 # for passing to ElementTree as the description of an element's attributes.
-ENCODING_ATTR = { "encoding" : NUMERIC_LIST_ENCODING }
+ENCODING_ATTR = { "encoding" : constants.NUMERIC_LIST_ENCODING }
 
 # BOOLEANS maps Python booleans to XML booleans and vice versa. 
 # Per the W3C --
@@ -366,6 +361,48 @@ def element_to_dict(root):
     return d
 
 
+def list_to_elements(tag, value):
+    """Given an arbitrary list (with some restrictions), converts it to a
+    set of ElementTree.Elements which become children of the parent param.
+    There is one child for each entry in the list, hence the plural
+    "elements" in the function name.
+    
+    The restrictions on the input list are as follows:
+    1. All values must be one of the following types:
+       - bool, int, long, float, complex, string (unicode or str)
+       - a numpy array
+       - list, tuple, or dict
+       You can nest containers (dicts, lists and tuples) as deeply as you 
+       like, as long as the leaf nodes are one of the non-container types
+       listed above.
+       
+    2. Unicode strings and pure ASCII strings are trouble-free. All other
+       strings must be UTF-8 encoded.
+       
+    When a list is round-tripped through this function and element_to_list(),
+    the resulting list can differ from the original in two ways --
+    - Tuples become lists.
+    - All string values become unicode.
+    """
+    if not isinstance(value, list):
+        return None
+    
+    return _any_type_to_element(tag, value)
+
+def element_to_list(root):
+    """Given the parent element passed to list_to_elements(), returns 
+    the corresponding list.
+    """
+    if root.get("type") != "list":
+        return None
+    
+    d = []
+    for element in root.getchildren():
+        d.append(_element_to_any_type(element))
+
+    return d
+
+
 def numeric_list_to_element(an_iterable, data_type, tag_name):
     """Given a list (or other iterable, e.g. a tuple) of numbers (int, float,
     complex), returns an ElementTree.Element containing a string 
@@ -379,7 +416,7 @@ def numeric_list_to_element(an_iterable, data_type, tag_name):
     # are convenient so we use them.
     data_type = constants.DataTypes.any_type_to_numpy(data_type)
     
-    attrs = {   "encoding"  : NUMERIC_LIST_ENCODING,
+    attrs = {   "encoding"  : constants.NUMERIC_LIST_ENCODING,
                 "data_type" : data_type
             }
     e = ElementTree.Element(tag_name, attrs)
@@ -482,7 +519,7 @@ def numpy_array_to_element(array, tag_name):
     This function only supports numeric and boolean arrays. It can't handle
     arrays of objects.
     """
-    attrs = {   "encoding"  : NUMERIC_LIST_ENCODING,
+    attrs = {   "encoding"  : constants.NUMERIC_LIST_ENCODING,
                 "shape"     : ','.join([str(dim) for dim in array.shape]),
                 "data_type" : str(array.dtype)
             }
@@ -520,6 +557,9 @@ def decode_numeric_list(data, encoding, data_type):
             # a list of complex numbers for me. I don't have to call
             # util_fileio.collapse_complexes() here.
             data = util_fileio.decode_xdr(data, data_type, element_count)
+        elif transform == "npy":
+            buf = io.BytesIO(data)              # was OK taking a 'str' in Py27
+            data = np.load(buf)
         elif transform == "zlib":
             data = zlib.decompress(data)
         elif transform == "base64":
@@ -539,9 +579,13 @@ def encode_numeric_list(data, data_type):
     
     To turn the data back into a list, use decode_numeric_list().
     """
-    for transform in NUMERIC_LIST_ENCODING.strip().split():
+    for transform in constants.NUMERIC_LIST_ENCODING.strip().split():
         if transform == "xdr":
             data = util_fileio.encode_xdr(data, data_type)
+        elif transform == "npy":
+            buf = io.BytesIO()
+            np.save(buf, data)      # data still numpy array here
+            data = buf.getvalue()   # returns a 'byte' representation of buffer
         elif transform == "zlib":
             data = zlib.compress(data, 9)
         elif transform == "base64":

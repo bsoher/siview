@@ -44,7 +44,27 @@ class Tab(object):
     def is_raw(self):
         return hasattr(self, "IS_RAW")
 
+    @property
+    def is_prep_fidsum(self):
+        return hasattr(self, "IS_PREP_FIDSUM")
 
+    @property
+    def is_voigt(self):
+        return hasattr(self, "IS_VOIGT")
+
+    @property
+    def is_spectral(self):
+        return hasattr(self, "IS_SPECTRAL")
+
+    @property
+    def is_watref(self):
+        return hasattr(self, "IS_WATREF")
+
+
+    @property
+    def dataset(self):
+        return self._top.datasets.get(self._tab_dataset.indexAB[0], None)
+        
 
     #=======================================================
     #

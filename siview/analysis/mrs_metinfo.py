@@ -372,7 +372,6 @@ class MetInfo(object):
 
 def _test():
 
-    import siview.common.util.time_ as util_time
     test = MetInfo()
 
     class_name = test.__class__.__name__

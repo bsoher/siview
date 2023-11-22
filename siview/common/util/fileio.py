@@ -120,7 +120,7 @@ def get_data_type(something, default=None):
 
 ###################       collapse/expand complexes       ###################
 
-def collapse_complexes(data):
+def collapse_complexes(data, conjugate_flag=False):
     """Given a list or other iterable that's a series of (real, imaginary)
     pairs, returns a list of complex numbers. For instance, given this list --
        [a, b, c, d, e, f]
@@ -139,7 +139,12 @@ def collapse_complexes(data):
     # http://stackoverflow.com/questions/4628290/pairs-from-single-list
     data_iter = iter(data)
 
-    return [complex(r, i) for r, i in zip(data_iter, data_iter)]
+    if not conjugate_flag:
+        tmp = [complex(r, i) for r, i in zip(data_iter, data_iter)]
+    else:
+        tmp = [complex(r, -1*i) for r, i in zip(data_iter, data_iter)]
+
+    return tmp
     
 
 def expand_complexes(data):
@@ -308,7 +313,7 @@ def _test_dump_iterable():
 def _test_encode_decode_xdr():
     import random
     import numpy
-    from . import math_ as util_math
+    import siview.common.util.math_ as util_math
 
     random.seed()
     LIST_SIZE = random.randint(0, 1000)

@@ -11,9 +11,9 @@
 import os
 
 # 3rd party modules
-# need for inline processing - no wx
 import configobj
 
+# need for inline processing - no wx
 try:
     import wx
 except:
@@ -24,6 +24,18 @@ import siview.common.util.misc as util_misc
 import siview.common.default_ini_file_content as default_content
 
 
+
+def get_last_export_path():
+    """A shortcut for the Config object method of the same name."""
+    config = SIViewConfig()
+    return config.get_last_export_path()
+
+def set_last_export_path(path):
+    """A shortcut for the Config object method of the same name."""
+    config = SIViewConfig()
+    config.set_last_export_path(path)
+    config.write()
+    
 
 class BaseConfig(configobj.ConfigObj):
     """This abstract base class is a special purpose version of a 
