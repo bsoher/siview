@@ -614,7 +614,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.view.Fit()
         self.view.change_naxes(1)
 
-        self.panel_image = ImagePaneUI(self.tab_notebook, wx.ID_ANY)
+#        self.panel_image = ImagePaneUI(self.tab_notebook, wx.ID_ANY)
+        self.panel_image = ImagePaneUI(self, wx.ID_ANY)
         self.image = ImagePanelSiview( self.panel_image.PanelImagePlot,
                                        self,
                                        self._tab_dataset,
