@@ -4,8 +4,8 @@
 import numpy as np
 
 # Our modules
-import vespa.analysis.block_fit_identity as block_fit_identity
-from vespa.analysis.chain_base import Chain
+import siview.analysis.block_fit_identity as block_fit_identity
+from siview.analysis.chain_base import Chain
 
 
 class ChainQuantWatref(Chain):

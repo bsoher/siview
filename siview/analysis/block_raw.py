@@ -6,7 +6,7 @@ from xml.etree.cElementTree import Element
 # Our modules
 import siview.analysis.chain_raw as chain_raw
 import siview.analysis.block as block
-import siview.common.mrsi_data_raw as mrsi_data_raw
+import siview.common.mrs_data_raw as mrs_data_raw
 import siview.common.util.xml_ as util_xml
 from siview.common.constants import Deflate
 
@@ -50,13 +50,13 @@ class _Settings(object):
 
 
 
-class BlockRaw(block.Block, mrsi_data_raw.MrsiDataRaw):
+class BlockRaw(block.Block, mrs_data_raw.DataRaw):
     """ 
     Building block to hold the state of a step in an MRS processing chain.
     Includes the functionality to save/recall this object to/from an XML node.
 
     Raw Blocks hold data loaded from file. They don't have 'inputs' for a
-    Chain object. They do have the attributes inherited from SiDataRaw.
+    Chain object. They do have the attributes inheirited from DataRaw. 
     
     For some subclasses, one or more DataRaws objects can be held in a Block
     object, such as the On/Off/Add/Diff objects of an Edited data file.
@@ -66,7 +66,7 @@ class BlockRaw(block.Block, mrsi_data_raw.MrsiDataRaw):
     
     def __init__(self, attributes=None):
         block.Block.__init__(self, attributes)
-        mrsi_data_raw.MrsiDataRaw.__init__(self, attributes)
+        mrs_data_raw.DataRaw.__init__(self, attributes)  
 
         # processing parameters
         self.set = _Settings(attributes)
@@ -81,7 +81,7 @@ class BlockRaw(block.Block, mrsi_data_raw.MrsiDataRaw):
 
 
     def __str__(self):
-        lines = mrsi_data_raw.MrsiDataRaw.__str__(self).split('\n')
+        lines = mrs_data_raw.DataRaw.__str__(self).split('\n')
         # Replace the heading line
         lines[0] = "------- {0} Object -------".format(self.__class__.__name__)
         lines.append("No printable data ")
@@ -93,7 +93,7 @@ class BlockRaw(block.Block, mrsi_data_raw.MrsiDataRaw):
 
 
     def concatenate(self, new):
-        # This is a method from SiDataRaw that's not supported here.
+        # This is a method from DataRaw that's not supported here. 
         raise NotImplementedError
 
 
@@ -101,7 +101,7 @@ class BlockRaw(block.Block, mrsi_data_raw.MrsiDataRaw):
         if flavor == Deflate.ETREE:
             
             # Call base class - then update for subclass
-            e = mrsi_data_raw.MrsiDataRaw.deflate(self, flavor)
+            e = mrs_data_raw.DataRaw.deflate(self, flavor)
             e.tag = "block_raw"
             e.set("version", self.XML_VERSION)
             
@@ -117,7 +117,7 @@ class BlockRaw(block.Block, mrsi_data_raw.MrsiDataRaw):
     def inflate(self, source):
 
         # Make my base class do its inflate work
-        mrsi_data_raw.MrsiDataRaw.inflate(self, source)
+        mrs_data_raw.DataRaw.inflate(self, source)
 
         # Now I inflate the attribs that are specific to this class
         if hasattr(source, "makeelement"):

@@ -6,16 +6,16 @@ import numpy as np
 from lmfit import Parameters
 
 # Our modules
-import vespa.analysis.chain_fit_identity as chain_fit_identity
-import vespa.common.util.math_                    as util_math
-import vespa.common.util.generic_spectral         as util_spectral
-import vespa.analysis.functors.funct_fit_voigt    as funct_fit_voigt
+import siview.analysis.chain_fit_identity as chain_fit_identity
+import siview.common.util.math_                    as util_math
+import siview.common.util.generic_spectral         as util_spectral
+import siview.analysis.functors.funct_fit_voigt    as funct_fit_voigt
 
-from vespa.common.constants import DEGREES_TO_RADIANS as DTOR
-from vespa.analysis.constants import FitLineshapeModel, VoigtDefaultFixedT2, FitMacromoleculeMethod
-from vespa.analysis.constants import FitOptimizeMethod as optmeth
+from siview.common.constants import DEGREES_TO_RADIANS as DTOR
+from siview.analysis.constants import FitLineshapeModel, VoigtDefaultFixedT2, FitMacromoleculeMethod
+from siview.analysis.constants import FitOptimizeMethod as optmeth
 
-from vespa.analysis.chain_base import Chain
+from siview.analysis.chain_base import Chain
 
 
 LMFIT_METHODS = [optmeth.LMFIT_DEFAULT, optmeth.LMFIT_JACOBIAN]

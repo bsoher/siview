@@ -147,7 +147,7 @@ def init_app(app_name):
             import numpy
             numpy.seterr(all=numpy_error_response)
 
-    return app
+    return app, None
 
 
 class _AlreadyRunningException(Exception):

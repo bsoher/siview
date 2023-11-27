@@ -10,11 +10,11 @@ import wx
 import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit
 
 # Our modules
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 
-# wx.GetStockLabel() returns the label associated with a wx stock button 
+# wx.GetStockLabel() returns the label associated with a wx stock button
 # id (like wx.ID_CANCEL). There's no function to do the reverse (map a label
-# to an id) so _STOCK_ITEM_IDS fills that void. It's keyed by properly 
+# to an id) so _STOCK_ITEM_IDS fills that void. It's keyed by properly
 # capitalized strings and also by lower-case versions of those strings.
 # Not all wx stock ids are represented, only ones I thought we might use.
 _STOCK_ITEM_IDS = {
@@ -47,37 +47,37 @@ _STOCK_ITEM_IDS = {
                     "Yes"               : wx.ID_YES,
                   }
 
-# Add lower case keys.     
-_STOCK_ITEM_IDS.update(dict([(key.lower(), value) for key, value 
+# Add lower case keys.
+_STOCK_ITEM_IDS.update(dict([(key.lower(), value) for key, value
                                                   in list(_STOCK_ITEM_IDS.items())]))
 
 
-def add_ok_cancel(dialog, placeholder, ok_event_handler=None, 
+def add_ok_cancel(dialog, placeholder, ok_event_handler=None,
                   cancel_event_handler=None, ok_text="OK"):
-    """Adds OK & Cancel buttons to the dialog in the lower right. The 
-    placeholder parameter should be a control located in a sizer 
+    """Adds OK & Cancel buttons to the dialog in the lower right. The
+    placeholder parameter should be a control located in a sizer
     approximately where you want the OK & Cancel buttons. This function
     destroys the placeholder control.
-    
+
     The newly-created OK and Cancel buttons are returned.
-    
+
     If ok_text is something other than the default, the "OK" button gets
     that text instead. If the button text (stripped of '&' characters) is in
-    this module's _STOCK_ITEM_IDS dict, it will be given the appropriate wx 
+    this module's _STOCK_ITEM_IDS dict, it will be given the appropriate wx
     id.
-    
-    This function is useful because OK and Cancel buttons appear in a 
-    different order on Windows than on OS X & GTK, and getting them in the 
+
+    This function is useful because OK and Cancel buttons appear in a
+    different order on Windows than on OS X & GTK, and getting them in the
     right place takes more code than one might expect.
     """
     parent = placeholder.GetParent()
-    
+
     # Using the proper ids (e.g. wx.ID_CANCEL) ensures that these buttons
     # get the appropriate artwork under GTK.
-    # Also, a button with id == ID_CANCEL is automatically bound to 
+    # Also, a button with id == ID_CANCEL is automatically bound to
     # self.Close()  | wx.ALIGN_CENTER_VERTICAL
     id_ = _STOCK_ITEM_IDS.get(ok_text.lower().replace("&", ""), wx.ID_ANY)
-        
+
     ok = wx.Button(parent, id_, ok_text, style=wx.ALIGN_RIGHT)
     cancel = wx.Button(parent, wx.ID_CANCEL, "Cancel", style=wx.ALIGN_RIGHT)
 
@@ -105,9 +105,8 @@ def add_ok_cancel(dialog, placeholder, ok_event_handler=None,
 
     button_sizer.Realize()
 
-    containing_sizer.Add(button_sizer, 1,
-                         wx.BOTTOM | wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT,
-                         10)
+    # bjs containing_sizer.Add(button_sizer, 1, wx.BOTTOM | wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT, 10)
+    containing_sizer.Add(button_sizer, 1, wx.BOTTOM | wx.ALIGN_BOTTOM, 10)
     containing_sizer.Fit(dialog)
 
     # Under wx, creation order = tab order. Since I created the OK button
@@ -123,18 +122,18 @@ def add_ok_cancel(dialog, placeholder, ok_event_handler=None,
     return (ok, cancel)
 
 
-def configure_spin(control, width, digits=None, increment=None, min_max=None): 
+def configure_spin(control, width, digits=None, increment=None, min_max=None):
     """A convenience function for setting common attributes of spin
     controls including regular integer spin controls, floatspins and
     floatspin multipliers. There is no return value.
 
-    Note that integer spin controls will complain if you attempt to set 
-    digits or increment. 
+    Note that integer spin controls will complain if you attempt to set
+    digits or increment.
 
     The width supplied should be the width that makes the control look best on
     Windows. The standard control fonts are a little bigger under OS X and GTK.
     As a result, the controls on those platforms have to be a little wider to
-    display the same amount of text. To correct for that, we multiply the 
+    display the same amount of text. To correct for that, we multiply the
     width by a platform-dependent fudge factor.
     """
     # We start by saving the current value so that we can restore it at the
@@ -149,16 +148,16 @@ def configure_spin(control, width, digits=None, increment=None, min_max=None):
 
     control.SetMinSize((width, -1))
     control.SetSize((width, -1))
-                   
+
     if digits is not None:
         control.SetDigits(digits)
-        
+
     if increment is not None:
         control.SetIncrement(increment)
-        
+
     if min_max is not None:
         control.SetRange(min_max[0], min_max[1])
-        
+
     control.SetValue(val)
 
 
@@ -169,19 +168,19 @@ def copy_to_clipboard(some_text):
     data.SetText(some_text)
     wx.TheClipboard.SetData(data)
     wx.TheClipboard.Close()
-    
+
 
 def display_text_as_file(the_text):
-    """Given a string (Unicode or ASCII), writes the string to disk and 
+    """Given a string (Unicode or ASCII), writes the string to disk and
     displays that file in the operating system's default text editor.
     """
     # We build strings using \n as the newline inidicator, but occasionally we
     # mix those strings with text files read from disk (e.g. a VASF params
     # file). In that case, the string will have mixed newline indicators
-    # which confuses the heck out of most text editors. 
+    # which confuses the heck out of most text editors.
     # We fix that here by ensuring that the newlines are consistent.
-    # Note that Notepad (the default text viewer for many under Windows) 
-    # can't handle unadorned "\n" as a new line.     
+    # Note that Notepad (the default text viewer for many under Windows)
+    # can't handle unadorned "\n" as a new line.
     newline = b"\r\n" if wx.Platform == "__WXMSW__" else b"\n"
     the_text = misc.normalize_newlines(the_text, newline)
 
@@ -190,12 +189,12 @@ def display_text_as_file(the_text):
     fd, filename = tempfile.mkstemp(".txt")
     os.write(fd, the_text)
     os.close(fd)
-        
+
     display_file(filename)
-    
+
     # It would be polite to remove the temp file I just created, but
     # since the call to webbrowser.open() is asynchronous, there's a good
-    # chance that file removal will happen before the OS has had a 
+    # chance that file removal will happen before the OS has had a
     # chance to open it. We leave it behind as trash that will hopefully
     # be cleaned up by the OS on the next reboot. Apologies for the mess!
 
@@ -203,32 +202,32 @@ def display_text_as_file(the_text):
 def display_file(filename):
     """Given a filename, this function asks the operating system to open
     the file in the default application associated with the filetype. This
-    isn't guaranteed to work for all file types, but has worked reliably 
+    isn't guaranteed to work for all file types, but has worked reliably
     for us with PDFs, PNGs and text files.
     """
     # Display the text file with the webbrowser module. As of Python 2.6, the
-    # webbrowser documentation warns, "[O]n some platforms, trying to open a 
+    # webbrowser documentation warns, "[O]n some platforms, trying to open a
     # filename using this function, may work and start the operating system's
     # associated program. However, this is neither supported nor portable."
-    # Despite the warning, this works for us under OS X, Windows, Ubuntu, 
+    # Despite the warning, this works for us under OS X, Windows, Ubuntu,
     # Kubuntu and Fedora.
     #
     # Relative paths don't seem to work well here, so we ensure the path is
-    # fully qualified. Also note that we must pass a URI rather than just a 
+    # fully qualified. Also note that we must pass a URI rather than just a
     # raw path, hence the addition of "file://".
-    filename = os.path.realpath(filename)    
+    filename = os.path.realpath(filename)
     webbrowser.open("file://" + filename)
-    
+
 
 def get_selected_item_indices(list_ctrl):
     """Returns a (possibly empty) list of the items selected in a wx.ListCtrl
-    or wx.Listbox. Note that the latter class already has the method 
+    or wx.Listbox. Note that the latter class already has the method
     GetSelections(), so you don't really need to call this function for
-    a wx.Listbox. There's no similar method on the wx.ListCtrl class, 
+    a wx.Listbox. There's no similar method on the wx.ListCtrl class,
     hence this function.
     """
     is_listbox = isinstance(list_ctrl, wx.ListBox)
-    
+
     if is_listbox:
         indices = list_ctrl.GetSelections()
     else:
@@ -239,11 +238,11 @@ def get_selected_item_indices(list_ctrl):
         while index != -1:
             indices.append(index)
             index = list_ctrl.GetNextSelected(index)
-            
-    # Under Windows & GTK, the list returned by listbox.GetSelections() is 
-    # always sorted smallest to largest. Under OS X, it's not sorted and 
-    # might be e.g. (2, 1, 0) or even (1, 0, 2). I don't know how list 
-    # controls behave, but sorting is cheap so we always do it here to 
+
+    # Under Windows & GTK, the list returned by listbox.GetSelections() is
+    # always sorted smallest to largest. Under OS X, it's not sorted and
+    # might be e.g. (2, 1, 0) or even (1, 0, 2). I don't know how list
+    # controls behave, but sorting is cheap so we always do it here to
     # eliminate surprises.
     return sorted(indices)
 
@@ -264,10 +263,10 @@ def is_select_all(event):
                 select_all = True
             
     return select_all
-    
-    
+
+
 def is_wx_floatspin_ok():
-    """Returns True if the wxPython version is sufficiently recent to provide 
+    """Returns True if the wxPython version is sufficiently recent to provide
     the floatspin features we require. False otherwise.
 
     "Sufficiently recent" means version 2.8.11.0 or greater (including 2.9).
@@ -276,16 +275,16 @@ def is_wx_floatspin_ok():
     version = version.split('.')
     version = [int(element) for element in version if element.strip()]
     return (version[1] > 8) or ((version[1] == 8) and (version[2] >= 11))
-    
+
 
 def select_list_ctrl_items(list_ctrl, item_indices=None, select=True):
-    """Given a wx.ListCtrl or a wx.ListBox and the index of one or more 
-    items therein, selects or deselects the item(s). item_indices can be a 
-    None, a single index or a list of them. When left at its default (None), 
+    """Given a wx.ListCtrl or a wx.ListBox and the index of one or more
+    items therein, selects or deselects the item(s). item_indices can be a
+    None, a single index or a list of them. When left at its default (None),
     all items in the list are affected.
     """
     is_listbox = isinstance(list_ctrl, wx.ListBox)
-    
+
     if item_indices is None:
         # operate on all items
         if is_listbox:
@@ -294,7 +293,7 @@ def select_list_ctrl_items(list_ctrl, item_indices=None, select=True):
             item_indices = list(range(list_ctrl.GetItemCount()))
     else:
         # Is item_indices a list or a single item?
-        if not misc.is_iterable(item_indices):
+        if not util_misc.is_iterable(item_indices):
             # Bartender, make it a tuple!
             item_indices = (item_indices, )
 
@@ -318,22 +317,27 @@ def send_close_to_active_tab_OLD_wx300(notebook):
     (which usually a circle with an X in it, but varies under GTK versus OS X 
     etc.). This allows us to programmatically (attempt to) close a tab exactly
     the same way the user does. That is all the same event calls are made.
+    
     """
     # I close the tab by mimicing the event that gets sent when the
-    # user clicks on the tab's close button. The event's id has to 
+    # user clicks on the tab's close button. The event's id has to
     # be that of the AuiTabCtrl. I figured this out by capturing a
     # real tab click event and examining its properties.
     tab_control = None
     for tab_control in notebook.GetChildren():
         if isinstance(tab_control, aui.AuiTabCtrl):
             break
-    
-    event = aui.AuiNotebookEvent(aui.EVT_AUINOTEBOOK_BUTTON.typeId, tab_control.Id)                                            
+
+    event = aui.AuiNotebookEvent(aui.EVT_AUINOTEBOOK_BUTTON.typeId, tab_control.Id)
     event.SetInt(aui.AUI_BUTTON_CLOSE)
     event.SetEventObject(tab_control)
     notebook.GetEventHandler().ProcessEvent(event)
 
 
+
+
+    
+    
 def send_close_to_active_tab(notebook):
     """
     Given an AUI Notebook, simulates a click on the active tab's close icon 
@@ -402,8 +406,8 @@ def send_close_to_active_tab(notebook):
 
 
 def set_font_to_monospace(control):
-    """Surprisingly, this function sets the font of the given control to 
-    the default monospace font. 
+    """Surprisingly, this function sets the font of the given control to
+    the default monospace font.
     """
     font = control.GetFont()
     point_size = font.GetPointSize()
@@ -418,7 +422,7 @@ def show_wx_inspector(window):
     if not InspectionTool().initialized:
         InspectionTool().Init()
 
-    # Find a widget to be selected in the tree.  Use either the one under the 
+    # Find a widget to be selected in the tree.  Use either the one under the
     # cursor, if any, or this frame.
     selected_window = wx.FindWindowAtPointer()
     if not selected_window:
@@ -427,32 +431,32 @@ def show_wx_inspector(window):
 
 
 def wrap_label(label, layout_control=None, fudge_factor=.97):
-    """Given a label (wx.StaticText) control, wraps the text therein so 
-    that it fits inside its sizer. 
+    """Given a label (wx.StaticText) control, wraps the text therein so
+    that it fits inside its sizer.
 
     The layout_control param is typically the parent (e.g. a dialog, panel,
-    etc.) of the label control. If layout_control is not None, this function 
-    will call layout_control.Layout() once it's done wrapping. This is 
-    important when the label has gotten taller or shorter (added/removed a 
+    etc.) of the label control. If layout_control is not None, this function
+    will call layout_control.Layout() once it's done wrapping. This is
+    important when the label has gotten taller or shorter (added/removed a
     line) as a result of wrapping.
-    
-    fudge_factor exists because sizing the label to the exact width of the 
-    sizer doesn't render correctly, so we size the label to the 
+
+    fudge_factor exists because sizing the label to the exact width of the
+    sizer doesn't render correctly, so we size the label to the
     sizer's width * fudge_factor. Adjust if necessary.
     """
-    # In wx, labels (wxStaticText) don't wrap automatically. They do, however, 
-    # have a .Wrap() method that requires an explicit pixel width. The correct 
-    # width to use is that of the sizer, but the sizer's width seems to 
-    # include it's left & right borders which are not meant to be drawn on. 
+    # In wx, labels (wxStaticText) don't wrap automatically. They do, however,
+    # have a .Wrap() method that requires an explicit pixel width. The correct
+    # width to use is that of the sizer, but the sizer's width seems to
+    # include it's left & right borders which are not meant to be drawn on.
     # So I get the sizer's width, shrink it a little and pass that to .Wrap().
 
     width = label.GetContainingSizer().GetSize().width
-    
+
     # wx implements wrapping by adding newlines to the text. That's fine
-    # if you only want to wrap once but it makes a mess if you try to 
+    # if you only want to wrap once but it makes a mess if you try to
     # wrap the same text multiple times. Here we remove the newlines.
     label_text = label.GetLabel()
-    label_text = misc.normalize_newlines(label_text, " ")
+    label_text = util_misc.normalize_newlines(label_text, " ")
     label.SetLabel(label_text)
 
     label.Wrap(int(width * fudge_factor))

@@ -8,33 +8,32 @@ import wx
 import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit  ?? Not anymore in wxPython 4.0.6 ??
 
 # Our modules
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.block_raw as block_raw
-import vespa.analysis.block_raw_probep as block_raw_probep
-import vespa.analysis.block_raw_edit as block_raw_edit
-import vespa.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
-import vespa.analysis.block_prep_fidsum as block_prep_fidsum
-import vespa.analysis.block_prep_timeseries as block_prep_timeseries
-import vespa.analysis.block_prep_wbnaa as block_prep_wbnaa
-import vespa.analysis.block_prep_edit_fidsum as block_prep_edit_fidsum
-import vespa.analysis.block_spectral as block_spectral
-import vespa.analysis.block_fit_voigt as block_fit_voigt
-import vespa.analysis.block_fit_giso as block_fit_giso
-import vespa.analysis.block_quant_watref as block_quant_watref
-import vespa.analysis.constants as constants
-import vespa.analysis.tab_raw as tab_raw
-import vespa.analysis.tab_prep_fidsum as tab_prep_fidsum
-import vespa.analysis.tab_prep_timeseries as tab_prep_timeseries
-import vespa.analysis.tab_prep_wbnaa as tab_prep_wbnaa
-import vespa.analysis.tab_spectral as tab_spectral
-import vespa.analysis.tab_voigt as tab_voigt
-import vespa.analysis.tab_giso as tab_giso
-import vespa.analysis.tab_watref as tab_watref
-import vespa.analysis.dialog_user_metabolite_info as dialog_user_metabolite_info
-import vespa.analysis.auto_gui.dataset as dataset_module
-import vespa.common.wx_gravy.notebooks as notebooks
+import siview.analysis.util_menu as util_menu
+import siview.analysis.block_raw as block_raw
+#import siview.analysis.block_raw_probep as block_raw_probep
+#import siview.analysis.block_raw_edit as block_raw_edit
+#import siview.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
+import siview.analysis.block_prep_fidsum as block_prep_fidsum
+#import siview.analysis.block_prep_timeseries as block_prep_timeseries
+#import siview.analysis.block_prep_wbnaa as block_prep_wbnaa
+#import siview.analysis.block_prep_edit_fidsum as block_prep_edit_fidsum
+import siview.analysis.block_spectral as block_spectral
+import siview.analysis.block_fit_voigt as block_fit_voigt
+#import siview.analysis.block_fit_giso as block_fit_giso
+import siview.analysis.block_quant_watref as block_quant_watref
+import siview.analysis.constants as constants
+import siview.analysis.tab_raw as tab_raw
+import siview.analysis.tab_prep_fidsum as tab_prep_fidsum
+#import siview.analysis.tab_prep_timeseries as tab_prep_timeseries
+#import siview.analysis.tab_prep_wbnaa as tab_prep_wbnaa
+import siview.analysis.tab_spectral as tab_spectral
+import siview.analysis.tab_voigt as tab_voigt
+import siview.analysis.tab_watref as tab_watref
+import siview.analysis.dialog_user_metabolite_info as dialog_user_metabolite_info
+import siview.analysis.auto_gui.dataset as dataset_module
+import siview.common.wx_gravy.notebooks as notebooks
 
-from vespa.analysis.dialog_user_prior import DialogUserPrior
+from siview.analysis.dialog_user_prior import DialogUserPrior
 
 PI = math.pi
 
@@ -123,29 +122,29 @@ class TabDataset(dataset_module.DatasetUI):
             else:
                 # Match block/tab types. Block order determines GUI tab order
 
-                if isinstance(block, block_raw.BlockRaw) or \
-                   isinstance(block, block_raw_probep.BlockRawProbep) or \
-                   isinstance(block, block_raw_edit.BlockRawEdit) or \
-                   isinstance(block, block_raw_edit_fidsum.BlockRawEditFidsum):
+                if isinstance(block, block_raw.BlockRaw): # or \
+                   #isinstance(block, block_raw_probep.BlockRawProbep) or \
+                   #isinstance(block, block_raw_edit.BlockRawEdit) or \
+                   #isinstance(block, block_raw_edit_fidsum.BlockRawEditFidsum):
                     tab = tab_raw.TabRaw(self, self.top, block)
                     self._tabs["raw"] = tab
                     self.NotebookDataset.AddPage(tab, "Raw", False)
 
-                elif isinstance(block, block_prep_fidsum.BlockPrepFidsum) or \
-                     isinstance(block, block_prep_edit_fidsum.BlockPrepEditFidsum):
+                elif isinstance(block, block_prep_fidsum.BlockPrepFidsum): # or \
+                     #isinstance(block, block_prep_edit_fidsum.BlockPrepEditFidsum):
                     tab = tab_prep_fidsum.TabPrepFidsum(self, self.top, block)
                     self._tabs["prep"] = tab
                     self.NotebookDataset.AddPage(tab, "Preprocess", False)
 
-                elif isinstance(block, block_prep_timeseries.BlockPrepTimeseries):
-                    tab = tab_prep_timeseries.TabPrepTimeseries(self, self.top, block)
-                    self._tabs["prep"] = tab
-                    self.NotebookDataset.AddPage(tab, "Preprocess", False)
+                # elif isinstance(block, block_prep_timeseries.BlockPrepTimeseries):
+                #     tab = tab_prep_timeseries.TabPrepTimeseries(self, self.top, block)
+                #     self._tabs["prep"] = tab
+                #     self.NotebookDataset.AddPage(tab, "Preprocess", False)
 
-                elif isinstance(block, block_prep_wbnaa.BlockPrepWbnaa):
-                    tab = tab_prep_wbnaa.TabPrepWbnaa(self, self.top, block)
-                    self._tabs["prep"] = tab
-                    self.NotebookDataset.AddPage(tab, "Preprocess", False)
+                # elif isinstance(block, block_prep_wbnaa.BlockPrepWbnaa):
+                #     tab = tab_prep_wbnaa.TabPrepWbnaa(self, self.top, block)
+                #     self._tabs["prep"] = tab
+                #     self.NotebookDataset.AddPage(tab, "Preprocess", False)
 
                 elif isinstance(block, block_spectral.BlockSpectral):
                     tab = tab_spectral.TabSpectral(self, self.top, block)
@@ -154,11 +153,6 @@ class TabDataset(dataset_module.DatasetUI):
 
                 elif isinstance(block, block_fit_voigt.BlockFitVoigt):
                     tab = tab_voigt.TabVoigt(self, self.top, block)
-                    self._tabs["fit"] = tab
-                    self.NotebookDataset.AddPage(tab, "Fitting", False)
-
-                elif isinstance(block, block_fit_giso.BlockFitGiso):
-                    tab = tab_giso.TabGiso(self, self.top, block)
                     self._tabs["fit"] = tab
                     self.NotebookDataset.AddPage(tab, "Fitting", False)
 
@@ -227,23 +221,7 @@ class TabDataset(dataset_module.DatasetUI):
         Adds a Giso tab if there isn't already a fitting tab, or activates
         the existing fitting tab if there is one.
         """
-        # If there's already a fit tab, just activate it.
-        if self._tabs["fit"]:
-            self.NotebookDataset.activate_tab(self._tabs["fit"])
-        else:
-            # Create a new giso block and add a tab to go with it.
-            block = self.dataset.add_giso()
-
-            # The fitting tab follows spectral
-            tab = self._tabs["spectral"]
-            index = self.NotebookDataset.get_tab_index(tab) + 1
-
-            # OK, now we know the insertion point. Create the new tab and
-            # insert it.
-            tab = tab_giso.TabGiso(self, self.top, block)
-            self._tabs["fit"] = tab
-
-            self.NotebookDataset.InsertPage(index, tab, 'Fitting', True)            
+        pass  
 
 
     def on_add_watref_tab(self, event):
@@ -357,10 +335,10 @@ class TabDataset(dataset_module.DatasetUI):
         wx.BeginBusyCursor()
 
 
-        self.set_voxel_range(self.dataset.raw_dims[1])
+        self.set_voxel_range(self.dataset.raw_dims[1])  # bjs si
 
         # reload preset values into each tab
-        for item in ['raw', 'prep', 'spectral', 'fit', 'quant']:
+        for item in ['raw', 'prep', 'spectral', 'fit', 'quant']:    # bjs si
             tab = self.get_tab(item)
             if tab:
                 self.top.Freeze()
@@ -382,8 +360,6 @@ class TabDataset(dataset_module.DatasetUI):
                         # Create the new tab and insert it
                         if isinstance(self.dataset.blocks['fit'],block_fit_voigt.BlockFitVoigt):
                             tab = tab_voigt.TabVoigt(self, self.top, self.dataset.blocks['fit'])
-                        elif isinstance(self.dataset.blocks['fit'],block_fit_giso.BlockFitGiso):
-                            tab = tab_giso.TabGiso(self, self.top, self.dataset.blocks['fit'])
                         
                         self._tabs["fit"] = tab
                         self.NotebookDataset.InsertPage(index, tab, 'Fitting', True)
@@ -409,7 +385,7 @@ class TabDataset(dataset_module.DatasetUI):
 
         # call these individually so we can turn keywords on/off
         
-        for item in ['raw', 'prep', 'spectral', 'fit', 'quant']:
+        for item in ['raw', 'prep', 'spectral', 'fit', 'quant']:    # bjs si
             tab = self.get_tab(item)
             if tab is not None:
                 if item == 'raw':
@@ -441,15 +417,28 @@ class TabDataset(dataset_module.DatasetUI):
         self.dataset.batch_process_all(statusbar=statusbar)
 
 
-    def set_voxel_range(self, xmax):
+    def set_voxel_range(self, xmax, ymax, zmax):        # bjs si
         
-        xval = self.voxel[0]
-        
+        xval, yval, zval = self.voxel
+
+        do_voxel_change = False
         if xval > xmax:
             self.SpinX.SetValue(xmax)
+            do_voxel_change = True
+        if yval > ymax:
+            self.SpinY.SetValue(ymax)
+            do_voxel_change = True
+        if zval > zmax:
+            self.SpinZ.SetValue(zmax)
+            do_voxel_change = True
+
+        if do_voxel_change:
             self.on_voxel_change()
-            
-        self.SpinX.SetRange(1,xmax)
+
+        self.SpinX.SetRange(1, xmax)
+        self.SpinY.SetRange(1, ymax)
+        self.SpinZ.SetRange(1, zmax)
+
             
         
          
@@ -484,9 +473,6 @@ class TabDataset(dataset_module.DatasetUI):
                 active_tab.plot_svd()
             elif active_tab.is_voigt:
                 active_tab.process_and_plot(entry='plot_refresh')
-                active_tab.view.canvas.draw()
-            elif active_tab.is_giso:
-                active_tab.process_and_plot(entry='voxel_change')
                 active_tab.view.canvas.draw()
             elif active_tab.is_watref:
                 active_tab.process_and_plot()

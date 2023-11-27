@@ -12,7 +12,7 @@ import itertools
 
 # Our modules
 import siview.common.constants as constants
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 
 
 
@@ -82,7 +82,7 @@ def get_data_type(something, default=None):
     if hasattr(something, "dtype"):
         # It's a numpy array or a numpy elemental value (e.g. a single float)
         data_type = constants.DataTypes.any_type_to_internal(str(something.dtype))
-    elif misc.is_iterable(something, False):
+    elif util_misc.is_iterable(something, False):
         # It's not a numpy array but it is iterable so it's something like a 
         # list or tuple.
         if len(something):
@@ -102,7 +102,7 @@ def get_data_type(something, default=None):
             if default:
                 data_type = default
             else:
-                raise TypeError( "Can't determine the data type of an empty list")
+                raise TypeError("Can't determine the data type of an empty list")
     else:
         # It's a non-numpy elemental type like a Python int or float.
         data_type = constants.DataTypes.any_type_to_internal(type(something))
@@ -181,7 +181,7 @@ def decode_xdr(data, data_type, element_count):
     """Given a string of data in XDR format and a data type, returns
     an iterable (tuple or list) of Python objects representing the decoded
     data. data_type must be one of the constants from
-    constants.DataTypes.ALL.
+    siview.common.constants.DataTypes.ALL.
     
     element_count is the number of elements expected in the data.
     
@@ -204,7 +204,7 @@ def decode_xdr(data, data_type, element_count):
     elif data_type in (constants.DataTypes.INT64,):
         unpack_function = p.unpack_hyper
     else:
-        raise ValueError( "Unknown data type '%s'" % data_type)
+        raise ValueError("Unknown data type '%s'" % data_type)
 
     if constants.DataTypes.is_complex(data_type):
         # XDR doesn't explicitly support complex numbers, so they're written
@@ -214,7 +214,7 @@ def decode_xdr(data, data_type, element_count):
     try:
         data = p.unpack_farray(element_count, unpack_function)
     except (xdrlib.Error, xdrlib.ConversionError) as instance:
-        raise UnreadableDataError( instance.msg)
+        raise UnreadableDataError(instance.msg)
 
     # Calling p.done() here will raise an xdrlib.Error if unextracted
     # data remains (i.e. the code above is buggy or element_count is wrong)
@@ -236,7 +236,7 @@ def encode_xdr(data, data_type):
     single-dimension numpy arrays. Multi-dimension arrays raise an error.
 
     data_type must be one of the values in 
-    constants.DataTypes.ALL.
+    siview.common.constants.DataTypes.ALL.
     
     To reverse the encoding, use decode_xdr().
     """

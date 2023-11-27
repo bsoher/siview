@@ -12,22 +12,21 @@
 # Our modules 
 import siview.common.constants as constants
 
+"""When Vespa needs to create an app's INI file, this is the content it
+uses. This could be part of constants.py, but the long triple-quoted
+strings make it 
+really hard to read so it's easier if this is isolated in its own module.
+
+This module contains just one object which is a dict called 
+DEFAULT_INI_FILE_CONTENT. The dict has a key for each INI file ("vespa", 
+"simulation", etc.) and associated with that key is the default content
+for that INI file. 
 """
-When we need to create an app's INI file, this is the content it
-uses. 
 
-This module contains just three objects:
-1) the name of the application
-2) the name of the configuration file to use
-3) a dict called DEFAULT_INI_FILE_CONTENT. The dict has a key 
-   for the INI file ("siview", etc.) and associated with 
-   that key is the default content for that INI file. 
-"""
+# The dict contents are mostly strings but at least one (simulation) 
+# uses string interpolation. 
 
-APP_NAME = "SIView"
-INI_NAME = "siview.ini"
 
-# The dict contents are mostly strings 
 
 DEFAULT_INI_FILE_CONTENT = {
 
@@ -36,10 +35,13 @@ DEFAULT_INI_FILE_CONTENT = {
     "siview" : """
 # The SIView config file.
 
+[database]
+filename=vespa.sqlite
+
 [general]
 last_export_path=
-# If cpu_limit is set to a positive integer, SIView will use no more than that
-# many CPUs simultaneously. When cpu_limit is set to 0 or left blank, SIView
+# If cpu_limit is set to a positive integer, Vespa will use no more than that
+# many CPUs simultaneously. When cpu_limit is set to 0 or left blank, Vespa
 # will use as many CPUs as it thinks are available.
 cpu_limit=
 
@@ -49,7 +51,7 @@ cpu_limit=
 ###############################      Analysis
 
     "analysis" : """
-# The SIView-Analysis config file.
+# The Analysis config file.
 
 # Colors are described in matplotlib's terms. Matplotlib understands standard
 # color names like "red", "black", "blue", etc.
@@ -86,59 +88,7 @@ zero_line_style = solid
 zero_line_top = False
 csv_qa_metab_labels = False
 
-[grid]
-bgcolor = "#ffffff"
-cmap_autumn = True
-cmap_blues = False
-cmap_jet = False
-cmap_rdbu = False
-cmap_gray = False
-cmap_rdylbu = False
-line_color_imaginary = red
-line_color_individual = green
-line_color_magnitude = purple
-line_color_real = black
-line_color_summed = black
-line_width = 1.0
-sash_position = 550
-xaxis_hertz = False
-xaxis_ppm = True
-xaxis_show = True
-zero_line_bottom = True
-zero_line_color = darkgoldenrod
-zero_line_middle = False
-zero_line_show = False
-zero_line_style = solid
-zero_line_top = False
-csv_qa_metab_labels = False
-
-[spatial]
-bgcolor = "#ffffff"
-cmap_autumn = True
-cmap_blues = False
-cmap_jet = False
-cmap_rdbu = False
-cmap_gray = False
-cmap_rdylbu = False
-line_color_imaginary = red
-line_color_individual = green
-line_color_magnitude = purple
-line_color_real = black
-line_color_summed = black
-line_width = 1.0
-sash_position = 550
-xaxis_hertz = False
-xaxis_ppm = True
-xaxis_show = True
-zero_line_bottom = True
-zero_line_color = darkgoldenrod
-zero_line_middle = False
-zero_line_show = False
-zero_line_style = solid
-zero_line_top = False
-csv_qa_metab_labels = False
-
-[prep_generic]
+[prep_fidsum_prefs]
 area_calc_plot_a = False
 area_calc_plot_b = True
 bgcolor = "#ffffff"
@@ -171,16 +121,9 @@ area_calc_plot_a = True
 area_calc_plot_b = False
 area_calc_plot_c = False
 bgcolor = "#ffffff"
-cmap_autumn = True
-cmap_blues = False
-cmap_jet = False
-cmap_rdbu = False
-cmap_gray = False
-cmap_rdylbu = False
 data_type_imaginary = False
 data_type_magnitude = False
 data_type_real = True
-line_color_baseline = blue
 line_color_imaginary = red
 line_color_magnitude = purple
 line_color_real = black
@@ -190,8 +133,7 @@ plot_c_function_a_minus_b = True
 plot_c_function_a_plus_b = False
 plot_c_function_b_minus_a = False
 plot_c_function_none = False
-plot_view_all = True
-plot_view_final = False
+sash_position_image = 500
 sash_position_main = 400
 sash_position_svd = 487
 xaxis_hertz = False
@@ -210,12 +152,6 @@ area_calc_plot_b = False
 area_calc_plot_c = False
 area_calc_plot_d = False
 bgcolor = "#ffffff"
-cmap_autumn = True
-cmap_blues = False
-cmap_jet = False
-cmap_rdbu = False
-cmap_gray = False
-cmap_rdylbu = False
 csv_qa_metab_labels = False
 line_color_base = purple
 line_color_fit = green
@@ -321,6 +257,118 @@ data_type_real = True
 fitted_data = False
 raw_data = False
 
+[giso_prefs]
+area_calc_plot_a = True
+area_calc_plot_b = False
+area_calc_plot_c = False
+area_calc_plot_d = False
+bgcolor = "#ffffff"
+line_color_base = purple
+line_color_fit = green
+line_color_imaginary = red
+line_color_init = green
+line_color_magnitude = purple
+line_color_real = black
+line_color_raw = black
+line_color_weight = darkgoldenrod
+line_width = 1.0
+n_plots_1 = False
+n_plots_2 = False
+n_plots_3 = False
+n_plots_4 = True
+sash_position = 550
+xaxis_hertz = False
+xaxis_ppm = True
+xaxis_show = False
+zero_line_bottom = True
+zero_line_color = darkgoldenrod
+zero_line_middle = False
+zero_line_show = False
+zero_line_style = solid
+zero_line_top = False
+
+[giso_plot_a]
+baseline = False
+bgcolor = black
+combo_fit_and_base = False
+combo_fit_plus_base = False
+combo_raw_and_base = False
+combo_raw_and_fit = False
+combo_raw_and_fit_plus_base = False
+combo_raw_and_init_model = True
+combo_raw_and_wt_arr = False
+combo_raw_minus_base = False
+combo_raw_minus_base_and_fit = False
+combo_raw_minus_fit = False
+combo_raw_minus_fit_minus_base = False
+data_type_imaginary = False
+data_type_magnitude = False
+data_type_real = True
+fitted_data = False
+raw_data = False
+
+[giso_plot_b]
+baseline = False
+bgcolor = black
+combo_fit_and_base = False
+combo_fit_plus_base = False
+combo_raw_and_base = True
+combo_raw_and_fit = False
+combo_raw_and_fit_plus_base = False
+combo_raw_and_init_model = False
+combo_raw_and_wt_arr = False
+combo_raw_minus_base = False
+combo_raw_minus_base_and_fit = False
+combo_raw_minus_fit = False
+combo_raw_minus_fit_minus_base = False
+data_type_imaginary = False
+data_type_magnitude = False
+data_type_real = True
+fitted_data = False
+raw_data = False
+
+[giso_plot_c]
+baseline = False
+bgcolor = black
+combo_fit_and_base = False
+combo_fit_plus_base = False
+combo_raw_and_base = False
+combo_raw_and_fit = False
+combo_raw_and_fit_plus_base = True
+combo_raw_and_init_model = False
+combo_raw_and_wt_arr = False
+combo_raw_minus_base = False
+combo_raw_minus_base_and_fit = False
+combo_raw_minus_fit = False
+combo_raw_minus_fit_minus_base = False
+data_type_imaginary = False
+data_type_magnitude = False
+data_type_real = True
+fitted_data = False
+raw_data = False
+
+[giso_plot_d]
+baseline = False
+bgcolor = black
+combo_fit_and_base = False
+combo_fit_plus_base = False
+combo_raw_and_base = False
+combo_raw_and_fit = False
+combo_raw_and_fit_plus_base = False
+combo_raw_and_init_model = False
+combo_raw_and_wt_arr = False
+combo_raw_minus_base = False
+combo_raw_minus_base_and_fit = False
+combo_raw_minus_fit = False
+combo_raw_minus_fit_minus_base = True
+data_type_imaginary = False
+data_type_magnitude = False
+data_type_real = True
+fitted_data = False
+raw_data = False
+
+
+
 [watref_prefs]
 csv_qa_metab_labels = False
 sash_position_main = 400
@@ -328,6 +376,71 @@ sash_position_main = 400
 """,
 
 
+###############################      Analysis Menu Additions
 
-}
+    "analysis_import_menu_additions" : r"""
+# The INI file for additions to Analysis' File/Import menu.
+
+# If you want Analysis to be able to import a file format that it doesn't 
+# currently understand, you can write a reader for it and reference it here
+# The reference here will make it appear on Analysis' File/Import menu along
+# with the other 3rd party formats.
+#
+# See vespa/analysis/src/fileio/template.py for more information on how to write 
+# a class that can read you custom format. You can also see template.py online:
+# https://github.com/vespa-mrs/vespa/tree/main/vespa/analysis/fileio 
+#
+# There should be one menu item for each file format, and one section in this
+# file for each menu item you want to add.
+# 
+# Section names should be valid Python module names (all lower case and no
+# spaces will work fine) and they shouldn't conflict with the name of any 
+# built-in Python modules. Also note that "dicom" is reserved; you may not use
+# that name.
+# 
+# Each section should contain four entries --
+#    - path -
+#    The fully qualified path to the file that implements your reader (which
+#    is based on template.py, as mentioned above).
+#    - class_name - 
+#    The name of the implementation class in your reader file.
+#    - menu_item_text - 
+#    The text that will appear on the menu for this item. Usually this is just 
+#    a single word or two. If you want to get fancy, you can define an 
+#    accelerator for it that will allow you to activate your menu item with 
+#    a single keystroke. Append "\tCtrl+Y" to your menu text and you'll be 
+#    able to activate it with Ctrl+Y, or Cmd+Y on the Mac. You can use any
+#    letter you like (not just 'Y'), just make sure yours doesn't conflict with
+#    another menu item!
+#    - ini_file_name - 
+#    We use this text in our INI file to record the last path from which you
+#    opened a file of this type. Just about any string will do, but for 
+#    simplicity we strongly recommend all lower case, and no spaces or 
+#    punctuation besides underscores or dashes.
+#
+# Here's an example that reads the fictitious Acme format.
+# 
+#    [acme]
+#    path=/home/wile_e_coyote/acme.py
+#    class_name=RawReaderAcme
+#    menu_item_text=Acme
+#    ini_file_name=import_acme
+#
+# Here's an example that reads the fictitious XYZ format. Note that its menu
+# item uses an accelerator.
+#
+#    [xyz]
+#    path=C:\Users\philip\xyz_reader.py
+#    class_name=RawReaderXyz
+#    menu_item_text=XYZ\tCtrl+Y
+#    ini_file_name=import_xyz
+#
+#[siemens_twix_wbnaa]
+#path=C:/miniconda3/envs/python37/Lib/site-packages/vespa/analysis/fileio/siemens_twix_wbnaa.py
+#class_name=RawReaderSiemensTwixWbnaa
+#menu_item_text=Siemens Twix WBNAA
+#ini_file_name=import_siemens_twix_wbnaa
+
+""" 
+,}
 

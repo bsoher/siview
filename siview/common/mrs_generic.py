@@ -2,10 +2,10 @@
 BJS - Sept 8, 2020. This was a start at amalgamating a number of files
   and classes into one module including:
   
-  siview.common.util.generic_spectral
-  siview.common.mrs_generic_basis
-  siview.analysis.mrs_user_prior
-  siview.analysis.mrs_user_prior_spectrum
+  util.generic_spectral
+  common.mrs_generic_basis
+  analysis.mrs_user_prior
+  analysis.mrs_user_prior_spectrum
   
   and maybe more.
   

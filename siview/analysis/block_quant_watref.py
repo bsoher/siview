@@ -7,11 +7,11 @@ import numpy as np
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.block_quant_identity as block_quant_identity
-import vespa.analysis.chain_quant_watref as chain_quant_watref
+import siview.analysis.block_quant_identity as block_quant_identity
+import siview.analysis.chain_quant_watref as chain_quant_watref
 
-import vespa.common.util.xml_ as util_xml
-from vespa.common.constants import Deflate
+import siview.common.util.xml_ as util_xml
+from siview.common.constants import Deflate
 
 
 

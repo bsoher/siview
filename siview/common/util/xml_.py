@@ -39,17 +39,18 @@ BOOLEANS = { True   : "true", False   : "false",
 # _SIMPLE_TYPE_NAMES maps simple types to their string counterparts, and 
 # vice versa. They're for the functions dict_to_elements() and 
 # element_to_dict().
-_SIMPLE_TYPE_NAMES = { bool    : "bool",   
-                       int     : "int",  
-                       float   : "float",  
-                       complex : "complex",
-                       str     : "string", 
+_SIMPLE_TYPE_NAMES = { bool  : "bool",   int : "int", int : "long", 
+                       float : "float",  complex : "complex",
+                       str   : "string", str : "string", 
                      }
 _SIMPLE_TYPE_NAMES.update(dict(list(zip(list(_SIMPLE_TYPE_NAMES.values()), 
                                    list(_SIMPLE_TYPE_NAMES.keys())))))
 # I make one small alteration to force string elements to be extracted
 # as unicode.
 _SIMPLE_TYPE_NAMES["string"] = str
+
+# bjs - bugfix june 8, 2020
+_SIMPLE_TYPE_NAMES["int"] = int
 
 # This file offers a number of utility functions for translating Python
 # objects into XML (actually, into ElementTree objects) and vice versa.
@@ -92,7 +93,7 @@ def TextElement(tag, content, attributes={}, **extra):
     element's .text attribute.
     
     In addition, this function offers a small convenience to the caller. The
-    caller can pass values of types int, float, boolean and
+    caller can pass values of types int, long, float, boolean and
     datetime.datetime in the content param, and they'll automatically be
     converted to string (via repr(), or .isoformat() in the case of datetime
     objects).
@@ -138,6 +139,10 @@ def find_settings(element, alternate_name):
     a subelement called "settings". If it doesn't find it, searches for
     a subelement using the alternate_name.
 
+    Prior to Vespa 0.7.0, the settings in Analysis blocks had unique class 
+    and XML tag names, e.g. BlockSpectralSettings/block_spectral_settings.
+    As of 0.7.0, they're all just called "settings". This function finds
+    whichever of the two is present.
     """
     # First search under the preferred name.
     settings_element = element.find("settings")
@@ -190,8 +195,8 @@ def indent(element, level=0):
 #############   Function pairs start here (to/from ElementTree.Elements)
 
 # _dict_to_file() and _file_to_dict() are public convenience functions. 
-# They're good enough for developers to use while debugging, but too 
-# crude for use in production code. 
+# They're good enough for Vespa developers to use while debugging, but too 
+# crude for use in Vespa production code. 
 def _dict_to_file(the_dict, filename, root_element_name="root"):
     # Given a dict and a filename, converts the dict to XML and writes it.
     # Uses dict_to_elements()  (q.v.)
@@ -248,7 +253,7 @@ def _any_type_to_element(tag, value):
         # fragment and recurse.
         element = ElementTree.Element(tag, {"type" : "dict"})
         # This is a dict inside a dict; inner_xxx refer to the inner dict.
-        for inner_key, inner_value in list(value.items()):
+        for inner_key, inner_value in value.items():
             element.append(_any_type_to_element(inner_key, inner_value))
     else:
         raise TypeError("Can't convert the type '%s'" % str(type(value)))
@@ -312,7 +317,7 @@ def _element_to_any_type(element):
         for child in element.getchildren():
             value[child.tag] = _element_to_any_type(child)
     else:
-        raise TypeError( "Can't convert the type '%s'" % type_)
+        raise TypeError("Can't convert the type '%s'" % type_)
 
     return value
 
@@ -332,22 +337,23 @@ def dict_to_elements(d, parent):
        http://www.w3.org/TR/2008/REC-xml-20081126/#sec-starttags
     
     2. All values must be one of the following types:
-       - bool, int, complex, string 
+       - bool, int, long, float, complex, string (unicode or str)
        - a numpy array
        - list, tuple, or dict
        You can nest containers (dicts, lists and tuples) as deeply as you 
        like, as long as the leaf nodes are one of the non-container types
        listed above.
        
-    3. All Python 3 strings are basically unicode.
+    3. Unicode strings and pure ASCII strings are trouble-free. All other
+       strings must be UTF-8 encoded.
        
     When a dict is round-tripped through this function and element_to_dict(),
     the resulting dict can differ from the original in two ways --
     - Tuples become lists.
     - All string values become unicode.
     """
-    for key, value in list(d.items()):
-        parent.append(_any_type_to_element(key, value)) 
+    for key, value in d.items():
+        parent.append(_any_type_to_element(key, value))
 
 
 def element_to_dict(root):
@@ -492,34 +498,40 @@ def element_to_array3d(e):
     
 
 def element_to_numpy_array(e):
-    """Given an ElementTree.Element written by numpy_array_to_element(), 
-    extracts the data therein and returns a properly shaped numpy array.
     """
-    data_type = e.get("data_type")
+    Given an ElementTree.Element written by numpy_array_to_element(), 
+    extracts the data therein and returns a properly shaped numpy array.
     
-    data_type = constants.DataTypes.any_type_to_internal(data_type)
+    """
+    encoding = e.get("encoding")
     
-    data = decode_numeric_list(e.text, e.get("encoding"), data_type)
+    data_type = constants.DataTypes.any_type_to_internal(e.get("data_type"))
     
-    data_type = constants.DataTypes.any_type_to_numpy(data_type)
-    
-    ndarray = np.fromiter(data, data_type)
-    
-    shape = e.get("shape")
-    shape = [int(dim) for dim in shape.split(',')]
+    data = decode_numeric_list(e.text, encoding, data_type)
 
-    return ndarray.reshape(shape)
-    
+    if 'xdr' in encoding:
+        data_type = constants.DataTypes.any_type_to_numpy(data_type)
+        ndarray = np.fromiter(data, data_type)
+        shape = e.get("shape")
+        shape = [int(dim) for dim in shape.split(',')]
+        data = ndarray.reshape(shape)
 
-def numpy_array_to_element(array, tag_name):
-    """Given a numpy array, returns an ElementTree.Element containing a
+    return data
+
+
+def numpy_array_to_element(array, tag_name, encoding=''):
+    """
+    Given a numpy array, returns an ElementTree.Element containing a
     string representation of the array containing enough info to reconstitute
     the array and its shape.
 
     This function only supports numeric and boolean arrays. It can't handle
     arrays of objects.
+    
     """
-    attrs = {   "encoding"  : constants.NUMERIC_LIST_ENCODING,
+    encode = constants.NUMERIC_LIST_ENCODING if encoding=='' else encoding
+
+    attrs = {   "encoding"  : encode,
                 "shape"     : ','.join([str(dim) for dim in array.shape]),
                 "data_type" : str(array.dtype)
             }
@@ -527,24 +539,29 @@ def numpy_array_to_element(array, tag_name):
     
     data_type = constants.DataTypes.any_type_to_internal(str(array.dtype))
     
-    # After recording the shape info, we just flatten the array into a list
-    # and save that.
-    # ravel() is conceptually the same as flatten() but sometimes faster.
-    e.text = encode_numeric_list(array.ravel().tolist(), data_type)
+    # Recording the shape info and encode the array 
+    e.text = encode_numeric_list(array, data_type)
     
     return e
-    
 
+   
 def decode_numeric_list(data, encoding, data_type):
-    """Given a string (data), returns it decoded into a Python list. The 
+    """
+    2019-12-2 We have added the Numpy 'load()/save()' cross-platform format
+        as an optional 'encoding' option. So this method may return a list 
+        of numbers, or an actual Numpy array, depending on the encoding 
+        list of strings. (e.g. npy zlib base64)
+    
+    Given a string (data), returns it decoded into a Python list. The 
     encoding parameter describes how the data was encoded from a list to
     a string (e.g. "xdr zlib base64").
     
     data_type must be one of the values in 
-    constants.DataTypes.ALL.
+    siview.common.constants.DataTypes.ALL.
     
     Typically the data string comes from XML and was created by 
     encode_numeric_list().
+    
     """
     encoding = encoding.strip().split()
     encoding.reverse()
@@ -561,52 +578,54 @@ def decode_numeric_list(data, encoding, data_type):
             buf = io.BytesIO(data)              # was OK taking a 'str' in Py27
             data = np.load(buf)
         elif transform == "zlib":
-            data = zlib.decompress(data)
+            data = zlib.decompress(data)        # 'str' in returns 'str' in Py27
         elif transform == "base64":
-            data = base64.b64decode(data)
+            data = base64.b64decode(data)       # 'str' in from Py27 created data -> 'bytes' out
         else:
-            raise ValueError( "Unrecognized transformation '%s'" % transform)
+            raise ValueError("Unrecognized transformation '%s'" % transform)
 
     return data
 
 
 def encode_numeric_list(data, data_type):
-    """Given a list of numbers of the same type (int, float, or complex), 
+    """
+    2019-12-2 We have added the Numpy 'load()/save()' cross-platform format
+        as an optional 'encoding' option. Had to modify input and 'xdr' option 
+        to accomodate the 'npy' format. Now we can pass in a numpy array, and 
+        in the 'xdr' step it will have ravel() and tolist() applied.
+              
+        So, generally we now assume that a numpy array is being passed in
+        the 'data' parameter. And that will be either converted into a
+        Numpy save byte-string, or a ravel().tolist() list of values. Thus,
+        the name of the function is only loosely requiring an actual list
+        of numbers.         
+
+    Original documentation:
+
+    Given a list of numbers of the same type (int, float, or complex), 
     encodes it into a string suitable for writing to XML.
     
     data_type must be one of the values in 
-    constants.DataTypes.ALL.
+    siview.common.constants.DataTypes.ALL.
     
     To turn the data back into a list, use decode_numeric_list().
+    
     """
     for transform in constants.NUMERIC_LIST_ENCODING.strip().split():
         if transform == "xdr":
-            data = util_fileio.encode_xdr(data, data_type)
+            data = util_fileio.encode_xdr(data.ravel().tolist(), data_type)
         elif transform == "npy":
             buf = io.BytesIO()
             np.save(buf, data)      # data still numpy array here
             data = buf.getvalue()   # returns a 'byte' representation of buffer
         elif transform == "zlib":
-            data = zlib.compress(data, 9)
+            data = zlib.compress(data, 9)   # in py27 'str' input returns type(data)='str'
         elif transform == "base64":
-            data = base64.b64encode(data)
+            data = base64.b64encode(data)   # in py27 'str' input returns type(data)='str'
         else:
-            raise ValueError( "Unrecognized data format '%s'" % transform)
+            raise ValueError("Unrecognized data format '%s'" % transform)
 
-    # From: https://stackoverflow.com/questions/15304229/convert-python-elementtree-to-string
-    #  and 
-    # https://docs.python.org/3/howto/pyporting.html#text-versus-binary-data
-    #
-    # In Python 2 you could use the str type for both text and binary data. 
-    # Unfortunately this confluence of two different concepts could lead to 
-    # brittle code which sometimes worked for either kind of data, sometimes 
-    # not. [...]
-    #
-    # To make the distinction between text and binary data clearer and more 
-    # pronounced, [Python 3] made text and binary data distinct types that 
-    # cannot blindly be mixed together.    
-
-    data = data.decode('utf-8')   
+    data = data.decode('utf-8')     # new with Py3 since some steps above now return 'byte' instead of 'str'
 
     return data
     
@@ -635,7 +654,7 @@ if __name__ == "__main__":
                   "zzz" : 3.14,                     # float
                   "z" : complex(5.6, -9),           # complex
                   "greeting" : "hello world",       # str
-#                  "u_greeting" : u"hello world",    # unicode
+                  "u_greeting" : "hello world",    # unicode
                   "stuff1" : [6, 7, 8],             # list (numeric, homogenous)
                   "stuff2" : [6, 7, 8.0],           # list (numeric, mixed)
                   "stuff3" : [6, "dog", 8.0],       # list (mixed)

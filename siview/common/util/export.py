@@ -1,6 +1,6 @@
 # Python modules
 
-import xml.etree.ElementTree as ElementTree
+import xml.etree.cElementTree as ElementTree
 import gzip
 
 # 3rd party modules
@@ -9,18 +9,18 @@ import gzip
 import siview.common.constants as constants
 import siview.common.util.xml_ as util_xml
 import siview.common.util.time_ as util_time
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 
 # The text below is added as an XML comment to each of our export files. 
-# It's meant to help anyone who is unfamiliar with VIFF and somehow gets
+# It's meant to help anyone who is unfamiliar with Vespa and somehow gets
 # ahold of a VIFF file and wants to do something with it.
 STANDARD_COMMENT = """
 This XML file is in Vespa Interchange File Format (VIFF). You can download
 applications that read and write VIFF files and learn more about VIFF here:
 https://vespa-mrs.github.io/vespa.io/
 
-It was created with version %s.
-""" % misc.get_application_version()
+It was created with Vespa version %s.
+""" % util_misc.get_vespa_version()
 
 def export(filename, export_objects, db=None, comment=None, compress=False):
     """Given a list of objects to export, this exports them to filename.
@@ -72,7 +72,10 @@ def export(filename, export_objects, db=None, comment=None, compress=False):
             root.append(element)
         else:
             for item in element:
-                root.append(item)
+                try:
+                    root.append(item)
+                except:
+                    bob = 10
     
     # Prettify the XML
     util_xml.indent(root)

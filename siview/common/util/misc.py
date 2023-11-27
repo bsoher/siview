@@ -7,16 +7,18 @@ import uuid as uuid_module
 import sys
 import re
 
-# 3rd party imports
-import pkg_resources
+try:
+    import importlib.metadata 
+    version_method = 'importlib'
+except:
+    # 3rd party imports
+    import pkg_resources
+    version_method = 'pkg_resources'
 
-# Our Modules
+# Beware -- lots of other Vespa modules import this one. If you import
+# other Vespa modules here you will almost certainly create circular imports!
 
-
-# Beware -- lots of other modules import this one. If you import 
-# other modules here you will almost certainly create circular imports!
-
-# The _EOL_REGEX matches all possible line endings: \r\n (Windows), 
+# The _EOL_REGEX matches all possible line endings: \r\n (Windows),
 # \r (old Macs) and \n (Unix).
 # This is used by normalize_newlines().
 _EOL_REGEX = re.compile(r"(?:\r\n)|\r|\n")
@@ -41,50 +43,50 @@ _ALL_DIGITS = [str(i) for i in range(10)]
 
 class ClassProperty(object):
     """Creates a read-only property associated with a class (rather than
-    a class instance). If Python had a @classproperty decorator, this is 
-    how it would work except that it's not possible to create a set-able 
+    a class instance). If Python had a @classproperty decorator, this is
+    how it would work except that it's not possible to create a set-able
     property with this trick.
-    
+
     I stole this code directly from Michael Foord:
     http://mail.python.org/pipermail/python-ideas/2011-January/008958.html
-    
+
     To instantiate, pass a function that accepts one param (which will be
     the associated class). For example:
-    
+
         def get_the_answer(klass):
             # The klass param is unused here
             return 42
-        
+
         class DeepThought(object):
             ANSWER = ClassProperty(get_the_answer)
-        
+
         print( DeepThought.ANSWER)
         42
-        
+
     A shorter example, using lambda:
         class DeepThought(object):
             ANSWER = ClassProperty(lambda klass: 42)
-        
+
         print( DeepThought.ANSWER)
         42
     """
     def __init__(self, function):
         self._function = function
-       
+
     def __get__(self, instance, klass):
         return self._function(klass)
-       
+
 
 class StaticProperty(object):
     """Identical to ClassProperty (q.v.), except that the function passed
     to the constructor must take no arguments. For example:
-    
+
         def get_the_answer():
             return 42
-        
+
         class DeepThought(object):
             ANSWER = StaticProperty(get_the_answer)
-        
+
         print( DeepThought.ANSWER)
         42
 
@@ -92,7 +94,7 @@ class StaticProperty(object):
     A shorter example, using lambda:
         class DeepThought(object):
             ANSWER = StaticProperty(lambda: 42)
-        
+
         print( DeepThought.ANSWER)
         42
     """
@@ -106,11 +108,11 @@ class StaticProperty(object):
 class WindowsSpecialFolderIds(object):
     """Constants for some Windows special folders. These are useful for
     passing to our function get_windows_special_folder_path().
-    
-    For details on special folders, see here: 
+
+    For details on special folders, see here:
     http://msdn.microsoft.com/en-us/library/bb762494%28v=vs.85%29.aspx
     """
-    # If you want to use a value that's not defined here, just add it. CSIDL 
+    # If you want to use a value that's not defined here, just add it. CSIDL
     # values are defined in shlobj.h. Here's one source for that file:
     # http://source.winehq.org/source/include/shlobj.h
     CSIDL_DESKTOP       = 0x0000
@@ -128,11 +130,11 @@ def get_bit_mode():
     the operating system is a 64-bit OS, it only informs about Python.
     """
     # It's trickier than you might think to get this information. Python's
-    # platform.architecture() can get confused under OS X, and the 
-    # once-preferred alternative of testing sys.maxint doesn't work under 
-    # Win64. 
-    # The solution below is blessed by the wisdom of stackoverflow.com. 
-    # References -- 
+    # platform.architecture() can get confused under OS X, and the
+    # once-preferred alternative of testing sys.maxint doesn't work under
+    # Win64.
+    # The solution below is blessed by the wisdom of stackoverflow.com.
+    # References --
     #     http://stackoverflow.com/questions/1405913/how-do-i-determine-if-my-python-shell-is-executing-in-32bit-or-64bit-mode
     #     http://stackoverflow.com/questions/3411079/why-does-the-python-2-7-amd-64-installer-seem-to-run-python-in-32-bit-mode
     #     http://mail.python.org/pipermail/python-list/2010-October/1258275.html
@@ -144,8 +146,8 @@ def get_bit_mode():
         # This works under Python 2.5.
         import struct
         return 8 * struct.calcsize("P")
-    
-    
+
+
 def get_data_dir():
     r"""Returns the path to the user's data folder which is where we store our
     config files and database, among other things. The path depends on the user
@@ -153,41 +155,41 @@ def get_data_dir():
 
     This is the same as the path returned by
     wx.StandardPaths.Get().GetUserDataDir(), but this function isn't dependent
-    on wx. The wx GetUserDataDir() function returns a path that contains the 
+    on wx. The wx GetUserDataDir() function returns a path that contains the
     value returned by wx.GetAppName(). This call always uses default_content. 
-    
+
     You can expect data dir names something like this:
       * Windows: C:\Documents and Settings\%USERNAME%\Application Data\Templates
       * Linux:   ~/.Templates
       * OS X:    ~/Library/Application Support/Templates
     """
-    APP_NAME = "SIView"  
-    
+    APP_NAME = "SIView"
+
     data_dir = None
-    
+
     home = os.path.expanduser("~")
 
     platform = get_platform()
-    
+
     if platform == "linux":
         data_dir = os.path.join(home, "." + APP_NAME)
-        
+
         if not os.path.exists(data_dir):
             # Up until now (March 2011), we've been putting our data files in
-            # ~/.Templates. To be better citizens, we'll now begin to respect the
+            # ~/.SIView. To be better citizens, we'll now begin to respect the
             # new-ish XDG standard described on freedesktop.org. So on machine
-            # where ~/.Templates doesn't yet exist (i.e. new installs), we'll try 
+            # where ~/.Vespa doesn't yet exist (i.e. new installs), we'll try
             # the location that the XDG standard recommends.
             data_dir = os.getenv("XDG_DATA_HOME", "")
             if os.path.exists(data_dir):
                 data_dir  = os.path.join(data_dir, "." + APP_NAME)
             else:
                 # Oh well, at least we tried.
-                data_dir = os.path.join(home, "." + APP_NAME)            
+                data_dir = os.path.join(home, "." + APP_NAME)
     elif platform == "osx":
         # Apple's doc says, "The preferred location for nearly all support
         # files is...the current user's ~/Library/Application Support
-        # directory. Within the Application Support directory, you should 
+        # directory. Within the Application Support directory, you should
         # always place support files in a custom subdirectory named for your
         # application or company."
         # ref: http://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/BPFileSystem/Articles/WhereToPutFiles.html
@@ -201,19 +203,19 @@ def get_data_dir():
 
 
 def get_documents_dir():
-    """Returns the path to the user's "My Documents" or similarly-named 
+    """Returns the path to the user's "My Documents" or similarly-named
     folder. If it can't find one, it returns the user's home folder.
-    
+
     When the Documents directory exists, this function should return the
     same value as the wx function GetDocumentsDir(). This function, however,
     isn't dependent on wx.
     """
     documents_dir = None
-    
+
     home = os.path.expanduser("~")
-    
+
     platform = get_platform()
-    
+
     if platform == "linux":
         documents_dir = get_linux_special_folder_path("XDG_DOCUMENTS_DIR")
     elif platform == "osx":
@@ -236,22 +238,22 @@ def get_linux_special_folder_path(folder_name):
     # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
     # http://www.freedesktop.org/wiki/Software/xdg-user-dirs
     path = ""
-    
+
     home = os.path.expanduser("~")
-    
+
     xdg_config_home = os.getenv("XDG_CONFIG_HOME", "")
-    
+
     if not xdg_config_home:
         xdg_config_home = os.path.join(home, ".config")
-        
+
     dirs_filename = os.path.join(xdg_config_home, "user-dirs.dirs")
-    
+
     if os.path.exists(dirs_filename):
         f = open(dirs_filename)
-        
+
         for line in f:
             line = line.strip()
-            
+
             if line.startswith(folder_name):
                 # Line looks like this:
                 # XDG_DOCUMENTS_DIR="$HOME/Documents"
@@ -259,31 +261,31 @@ def get_linux_special_folder_path(folder_name):
                 i = len(line) - i
                 line = line[i:]
                 line = line.strip('"')
-                
+
                 path = line.replace("$HOME", home)
-                
-                break                
+
+                break
         f.close()
-        
+
     if not os.path.exists(path):
         path = ""
 
     return path
-    
+
 
 def get_platform():
     """Returns the current platform/operating system as one of "osx", "linux"
     or "windows". The function is intentionally coarse-grained and doesn't
     differentiate between different versions of these operating systems.
-    
+
     If the platform can't be determined, something is probably seriously
     wrong and this function returns None.
-    """    
+    """
     platform = sys.platform.lower()
-    
+
     if "linux" in platform:
         simple_platform = "linux"
-    # Beware! If you simply test for ("win" in platform) you will get a 
+    # Beware! If you simply test for ("win" in platform) you will get a
     # surprise when "darwin" is identified as Windows.
     elif platform.startswith("win"):
         simple_platform = "windows"
@@ -291,29 +293,27 @@ def get_platform():
         simple_platform = "osx"
     else:
         simple_platform = None
-        
-    return simple_platform
-    
 
-def get_install_directory():
-    """
-    Returns the fully-qualified name of the directory from which then
-    application was run. 
-    
+    return simple_platform
+
+
+def get_vespa_install_directory():
+    """Returns the fully-qualified name of the directory in which Vespa has
+    been installed.
+
     Under OS X this will return something like --
-    /Library/Frameworks/Python.framework/Versions/2.5/lib/python2.5/site-packages/templates
-    
+    /Library/Frameworks/Python.framework/Versions/2.5/lib/python2.5/site-packages/vespa
+
     Under Linux this will return something like --
-    /usr/local/lib/python2.6/dist-packages/templates
-    
+    /usr/local/lib/python2.6/dist-packages/vespa
+
     Under Windows this will return something like --
-    c:\\Python25\\lib\\site-packages\\templates
-    
+    c:\\Python25\\lib\\site-packages\\vespa
     """
     # We figure out the path by picking a file at a known location in the
-    # application hierarchy, getting that file's path and inferring the rest.
+    # vespa hierarchy, getting that file's path and inferring the rest.
     path = ""
-    
+
     if hasattr(sys, "frozen") and sys.frozen:
         # Looks like this is being used in a PyInststaller bundle. 
         path = sys._MEIPASS
@@ -339,64 +339,56 @@ def get_install_directory():
         # Trim the filename
         path = os.path.dirname(path)
 
-    
     return path
 
 
-def get_application_version():
-    """Returns Application's version as a string, e.g. "1.0.1"."""
-    
-    if hasattr(sys, "frozen") and sys.frozen:
-        # Looks like this is being used in a PyInststaller bundle. 
-        path = os.path.join(sys._MEIPASS, 'VERSION')
+def get_vespa_version():
+    """Returns Vespa's version as a string, e.g. "1.0.1"."""
+    path = os.path.join(get_vespa_install_directory(), '..', 'VERSION')
 
-        if os.path.exists(path):
-            version = open(path).read().strip()
-        else:
-            version = 'not.availableeee'       # default 'error occurred' - likely not using specfile
+    if os.path.exists(path):
+        # The VERSION file isn't distributed as part of Vespa, so if I can see it, this
+        # must be a development install.
+        version = open(path).read().strip()
     else:
-        path = os.path.join(get_install_directory(), '..', 'VERSION')
-    
-        if os.path.exists(path):
-            # The VERSION file isn't distributed as part of SIView, so if I can 
-            # see it, this must be a development install.
-            version = open(path).read().strip()
+        # This is an end-user installation.
+        if version_method == 'pkg_resources':
+            version = pkg_resources.get_distribution('vespa-suite').version
         else:
-            # This is an end-user installation.
-            version = pkg_resources.get_distribution('siview').version
-    
+            version = importlib.metadata.version('vespa-suite')
+
     return version
 
 
-def get_windows_special_folder_path(folder_id):    
-    r"""Given a Windows CSIDL_XXX value (CSIDL = Constant Special ID List), 
-    returns the associated directory. For instance, passing 0x026 
+def get_windows_special_folder_path(folder_id):
+    r"""Given a Windows CSIDL_XXX value (CSIDL = Constant Special ID List),
+    returns the associated directory. For instance, passing 0x026
     (the value associated with CSIDL_PROGRAM_FILES) returns this:
        C:\Program Files\
-    
+
     Some CSIDL constants are defined in constants.WindowsSpecialFolderIds.
-    
+
     This function raises an error if called under a non-Windows OS.
     """
-    # Getting Windows folders requires requires calling a function 
+    # Getting Windows folders requires requires calling a function
     # provided by Windows itself. Thanks to Jay on stackoverflow for the
     # solution.
     # ref: http://stackoverflow.com/questions/626796/how-do-i-find-the-windows-common-application-data-folder-using-python
-    
-    # I import these here rather than at the top of the module because 
+
+    # I import these here rather than at the top of the module because
     # I'm not sure windll & wintypes are available on non-Win platforms.
     import ctypes
     from ctypes import windll, wintypes
 
     _SHGetFolderPath = windll.shell32.SHGetFolderPathW
     _SHGetFolderPath.argtypes = [wintypes.HWND, ctypes.c_int,
-                                 wintypes.HANDLE, wintypes.DWORD, 
+                                 wintypes.HANDLE, wintypes.DWORD,
                                  wintypes.LPCWSTR]
 
 
     path_buffer = ctypes.create_unicode_buffer(wintypes.MAX_PATH)
     _SHGetFolderPath(0, folder_id, 0, 0, path_buffer)
-    
+
     return path_buffer.value
 
 
@@ -428,12 +420,12 @@ def is_intable(s):
 
 def is_iterable(an_object, include_strings=True):
     """ Returns True if an object is iterable, False otherwise. Iterable
-    types include lists, tuples, dicts, strings, numpy arrays, etc. 
-    
+    types include lists, tuples, dicts, strings, numpy arrays, etc.
+
     If include_strings is False, then strings are not considered iterable.
-    This is useful because often we use is_iterable() to decide whether 
+    This is useful because often we use is_iterable() to decide whether
     something is an object or a list of objects, and while one *can* loop
-    over the contents of a string with 'for item in some_string', one 
+    over the contents of a string with 'for item in some_string', one
     doesn't typically want to.
     """
     try:
@@ -441,30 +433,30 @@ def is_iterable(an_object, include_strings=True):
         rc = True
     except TypeError:
         rc = False
-        
+
     if rc and (not include_strings) and isinstance(an_object, str):
         rc = False
-            
+
     return rc
-    
-    
+
+
 def is_gzipped(f):
     """Given a file object or filename, returns True if the file appears to
     be in gzip format; False otherwise.
-    
+
     The parameter can be a file object or a string indicating a filename.
-    
-    If the parameter is a file object, it must be opened with the mode 'rb'. 
+
+    If the parameter is a file object, it must be opened with the mode 'rb'.
     It will still be open when the function returns, but the file pointer
     may be changed.
     """
     # Gzip files start with two bytes: ID1 and ID2.
-    # "These have the fixed values ID1 = 31 (0x1f, \037), 
+    # "These have the fixed values ID1 = 31 (0x1f, \037),
     # ID2 = 139 (0x8b, \213), to identify the file as being in gzip format."
-    #     
+    #
     # ref: http://www.gzip.org/zlib/rfc-gzip.html#file-format
     GZIP_BYTES = '\x1f\x8b'
-    
+
     please_close = False
     if hasattr(f, "read"):
         # It's already file-ish
@@ -473,18 +465,18 @@ def is_gzipped(f):
         # It's string-y
         f = open(f, "rb")
         please_close = True
-        
+
     s = f.read(2)
     if please_close:
         f.close()
-        
+
     return (s == GZIP_BYTES)
 
 
 def iter_flatten(*args):
-    """ Returns a flattened copy of an object if an object is iterable, 
-    Iterable types include lists, tuples, dicts, strings, numpy arrays, etc. 
-    
+    """ Returns a flattened copy of an object if an object is iterable,
+    Iterable types include lists, tuples, dicts, strings, numpy arrays, etc.
+
     This is useful for iterating through an entire list of lists one item
     at a time, but without losing the structure of the original list of lists.
     """
@@ -534,7 +526,7 @@ def normalize_newlines(a_string, target_newline="\n"):
     the target newline which defaults to \n.
     """
     return _EOL_REGEX.sub(target_newline, a_string)
-    
+
 
 def safe_attribute_compare(this, that, attribute_name):
     """Compares the named attribute on the objects this and that. The
@@ -565,15 +557,15 @@ def safe_attribute_compare(this, that, attribute_name):
 
 
 def safe_attribute_set(source, target, attribute_name):
-    """Given two objects and an attribute name, copies the value of the 
-    attribute from source to target. 
+    """Given two objects and an attribute name, copies the value of the
+    attribute from source to target.
 
-    Both objects must have the attribute in question or this function 
+    Both objects must have the attribute in question or this function
     raises AttributeError.
-    
+
     It's insurance for when we're copying attributes from objects that have
     different types and therefore might have different attribute names.
-    
+
     """
     source_has = hasattr(source, attribute_name)
     target_has = hasattr(target, attribute_name)
@@ -581,7 +573,7 @@ def safe_attribute_set(source, target, attribute_name):
     if source_has and target_has:
         setattr(target, attribute_name, getattr(source, attribute_name))
     else:
-        raise AttributeError("""Attribute "%s" must exist on both source and destination""" % attribute_name) 
+        raise AttributeError("""Attribute "%s" must exist on both source and destination""" % attribute_name)
 
 def uuid():
     """Returns a random UUID. This function should be the source of all UUIDs. """
@@ -594,14 +586,14 @@ def _test():
     assert(is_iterable([]))
     assert(is_iterable(""))
     assert(is_iterable({}))
-    assert(is_iterable(()))    
+    assert(is_iterable(()))
     assert(is_iterable("", False) == False)
 
 
     # Unit tests for safe_attribute_compare()
     class Anonymous(object):
         pass
-    
+
     this = Anonymous()
     that = Anonymous()
 

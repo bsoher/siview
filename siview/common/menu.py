@@ -19,7 +19,7 @@ import wx
 # SEPARATOR defines a menu separator for use in append_items().
 SEPARATOR = (None, )
 
-class _TemplateMenu(wx.Menu):
+class _VespaMenu(wx.Menu):
     """A menu item that knows its own label (standard wx.Menus don't)."""
     def __init__(self, label=""):
         wx.Menu.__init__(self)
@@ -62,7 +62,7 @@ def create_menu(main, label, items):
 
     See append_items() for details on the dict format.
     """
-    menu = _TemplateMenu(label)
+    menu = _VespaMenu(label)
 
     append_items(main, menu, items)
 
@@ -167,8 +167,8 @@ class IdContainer(object, metaclass=abc.ABCMeta):
                 # It's not something we created; don't touch it!
 
 
-class TemplateMenuBar(wx.MenuBar):
-    """A subclass of wx.MenuBar that adds some goodies."""
+class VespaMenuBar(wx.MenuBar):
+    """A subclass of wx.MenuBar that adds some Vespa-specific goodies."""
     def __init__(self, main):
         wx.MenuBar.__init__(self)
 
@@ -177,16 +177,6 @@ class TemplateMenuBar(wx.MenuBar):
     def view_menu(self):
         """A convenience property that returns the View menu"""
         return self.GetMenu(self.FindMenu("View"))
-
-    @property
-    def image_menu(self):
-        """A convenience property that returns the View menu"""
-        return self.GetMenu(self.FindMenu("Image"))
-
-    @property
-    def plot_menu(self):
-        """A convenience property that returns the View menu"""
-        return self.GetMenu(self.FindMenu("Plot"))
 
 
     @property

@@ -2,25 +2,21 @@
 Expansion of matplotlib embed in wx example by John Bender and Edward 
 Abraham, see http://www.scipy.org/Matplotlib_figure_in_a_wx_panel
 
-This version, plot_panel_spectrum.py, is a derivative of plot_panel.py that
-has the specific purpose of displaying a plot of 1D spectral data in a 
-variety of ways including: one spectrum, a spectrum with an overlay, multiple
-lines in one spectrum, etc.  
+This version, plot_panel_points.py, is a derivative of plot_panel.py that
+has the specific purpose of displaying a plot of 1D x,y data in a 
+variety of ways including: one line plot, a line plot with an overlay, 
+multiple lines in one plot, etc.  
 
 This version is more restrictive in that it requires a plot_option attibute
 that describes the current state of the displayed data (e.g. whether x-axis
-is show, and if so is it Hz or PPM, etc.).  These plot_option settings can be
+is shown, and if a zero line drawn, etc.).  These plot_option settings can be
 controlled using the self.get_xxx() methods. This moves a lot of the 
 functionality that had been handwritten over and over in various inheirited
 classes into the base class.  
 
-Of particular interest here is that we deal with real / imag / magn data types
-and the phase0/1 applied to the complex data within the base class.  The user
-sets the plot_option.data_types attribute using the self.set_data_type_xxx
-methods and the base class does the rest.  Similarly for the self.set_phase_0
-and self.set_phase_1 methods. In these latter cases, the user passes in a 
-delta value and the actual applied phase0 or phase1 value is returned. This is
-to allow you to store this values elsewhere within your program.
+Of particular interest here is that we deal with real / imag / magn data types 
+within the base class.  The user sets the plot_option.data_types attribute 
+using the self.set_data_type_xxx methods and the base class does the rest.  
 
 The data you want in your plot is passed in on __init__ and/or can be set anew
 later using the self.set_data() method.  The data passed in is always a list 
@@ -42,13 +38,13 @@ of lists. However, each item in the list can vary as follows:
  then all lines from all arrays are displayed.
  
  The only requirement for consistency across all ndarrays or dicts that are 
- passed in is that they all have the same number of 'spectral' points. Where
- the spectral dimension is that in the last entry of the ndarray.shape 
+ passed in is that they all have the same number of plot points. Where
+ the plot point dimension is that in the last entry of the ndarray.shape 
  value (ie. ndarray.shape[-1])
 
-This version allows the user to zoom in on the figure using either 
-a span selector or a box selector. You can also set a persistent span
-selector that acts as cursor references on top of whatever is plotted
+This version allows the user to zoom in on the figure using either a span selector 
+or a box selector. You can also set a persistent span selector that acts as cursor 
+references on top of whatever is plotted
 
 ZoomSpan based on matplotlib.widgets.SpanSelector
 CursorSpan based on matplotlib.widgets.SpanSelector
@@ -60,13 +56,15 @@ Brian J. Soher, Duke University, September, 2012
 # Python modules
 
 import math
+import warnings
 
 # 3rd party modules
 import matplotlib
 import wx
 import numpy as np
 
-# If we set the backend unconditionally, we sometimes get an undesirable message. 
+# If we set the backend unconditionally, we sometimes get an undesirable
+# message. 
 if matplotlib.get_backend() != "WXAgg":
     matplotlib.use('WXAgg')
 
@@ -95,7 +93,7 @@ def get_data_index(event, xvalue=None, reversex=False):
     if npts>=0 and (x1-x0)!=0:
         indx = int(round((npts-1) * (xvalue-x0)/(x1-x0)))
     else:
-        indx = 0
+        indx = 0 
 
     if reversex:        indx = npts - indx - 1
     if indx > (npts-1): indx = npts-1
@@ -155,6 +153,9 @@ class PlotPanelPoints(wx.Panel):
                                reference=False, 
                                middle=False,
                                unlink=False,
+                               zoom_button=1,
+                               middle_button=2,
+                               refs_button=3,
                                do_zoom_select_event=False,
                                do_zoom_motion_event=False,
                                do_refs_select_event=False,
@@ -170,7 +171,6 @@ class PlotPanelPoints(wx.Panel):
                                data=None,
                                prefs=None,
                                line_width=1.0,
-                               xtitle='Points',
                                **kwargs):
 
         from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
@@ -183,22 +183,37 @@ class PlotPanelPoints(wx.Panel):
             kwargs['style'] = wx.NO_FULL_REPAINT_ON_RESIZE
         wx.Panel.__init__( self, parent, **kwargs )
 
+        if zoom:
+            if reference:
+                if refs_button==zoom_button:
+                    raise ValueError('Zoom and Reference button numbers the same.')
+            if middle:
+                if middle_button==zoom_button:
+                    raise ValueError('Zoom and Middle button numbers the same.')
+        if reference:
+            if middle:
+                if middle_button==refs_button:
+                    raise ValueError('Reference and Middle button numbers the same.')
+        self.zoom_button = zoom_button
+        self.refs_button = refs_button
+        self.middle_button = middle_button
+
         self.parent = parent
         self.reversex = reversex
         self.unlink = unlink
         self.xscale_bump = xscale_bump
         self.yscale_bump = yscale_bump
-        self.xtitle      = xtitle
         
         # Under GTK we need to track self's size to avoid a continuous flow
-        # of size events. For details, see:
+        # of size events. 
         self._platform_is_gtk = ("__WXGTK__" in wx.PlatformInfo)
         self._current_size = (-1, -1)
 
         # initialize matplotlib stuff
         self.figure = Figure( None, dpi )
         self.canvas = FigureCanvasWxAgg( self, -1, self.figure )
-        
+        self.figure.set_tight_layout({'pad': 0.1, 'h_pad': 0.1, 'w_pad': 0.1})
+
         # here we create the required naxes, add them to the figure, but we
         # also keep a permanent reference to each axes so they can be added
         # or removed from the figure as the user requests 1-N axes be displayed
@@ -224,9 +239,19 @@ class PlotPanelPoints(wx.Panel):
         self.multiplier       = [1     for i in range(naxes)]
         self.ref_locations    = 0,1
 
+        self.xlabel           = 'Points'
         self.vertical_scale   = 1.0
         self.dataymax         = 1.0
-        self.data_type        = ['real' for i in range(naxes)]
+
+        data_type = 'real'
+        if hasattr(prefs, 'data_type_magnitude'):
+            if prefs.data_type_magnitude: data_type = 'magnitude'
+        if hasattr(prefs, 'data_type_imaginary'):
+            if prefs.data_type_imaginary: data_type = 'imaginary'
+        if hasattr(prefs, 'data_type_real'):
+            if prefs.data_type_real: data_type = 'real'
+
+        self.data_type        = [data_type for i in range(naxes)]
         self.data_type_summed = [self.prefs.data_type_summed for i in range(naxes)]
         self.line_width       = [self.prefs.line_width for i in range(naxes)]
 
@@ -242,7 +267,7 @@ class PlotPanelPoints(wx.Panel):
         self.middle = []
         
         self.set_color( color )
-        #self._set_size()
+        self._set_size()
         self._resizeflag = False
 
         self.Bind(wx.EVT_IDLE, self._on_idle)
@@ -264,6 +289,7 @@ class PlotPanelPoints(wx.Panel):
             if not unlink:
                 self.zoom = ZoomSpan( self, self.all_axes,
                                       useblit=True,
+                                      button=zoom_button,
                                       do_zoom_select_event=do_zoom_select_event,
                                       do_zoom_motion_event=do_zoom_motion_event,
                                       rectprops=props_zoom)
@@ -271,6 +297,7 @@ class PlotPanelPoints(wx.Panel):
                 for axes in self.axes:
                     self.zoom.append( ZoomSpan( self, [axes],
                                           useblit=True,
+                                          button=zoom_button,
                                           do_zoom_select_event=do_zoom_select_event,
                                           do_zoom_motion_event=do_zoom_motion_event,
                                           rectprops=props_zoom))
@@ -279,7 +306,7 @@ class PlotPanelPoints(wx.Panel):
                 self.zoom = ZoomBox(  self, self.axes,
                                       drawtype='box',
                                       useblit=True,
-                                      button=1,
+                                      button=zoom_button,
                                       do_zoom_select_event=do_zoom_select_event,
                                       do_zoom_motion_event=do_zoom_motion_event,
                                       spancoords='data',
@@ -289,7 +316,7 @@ class PlotPanelPoints(wx.Panel):
                     self.zoom.append(ZoomBox(  self, [axes],
                                           drawtype='box',
                                           useblit=True,
-                                          button=1,
+                                          button=zoom_button,
                                           do_zoom_select_event=do_zoom_select_event,
                                           do_zoom_motion_event=do_zoom_motion_event,
                                           spancoords='data',
@@ -297,26 +324,30 @@ class PlotPanelPoints(wx.Panel):
         if reference:
             if not unlink:
                 self.refs = CursorSpan(self, self.axes,
-                                      useblit=True,
-                                      do_refs_select_event=do_refs_select_event,
-                                      do_refs_motion_event=do_refs_motion_event,
-                                      rectprops=props_cursor)
+                                       useblit=True,
+                                       button=refs_button,
+                                       do_refs_select_event=do_refs_select_event,
+                                       do_refs_motion_event=do_refs_motion_event,
+                                       rectprops=props_cursor)
             else:
                 for axes in self.axes:
                     self.refs.append(CursorSpan(self, [axes],
                                           useblit=True,
+                                          button=refs_button,
                                           do_refs_select_event=do_refs_select_event,
                                           do_refs_motion_event=do_refs_motion_event,
                                           rectprops=props_cursor))
         if middle:
             if not unlink:
                 self.middle = MiddleEvents(self, self.axes,
-                                      do_middle_select_event=do_middle_select_event,
-                                      do_middle_motion_event=do_middle_motion_event,
-                                      do_middle_press_event=do_middle_press_event)
+                                           button=middle_button,
+                                           do_middle_press_event=do_middle_press_event,
+                                           do_middle_select_event=do_middle_select_event,
+                                           do_middle_motion_event=do_middle_motion_event)
             else:
                 for axes in self.axes:
                     self.middle.append( MiddleEvents(self, [axes],
+                                          button=middle_button,
                                           do_middle_select_event=do_middle_select_event,
                                           do_middle_motion_event=do_middle_motion_event,
                                           do_middle_press_event=do_middle_press_event))
@@ -328,10 +359,14 @@ class PlotPanelPoints(wx.Panel):
         if self.do_scroll_event:
             self.scroll_id = self.canvas.mpl_connect('scroll_event', self._on_scroll)
 
+        self.shift_is_held = False      # flag for shift+ButtonLeft or shift+ButtonRight
+        self.canvas.mpl_connect('key_press_event', self._on_key_press)
+        self.canvas.mpl_connect('key_release_event', self._on_key_release)
+
         # initialize plots with initial data and format axes
         self.set_data(self.data)
         self.update(set_scale=True)
-        
+
 
     @property
     def dim0(self):
@@ -352,12 +387,18 @@ class PlotPanelPoints(wx.Panel):
         plot_panel. Subsequently, the menu_events take care of setting
         these options and then do a canvas.plot() call to refresh        
         """
+        
         # take min/max only from first data set, since it will always be there
         xx = self.all_axes[0].lines[0].get_xdata()
         xmin = min(xx)
         xmax = max(xx)
+
+        if xmin == xmax:
+            xmin, xmax = xmin-0.05, xmax+0.05
+
         ymax = max(np.abs(self.data[0][0]['data'].flatten()))
         ymin = -ymax
+   
         if ymin == ymax == 0: ymax = 1.0
         self.dataymax = ymax
         self.vertical_scale = ymax
@@ -382,16 +423,16 @@ class PlotPanelPoints(wx.Panel):
                 else:
                     axes.set_xlim(x0-xdel,x0+x1+xdel)
                 axes.set_ylim(y0-ydel,y0+y1+ydel)
-
+        
 
     def _dprint(self, a_string):
         if self._EVENT_DEBUG:
-            print( a_string)
+            print(a_string)
 
 
     def _on_size( self, event ):
         if self._platform_is_gtk:
-            # This is a workaround for resize issue
+            # This is a workaround 
             current_x, current_y = self._current_size
             new_x, new_y = tuple(event.GetSize())
 
@@ -457,11 +498,21 @@ class PlotPanelPoints(wx.Panel):
         self.on_scroll(event.button, event.step, iaxis)        
 
 
+    def _on_key_press(self, event):
+        """internal method to set up shift+button events"""
+        if event.key == 'shift':
+            self.shift_is_held = True
+
+    def _on_key_release(self, event):
+        """internal method to release shift+button events"""
+        if event.key == 'shift':
+            self.shift_is_held = False
+
+
     def _default_data(self):
         data = []
         for i in range(self.naxes):
-            #data.append([np.zeros([1,50],)])
-            data.append([np.arange(50)])
+            data.append([np.zeros([1,50],)])
         return data
 
 
@@ -511,13 +562,13 @@ class PlotPanelPoints(wx.Panel):
                     'line_color_imaginary' : 'red',
                     'line_color_magnitude' : 'blue',
                     'markevery'            : [],
-                    'markevery_color'      : 'purple',                    
+                    'markevery_color'      : 'purple',
                     'xaxis_values' : np.arange(len(raw_data))/1000.0 }    # set x-values in [msec]
 
             fit  = {'data' : fit_data, 
                     'line_color_real'      : 'black',
                     'line_color_imaginary' : 'purple',
-                    'line_color_magnitude' : 'black', 
+                    'line_color_magnitude' : 'black',
                     'markevery'            : [],
                     'markevery_color'      : 'green' }    # default xaxis values used here
 
@@ -554,22 +605,15 @@ class PlotPanelPoints(wx.Panel):
                     if 'markevery' not in list(dat.keys()):
                         dat['markevery'] = []
                     if 'markevery_color' not in list(dat.keys()):
-                        dat['markevery_color'] = 'green'                        
+                        dat['markevery_color'] = 'green'
                 else:
                     # Only data in this item, so add all default line colors 
                     dat = {'data' : dat,
-                           'line_color_real' : self.prefs.line_color_real,
+                           'line_color_real'      : self.prefs.line_color_real,
                            'line_color_imaginary' : self.prefs.line_color_imaginary,
                            'line_color_magnitude' : self.prefs.line_color_magnitude,
                            'markevery'            : [],
                            'markevery_color'      : 'green'}
-#                 # add default x-axis values if needed
-#                 if 'xaxis_values' not in dat.keys():
-#                     dat['xaxis_values'] = np.arange(len(dat['data'][0]))
-#                 else:
-#                     # xaxis length must match data dimension
-#                     if len(dat['xaxis_values']) != len(dat['data'][0]):
-#                         dat['xaxis_values'] = np.arange(len(dat['data'][0]))
                 item[j] = dat
         
         
@@ -639,7 +683,9 @@ class PlotPanelPoints(wx.Panel):
             self._calculate_scale()
         self.update_axes()
         if not no_draw:
-            self.canvas.draw()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.canvas.draw()
 
 
     def update_axes(self):
@@ -676,6 +722,9 @@ class PlotPanelPoints(wx.Panel):
         ymin = -ymax
         xmax = max(xx)
         xmin = min(xx)
+
+        if xmin == xmax:
+            xmin, xmax = xmin-0.001, xmax+0.001
 
         for i, axes in enumerate(self.all_axes):
 
@@ -751,22 +800,19 @@ class PlotPanelPoints(wx.Panel):
         xmax = max(xx)
         ymax = self.vertical_scale 
         ymin = -ymax
-        
-        if self.prefs.xaxis_show:
-            self.figure.subplots_adjust(left=0.0,right=0.999,
-                                        bottom=0.075,top=1.0,
-                                        wspace=0.0,hspace=0.0)
-            self.all_axes[self.naxes-1].xaxis.set_visible(True)                                             
-        else:
-            self.figure.subplots_adjust(left=0.0,right=0.999,
-                                        bottom=0.0,top=1.0,
-                                        wspace=0.0,hspace=0.0)  
-            self.all_axes[self.naxes-1].xaxis.set_visible(False)
 
-        self.all_axes[self.naxes-1].set_xlabel(self.xtitle)
-
+        if xmin == xmax:
+            xmin, xmax = xmin-0.05, xmax+0.05
 
         # set axes on/off and use appropriate title
+        naxes = len(self.axes) - 1
+        for i,axes in enumerate(self.axes):
+            xaxis_show = self.prefs.xaxis_show if i==naxes else False
+            the_label = self.xlabel if i==naxes else ''
+            axes.xaxis.set_visible(xaxis_show)
+            axes.yaxis.set_visible(False)
+            axes.set_xlabel(the_label)
+
         for j, axes in enumerate(self.all_axes):
 
             # flag whether to display overlay1 line
@@ -862,14 +908,6 @@ class PlotPanelPoints(wx.Panel):
         self.canvas.draw() 
 
 
-    def set_vertical_scale_abs(self, val):
-        '''
-        
-        '''
-        self.vertical_scale = val
-        self.set_ylim()
-        self.canvas.draw() 
-
     def set_overlay1(self, value):
         if len(value) == self.dim0:
             self.overlay1 = value
@@ -895,6 +933,9 @@ class PlotPanelPoints(wx.Panel):
         '''
         rstr, rend = self.ref_locations 
         if rstr > rend: rstr, rend = rend, rstr
+
+        rstr = int(rstr)
+        rend = int(rend)
 
         all_areas = []
         all_rms = []
@@ -940,21 +981,14 @@ class PlotPanelPoints(wx.Panel):
 
     def change_naxes(self, n):
         """
-        Allows user to determine serially which of the N axes are 
-        included in the figure. Using this method the user supplies only the
-        number of axes to include and the first 1:n axes in the long term
-        storage list are added to the figure. 
-        
-        This method also updates the axes lists in the zoom, refs and middle
-        functor methods.
+        Allow user to determine interactively which of the N axes are included
+        in the figure. NB. This method irrevocably removes axes from the figure.
+        User supplies only the number of axes to include and the first 1:n
+        axes in the long term storage list are retained in the figure. This method
+        also updates the axes lists in any zoom, refs or middle objects.
         
         """
-        ncurrent = len(self.figure.axes)
-        if n > self.naxes:
-            return
-        elif n < 0: 
-            return
-        elif n == ncurrent:
+        if n > self.naxes or n < 0 or n == len(self.figure.axes):
             return
         
         self.axes = self.all_axes[0:n]  
@@ -980,16 +1014,20 @@ class PlotPanelPoints(wx.Panel):
 
         # this resets figure to have 1 or 2 or N axes shown
         naxes = len(self.axes)
+        gs = matplotlib.gridspec.GridSpec(naxes, 1)
         for i in range(naxes):
-            self.figure.axes[i].change_geometry(naxes,1,i+1)
+            self.figure.axes[i].set_position(gs[i].get_position(self.figure))
+            self.figure.axes[i].set_subplotspec(gs[i])
+            # bjs MPL deprecated self.figure.axes[i].change_geometry(naxes,1,i+1)
 
+        self.format_axes()
         self.canvas.draw()
 
 
     def display_naxes(self, flags):
         """
         Allows user to specifiy exactly which of the N axes defined in the 
-        Init() method are included in the figure. 
+        init() method are included in the figure. 
         
         The user has to supply a boolean list of flags of the same length as
         the list of all_axes. The axes that correspond to flags set to True 
@@ -1021,6 +1059,7 @@ class PlotPanelPoints(wx.Panel):
             if self.middle:
                 self.middle.axes = self.axes
         
+        self.format_axes()
         self.canvas.draw()
 
 
@@ -1103,7 +1142,7 @@ class ZoomSpan:
       axes.plot(x,y)
 
       def onselect(vmin, vmax):
-          print( vmin, vmax)
+          print(vmin, vmax)
       span = ZoomSpan(axes, onselect, 'horizontal')
 
       onmove_callback is an optional callback that will be called on mouse move
@@ -1111,12 +1150,13 @@ class ZoomSpan:
 
     """
 
-    def __init__(self, parent, axes, 
-                               minspan=None, 
-                               useblit=False, 
-                               rectprops=None, 
-                               do_zoom_select_event=False, 
-                               do_zoom_motion_event=False):
+    def __init__(self, parent, axes,
+                        button=1,
+                        minspan=None,
+                        useblit=False,
+                        rectprops=None,
+                        do_zoom_select_event=False,
+                        do_zoom_motion_event=False):
         """
         Create a span selector in axes.  When a selection is made, clear
         the span and call onselect with
@@ -1152,6 +1192,7 @@ class ZoomSpan:
         self.do_zoom_motion_event = do_zoom_motion_event
         self.useblit = useblit
         self.minspan = minspan
+        self.button = button
 
         # Needed when dragging out of axes
         self.buttonDown = False
@@ -1186,16 +1227,17 @@ class ZoomSpan:
 
 
     def update_background(self, event):
-        'force an update of the background'
+        '''force an update of the background'''
         if self.useblit:
             self.background = self.canvas.copy_from_bbox(self.canvas.figure.bbox)
 
     def ignore(self, event):
-        'return True if event should be ignored'
-        return  event.inaxes not in self.axes or not self.visible or event.button !=1
+        '''return True if event should be ignored'''
+        correct_button = event.button==self.button and not self.parent.shift_is_held
+        return  event.inaxes not in self.axes or not self.visible or not correct_button
 
     def press(self, event):
-        'on button press event'
+        '''on button press event'''
         if self.ignore(event): return
         self.buttonDown = True
         
@@ -1220,7 +1262,7 @@ class ZoomSpan:
         return False
 
     def release(self, event):
-        'on button release event'
+        '''on button release event'''
         if self.pressv is None or (self.ignore(event) and not self.buttonDown): return
 
         self.parent.SetFocus()  # sets focus into Plot_Panel widget canvas
@@ -1284,7 +1326,7 @@ class ZoomSpan:
         return False
 
     def update(self):
-        'draw using newfangled blit or oldfangled draw depending on useblit'
+        '''draw using newfangled blit or oldfangled draw depending on useblit'''
         if self.useblit:
             if self.background is not None:
                 self.canvas.restore_region(self.background)
@@ -1297,7 +1339,7 @@ class ZoomSpan:
         return False
 
     def onmove(self, event):
-        'on motion notify event'
+        '''on motion notify event'''
         if self.pressv is None or self.ignore(event): return
         x, y = event.xdata, event.ydata
         self.prev = x, y
@@ -1333,7 +1375,7 @@ class CursorSpan:
       axes.plot(x,y)
 
       def onselect(vmin, vmax):
-          print( vmin, vmax)
+          print(vmin, vmax)
       span = CursorSpan(axes, onselect)
 
       onmove_callback is an optional callback that will be called on mouse move
@@ -1341,12 +1383,13 @@ class CursorSpan:
 
     """
 
-    def __init__(self, parent, axes, 
-                               minspan=None, 
-                               useblit=False, 
-                               rectprops=None, 
-                               do_refs_select_event=False, 
-                               do_refs_motion_event=False):
+    def __init__(self, parent, axes,
+                       button=3,
+                       minspan=None,
+                       useblit=False,
+                       rectprops=None,
+                       do_refs_select_event=False,
+                       do_refs_motion_event=False):
         """
         Create a span selector in axes.  When a selection is made, clear
         the span and call onselect with
@@ -1384,6 +1427,7 @@ class CursorSpan:
         self.do_refs_motion_event = do_refs_motion_event
         self.useblit = useblit
         self.minspan = minspan
+        self.button = button
 
         # Needed when dragging out of axes
         self.buttonDown = False
@@ -1433,16 +1477,18 @@ class CursorSpan:
 
 
     def update_background(self, event):
-        'force an update of the background'
+        '''force an update of the background'''
         if self.useblit:
             self.background = self.canvas.copy_from_bbox(self.canvas.figure.bbox)
 
     def ignore(self, event):
-        'return True if event should be ignored'
-        return  event.inaxes not in self.axes or not self.visible or event.button !=3
+        '''return True if event should be ignored'''
+        correct_button = event.button==self.button or \
+                         (event.button==self.parent.zoom_button and self.parent.shift_is_held)
+        return  event.inaxes not in self.axes or not self.visible or not correct_button
 
     def press(self, event):
-        'on button press event'
+        '''on button press event'''
         self.visible = True
         if self.ignore(event): return
         self.buttonDown = True
@@ -1467,7 +1513,7 @@ class CursorSpan:
         return False
 
     def release(self, event):
-        'on button release event'
+        '''on button release event'''
         if self.pressv is None or (self.ignore(event) and not self.buttonDown): return
 
         self.parent.SetFocus()  # sets focus into Plot_Panel widget canvas
@@ -1532,7 +1578,7 @@ class CursorSpan:
         return False
 
     def update(self):
-        'draw using newfangled blit or oldfangled draw depending on useblit'
+        '''draw using newfangled blit or oldfangled draw depending on useblit'''
         if self.useblit:
             if self.background is not None:
                 self.canvas.restore_region(self.background)
@@ -1545,7 +1591,7 @@ class CursorSpan:
         return False
 
     def onmove(self, event):
-        'on motion notify event'
+        '''on motion notify event'''
         if self.pressv is None or self.ignore(event): return
         x, y = event.xdata, event.ydata
         self.prev = x, y
@@ -1570,7 +1616,7 @@ class CursorSpan:
             self.parent.ref_locations = imin, imax
 
             # get data values at the current cursor location            
-            value = self.get_values(event, reversex=self.parent.reversex)            
+            value = self.parent.get_values(event, reversex=self.parent.reversex)            
             self.parent.on_refs_motion(vmin, vmax, value, iplot=self.axes_index) 
 
         self.update()
@@ -1590,17 +1636,17 @@ class ZoomBox:
 
         def onselect(xmin, xmax, value, ymin, ymax):
           'eclick and erelease are matplotlib events at press and release'
-          print( ' x,y min position : (%f, %f)' % (xmin, ymin))
-          print( ' x,y max position   : (%f, %f)' % (xmax, ymax))
-          print( ' used button   : ', eclick.button)
+          print ' x,y min position : (%f, %f)' % (xmin, ymin)
+          print ' x,y max position   : (%f, %f)' % (xmax, ymax)
+          print ' used button   : ', eclick.button
 
         def toggle_selector(event):
-            print( ' Key pressed.')
+            print ' Key pressed.'
             if event.key in ['Q', 'q'] and toggle_selector.RS.active:
-                print( ' RectangleSelector deactivated.')
+                print ' RectangleSelector deactivated.'
                 toggle_selector.RS.set_active(False)
             if event.key in ['A', 'a'] and not toggle_selector.RS.active:
-                print( ' RectangleSelector activated.')
+                print ' RectangleSelector activated.'
                 toggle_selector.RS.set_active(True)
 
         x = arange(100)/(99.0)
@@ -1613,7 +1659,8 @@ class ZoomBox:
         connect('key_press_event', toggle_selector)
         show()
     """
-    def __init__(self, parent, axes, 
+    def __init__(self, parent, axes,
+                             button=1,
                              drawtype='box',
                              minspanx=None, 
                              minspany=None, 
@@ -1622,8 +1669,7 @@ class ZoomBox:
                              rectprops=None,
                              do_zoom_select_event=False, 
                              do_zoom_motion_event=False,
-                             spancoords='data',
-                             button=None):
+                             spancoords='data'):
 
         """
         Create a selector in axes.  When a selection is made, clear
@@ -1723,12 +1769,12 @@ class ZoomBox:
     
 
     def update_background(self, event):
-        'force an update of the background'
+        '''force an update of the background'''
         if self.useblit:
             self.background = self.canvas.copy_from_bbox(self.canvas.figure.bbox)
 
     def ignore(self, event):
-        'return True if event should be ignored'
+        '''return True if event should be ignored'''
         # If ZoomBox is not active :
         if not self.active:
             return True
@@ -1751,7 +1797,7 @@ class ZoomBox:
                  event.button != self.eventpress.button)
 
     def press(self, event):
-        'on button press event'
+        '''on button press event'''
         # Is the correct button pressed within the correct axes?
         if self.ignore(event): return
         
@@ -1772,7 +1818,7 @@ class ZoomBox:
 
 
     def release(self, event):
-        'on button release event'
+        '''on button release event'''
         if self.eventpress is None or self.ignore(event): return
 
         self.parent.SetFocus()  # sets focus into Plot_Panel widget canvas
@@ -1858,7 +1904,7 @@ class ZoomBox:
 
 
     def update(self):
-        'draw using newfangled blit or oldfangled draw depending on useblit'
+        '''draw using newfangled blit or oldfangled draw depending on useblit'''
         if self.useblit:
             if self.background is not None:
                 self.canvas.restore_region(self.background)
@@ -1871,7 +1917,7 @@ class ZoomBox:
 
 
     def onmove(self, event):
-        'on motion notify event if box/line is wanted'
+        '''on motion notify event if box/line is wanted'''
         if self.eventpress is None or self.ignore(event): return
         x,y = event.xdata, event.ydata              # actual position (with
                                                     #   (button still pressed)
@@ -1896,14 +1942,11 @@ class ZoomBox:
         return False
 
     def set_active(self, active):
-        """ Use this to activate / deactivate the RectangleSelector
-
-            from your program with an boolean variable 'active'.
-        """
+        ''' Use to de/activate RectangleSelector with a boolean variable 'active' '''
         self.active = active
 
     def get_active(self):
-        """ to get status of active mode (boolean variable)"""
+        ''' to get status of active mode (boolean variable)'''
         return self.active
 
 
@@ -1918,7 +1961,7 @@ class MiddleEvents:
       axes.plot(x,y)
 
       def onselect(vmin, vmax):
-          print( vmin, vmax)
+          print vmin, vmax
       middle = MiddleEvents(axes, onselect)
 
       onmove_callback is an optional callback that will be called on mouse move
@@ -1926,10 +1969,11 @@ class MiddleEvents:
 
     """
 
-    def __init__(self, parent, axes, 
-                               do_middle_select_event=False, 
-                               do_middle_motion_event=False,
-                               do_middle_press_event=False):
+    def __init__(self, parent, axes,
+                       button=None,
+                       do_middle_select_event=False,
+                       do_middle_motion_event=False,
+                       do_middle_press_event=False):
         """
         Create a span selector in axes.  When a selection is made, clear
         the span and call onselect with
@@ -1961,6 +2005,7 @@ class MiddleEvents:
         self.do_middle_select_event = do_middle_select_event
         self.do_middle_motion_event = do_middle_motion_event
         self.do_middle_press_event  = do_middle_press_event
+        self.button = button
 
         # Needed when dragging out of axes
         self.buttonDown = False
@@ -1982,11 +2027,11 @@ class MiddleEvents:
             self.cids.append(self.canvas.mpl_connect('button_release_event', self.release))
     
     def ignore(self, event):
-        'return True if event should be ignored'
-        return  event.inaxes not in self.axes or event.button !=2
+        '''return True if event should be ignored'''
+        return  event.inaxes not in self.axes or event.button != self.button
 
     def press(self, event):
-        'on button press event'
+        '''on button press event'''
         if self.ignore(event): return
         self.buttonDown = True
         
@@ -1999,7 +2044,7 @@ class MiddleEvents:
                 self.axes_index = i
 
         bounds = event.inaxes.dataLim.bounds
-        
+
         self.pressxy = event.x, event.y
         self.prevxy  = event.x, event.y
 
@@ -2009,7 +2054,7 @@ class MiddleEvents:
         return False
 
     def release(self, event):
-        'on button release event'
+        '''on button release event'''
         if self.pressxy is None or (self.ignore(event) and not self.buttonDown): return
 
         self.parent.SetFocus()  # sets focus into Plot_Panel widget canvas
@@ -2032,7 +2077,7 @@ class MiddleEvents:
         return False
 
     def onmove(self, event):
-        'on motion notify event'
+        '''on motion notify event'''
         if self.pressxy is None or self.ignore(event): return
         xcurrent, ycurrent = event.x, event.y
         xprevious, yprevious = self.prevxy
@@ -2085,7 +2130,7 @@ class util_CreateMenuBar:
             if len(eachItem) == 2:
                 label = eachItem[0]
                 subMenu = self.createMenu(self2, eachItem[1])
-                menu.Append(wx.ID_ANY, label, subMenu)
+                menu.AppendSubMenu(subMenu, label)
             else:
                 self.createMenuItem(self2, menu, *eachItem)
         return menu
@@ -2112,11 +2157,12 @@ class DemoPlotPanel(PlotPanelPoints):
         self.tab    = tab
         self.top    = wx.GetApp().GetTopWindow()
         self.parent = parent
-        self.count = 0
+        self.count  = 0
+
 
     def on_motion(self, xdata, ydata, value, bounds, iaxis):
         self.top.statusbar.SetStatusText( " Points = %i" % (xdata-0.5, ), 0)
-        self.top.statusbar.SetStatusText( " " , 1)
+        self.top.statusbar.SetStatusText( " Xval = %.2f" % (xdata, ), 1)
 
     def on_scroll(self, button, step, iaxis):
         self.set_vertical_scale(step)
@@ -2143,7 +2189,18 @@ class DemoPlotPanel(PlotPanelPoints):
         area = all_areas[0]
         rms  = all_rms[0]
         self.top.statusbar.SetStatusText(' Area = %1.5g  RMS = %1.5g' % (area,rms), 3)
-        
+
+
+    def on_middle_press(self, xloc, yloc, iplot, bounds=None, xdata=None, ydata=None):
+        if xdata is not None:
+            xindex = int(round(xdata))
+            if xindex in self.tab.marks:
+                self.tab.marks.remove(xindex)
+            else:
+                self.tab.marks.append(xindex)
+                self.tab.marks.sort()
+            self.tab.do_update_plot()
+
 
 
 class MyFrame(wx.Frame):
@@ -2157,10 +2214,10 @@ class MyFrame(wx.Frame):
         self.statusbar = self.CreateStatusBar(4, 0)
 
         self._create_fake_prefs()
-        
-        lines = self.make_data(points=90, lines=18)
-        data = [[lines], [lines], [lines]]
-        
+
+        self.plot_mode = 1
+        self.marks = []
+
         self.nb = wx.Notebook(self, -1, style=wx.BK_BOTTOM)
         
         panel1 = wx.Panel(self.nb, -1)
@@ -2175,8 +2232,9 @@ class MyFrame(wx.Frame):
                                       do_zoom_motion_event=True,
                                       do_refs_select_event=True,
                                       do_refs_motion_event=True,
-                                      do_middle_select_event=True,
+                                      do_middle_select_event=False,
                                       do_middle_motion_event=True,
+                                      do_middle_press_event=True,
                                       do_scroll_event=True,
                                       xscale_bump=0.0,
                                       yscale_bump=0.05,
@@ -2191,8 +2249,10 @@ class MyFrame(wx.Frame):
     
         self.nb.AddPage(panel1, "One")
 
-        self.view.set_data(data)    
-        
+        lines = self.make_data(mode=self.plot_mode)
+        data = [[lines], [lines], [lines]]
+        self.view.set_data(data)
+    
         self.view.set_color( (255,255,255) )
 
 
@@ -2225,7 +2285,20 @@ class MyFrame(wx.Frame):
                     ("Placeholder",    "non-event",  self.on_placeholder)))]    
 
 
-    def make_data(self, lines=8, points=50):
+    def make_data(self, mode=1):
+
+        if mode == 1:
+            lines = 18
+            points = 90
+        elif mode == 2:
+            lines = 18
+            points = 50
+        elif mode == 3:
+            lines = 8
+            points = 90
+        elif mode == 4:
+            lines = 8
+            points = 50
 
         if lines > 18: lines = 18
         if lines < 1:  lines = 1
@@ -2294,35 +2367,34 @@ class MyFrame(wx.Frame):
         self.view.update_plots()
         self.view.canvas.draw()
 
-    def on_test_90pts_18lines(self, event):
-        lines = self.make_data(lines=18, points=90)
-        data = [[lines],[lines],[lines]]
-        self.view.set_data(data)
-        self.view.update(no_draw=False)
-
-    def on_test_50pts_18lines(self, event):
-        lines = self.make_data(lines=18, points=50)
-        data = [[lines],[lines],[lines]]
-        self.view.set_data(data)
-        self.view.update(no_draw=False)
-
-    def on_test_90pts_8lines(self, event):
-        lines = self.make_data(lines=8, points=90)
+    def do_update_plot(self):
+        lines = self.make_data(mode=self.plot_mode)
+        self.marks = [item for item in self.marks if item < lines.shape[1]]
         bob = lines.copy()
-        dbob  = {'data':bob,'line_color_real':'green', 'markevery':[12, 17, 18, 19], 'markevery_color':'purple'}
-        dbob2 = {'data':bob, 'markevery':[12, 17, 18, 19], 'markevery_color':'red'}
+        dbob  = {'data':bob,'line_color_real':'green', 'markevery':self.marks, 'markevery_color':'purple'}
+        dbob2 = {'data':bob, 'markevery':self.marks, 'markevery_color':'red'}
         data = [[lines],[dbob],[dbob2]]
         self.view.set_data(data)
         self.view.update(no_draw=False)
 
+    def on_test_90pts_18lines(self, event):
+        self.plot_mode = 1
+        self.do_update_plot()
+
+    def on_test_50pts_18lines(self, event):
+        self.plot_mode = 2
+        self.do_update_plot()
+
+    def on_test_90pts_8lines(self, event):
+        self.plot_mode = 3
+        self.do_update_plot()
+
     def on_test_50pts_8lines(self, event):
-        lines = self.make_data(lines=8, points=50)
-        data = [[lines],[lines],[lines]]
-        self.view.set_data(data)
-        self.view.update(no_draw=False)
+        self.plot_mode = 4
+        self.do_update_plot()
 
     def on_placeholder(self, event):
-        print( "Event handler for on_placeholder - not implemented")
+        print("Event handler for on_placeholder - not implemented")
 
     def on_show_one(self, event):
         self.view.change_naxes(1)

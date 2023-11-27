@@ -9,31 +9,27 @@ import wx
 import numpy as np
 
 # Our modules
-import vespa.analysis.constants as constants
-import vespa.analysis.block_fit_voigt as block_fit_voigt
-import vespa.analysis.tab_base as tab_base
-import vespa.analysis.prefs as prefs_module
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.util_import as util_import
-import vespa.analysis.plot_panel_voigt as plot_panel_voigt  
-import vespa.analysis.util_analysis_config as util_analysis_config
-import vespa.analysis.dialog_dataset_browser as dialog_dataset_browser
-import vespa.analysis.dynamic_list_voigt_metabolite as dynamic_list_voigt_metabolite
-import vespa.analysis.figure_layouts as figure_layouts 
-import vespa.analysis.auto_gui.voigt as voigt
+import siview.analysis.constants as constants
+import siview.analysis.block_fit_voigt as block_fit_voigt
+import siview.analysis.tab_base as tab_base
+import siview.analysis.prefs as prefs_module
+import siview.analysis.util_menu as util_menu
+import siview.analysis.util_import as util_import
+import siview.analysis.plot_panel_voigt as plot_panel_voigt  
+import siview.analysis.util_analysis_config as util_analysis_config
+import siview.analysis.dialog_dataset_browser as dialog_dataset_browser
+import siview.analysis.dynamic_list_voigt_metabolite as dynamic_list_voigt_metabolite
+import siview.analysis.figure_layouts as figure_layouts 
+import siview.analysis.auto_gui.voigt as voigt
 
-# TODO - move these into COMMON
-import vespa.simulation.dialog_mixed_metabolite_output as dialog_mixout
-from vespa.simulation.constants import ThirdPartyExportTypes
+import siview.common.mrs_prior as mrs_prior
+import siview.common.dialog_experiment_browser as dialog_experiment_browser
+import siview.common.wx_gravy.util as wx_util
+import siview.common.wx_gravy.common_dialogs as common_dialogs
+import siview.common.util.misc as util_misc
+import siview.common.util.generic_spectral as util_spectral
 
-import vespa.common.mrs_prior as mrs_prior
-import vespa.common.dialog_experiment_browser as dialog_experiment_browser
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.wx_gravy.common_dialogs as common_dialogs
-import vespa.common.util.misc as util_misc
-import vespa.common.util.generic_spectral as util_spectral
-
-from vespa.analysis.constants import FitLineshapeModel
+from siview.analysis.constants import FitLineshapeModel
 
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -1246,27 +1242,29 @@ class TabVoigt(tab_base.Tab, voigt.PanelVoigtUI):
     
     def on_prior_information_from_database(self, event): 
         # Get the user to select an experiment
-        dialog = dialog_experiment_browser.DialogExperimentBrowser(self, self.top.db)
-        dialog.ShowModal()
-        experiment_id = dialog.selected_experiment_id
-        dialog.Destroy()
-
-        if experiment_id:
-            
-            experiment = self.top.db.fetch_experiment(experiment_id)
-            format     = ThirdPartyExportTypes.ANALYSIS_DIRECT
-            dialog = dialog_mixout.DialogMixedMetaboliteOutput(self, 
-                                                               experiment, 
-                                                               self.dataset, 
-                                                               format)
-            dialog.ShowModal()
-            prior = dialog.final_prior
-            dialog.Destroy()
-            
-            if prior is not None:
-                preview = self.top.db.fetch_experiment_preview(experiment_id)
-                # Now load the new prior into the block & GUI
-                self._apply_selected_prior(prior, preview.name)
+        pass
+        
+#        dialog = dialog_experiment_browser.DialogExperimentBrowser(self, self.top.db)
+#        dialog.ShowModal()
+#        experiment_id = dialog.selected_experiment_id
+#        dialog.Destroy()
+#
+#        if experiment_id:
+#            
+#            experiment = self.top.db.fetch_experiment(experiment_id)
+#            format     = ThirdPartyExportTypes.ANALYSIS_DIRECT
+#            dialog = dialog_mixout.DialogMixedMetaboliteOutput(self, 
+#                                                               experiment, 
+#                                                               self.dataset, 
+#                                                               format)
+#            dialog.ShowModal()
+#            prior = dialog.final_prior
+#            dialog.Destroy()
+#            
+#            if prior is not None:
+#                preview = self.top.db.fetch_experiment_preview(experiment_id)
+#                # Now load the new prior into the block & GUI
+#                self._apply_selected_prior(prior, preview.name)
                 
                 
     def on_prior_information_from_file(self, event): 
@@ -2589,9 +2587,9 @@ class TabVoigt(tab_base.Tab, voigt.PanelVoigtUI):
                 data.append([dat1,dat2])
 
             self.view.set_data(data)
-            self.view.update(no_draw=True, set_scale=not self._scale_intialized)
-            if not self._scale_intialized:
-                self._scale_intialized = True
+            self.view.update(no_draw=True, set_scale=not self._scale_initialized)
+            if not self._scale_initialized:
+                self._scale_initialized = True
 
             self.view.set_phase_0(ph0, absolute=True, no_draw=True)
             self.view.set_phase_1(ph1, absolute=True, no_draw=True)

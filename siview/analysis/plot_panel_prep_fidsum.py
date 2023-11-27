@@ -5,11 +5,11 @@ import wx
 import numpy as np
 
 # Our modules
-import vespa.analysis.constants as constants
+import siview.analysis.constants as constants
 
-from vespa.common.wx_gravy.plot_panel_spectrum import PlotPanelSpectrum
-from vespa.common.wx_gravy.plot_panel_points   import PlotPanelPoints
-from vespa.common.wx_gravy.plot_panel          import PlotPanel
+from siview.common.wx_gravy.plot_panel_spectrum import PlotPanelSpectrum
+from siview.common.wx_gravy.plot_panel_points   import PlotPanelPoints
+from siview.common.wx_gravy.plot_panel          import PlotPanel
 
         
 

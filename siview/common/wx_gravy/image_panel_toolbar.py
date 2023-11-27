@@ -486,7 +486,7 @@ class ImagePanelToolbar2(wx.Panel):
             self.imageid[i] = axes.imshow(data, cmap=cmap, 
                                                 alpha=alpha, 
                                                 vmax=vmax, 
-                                                vmin=vmin, 
+                                                vmin=vmin,
                                                 aspect='equal', 
                                                 origin='upper') 
 

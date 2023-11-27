@@ -4,8 +4,8 @@
 import numpy as np
 
 # Our modules
-import vespa.analysis.functors.funct_fidsum_all as funct_fidsum_all
-from vespa.analysis.chain_base import Chain
+import siview.analysis.functors.funct_fidsum_all as funct_fidsum_all
+from siview.analysis.chain_base import Chain
 
 
 

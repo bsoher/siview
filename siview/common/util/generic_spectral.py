@@ -179,7 +179,7 @@ def calculate_peakppm_standalone(fid, sw, freq, zfmult=1, zfnew=4, resppm=4.7):
 #def create_fid_standalone(area, ppm, phase, sw, frequency, dim0, ta=[1e6,], tb=[1e6,], resppm=4.7, ideal=True):
 #    """
 #
-#    bjs-start  Not found in search all https://vespa-mrs.github.io/vespa.io/
+#    bjs-start  Not found in search all vespa
 #
 #    Create an 'ideal' FID via a sum of individual FIDs from lists of spectral
 #    peak descriptors (ie. area, ppm, phase, (opt) ta, (opt) tb values). No

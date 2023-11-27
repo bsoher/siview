@@ -4,10 +4,10 @@ import abc
 # 3rd party modules
 
 # Our modules
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.util_analysis_config as util_analysis_config
-import vespa.common.prefs as prefs
-import vespa.common.util.xml_ as util_xml
+import siview.analysis.util_menu as util_menu
+import siview.analysis.util_analysis_config as util_analysis_config
+import siview.common.prefs as prefs
+import siview.common.util.xml_ as util_xml
 
 
 """See common/prefs.py for info on the classes below."""
@@ -92,7 +92,8 @@ class PrefsSpectral(AnalysisPrefs):
 
         # Add my custom stuff
         for name in ("sash_position_main", 
-                     "sash_position_svd", 
+                     "sash_position_svd",
+                     "sash_position_image",
                      "line_color_imaginary", 
                      "line_color_magnitude", 
                      "line_color_real", 
@@ -112,7 +113,9 @@ class PrefsSpectral(AnalysisPrefs):
 
         # Add my custom stuff
         for name in ("sash_position_main", 
-                     "sash_position_svd", ):
+                     "sash_position_svd",
+                     "sash_position_image",
+                    ):
             setattr(self, name, int(source[name]))
 
         for name in ("line_color_imaginary", 

@@ -5,7 +5,7 @@
 import wx
 
 # Our modules
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 
 # Some shortcut styles for message boxes
 Q_OK_CANCEL = wx.ICON_QUESTION | wx.OK | wx.CANCEL
@@ -38,7 +38,7 @@ def message(message_text, title=None, style=wx.ICON_INFORMATION | wx.OK):
         # An app may call this to display a message box before it has 
         # created any windows, so we can't assume a top window always exists.
         top_window = wx.GetApp().GetTopWindow()
-        title = top_window.GetTitle() if top_window else "Template"
+        title = top_window.GetTitle() if top_window else "Vespa"
 
     return wx.MessageBox(message_text, title, style)
 
@@ -62,7 +62,7 @@ def pickdir(message="", default_path=""):
     # the file selector used. Ubuntu forgets, however. This might be a 
     # function of Ubuntu, Linux, GTK, I don't know.
     if (not default_path) and ("__WXGTK__" in wx.PlatformInfo):
-        default_path = misc.get_documents_dir()
+        default_path = util_misc.get_documents_dir()
         
     return wx.DirSelector(message, default_path)
 
@@ -126,7 +126,7 @@ def pickfile(message="", filetype_filter="All files (*.*)|*.*",
     # the file selector used. Ubuntu forgets, however. This might be a 
     # function of Ubuntu, Linux, GTK, I don't know.
     if (not default_path) and ("__WXGTK__" in wx.PlatformInfo):
-        default_path = misc.get_documents_dir()
+        default_path = util_misc.get_documents_dir()
         
     dialog = wx.FileDialog(wx.GetApp().GetTopWindow(), message, default_path, 
                            default_file, filetype_filter, flags)
@@ -155,13 +155,13 @@ def save_as(message="Save file", filetype_filter="", default_path="",
     last invoked, and if the default_path param is empty, it will start in 
     that same directory. Under GTK a reasonable default is used.    
     """    
-    flags = wx.FD_SAVE | wx.FD_CHANGE_DIR | wx.FD_OVERWRITE_PROMPT
+    flags = wx.FD_SAVE | wx.FD_CHANGE_DIR | wx.FD_OVERWRITE_PROMPT 
     
     # Under OS X and Windows, wx automatically remembers the last dir that 
     # the file selector used. Ubuntu forgets, however. This might be a 
     # function of Ubuntu, Linux, GTK, I don't know.
     if (not default_path) and ("__WXGTK__" in wx.PlatformInfo):
-        default_path = misc.get_documents_dir()
+        default_path = util_misc.get_documents_dir()
         
     # Under Windows, OS X & Ubuntu 9, with wxPython 2.8, the 
     # default_extension parameter to wx.FileSelector() is ignored. 

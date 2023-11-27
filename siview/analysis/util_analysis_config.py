@@ -13,7 +13,6 @@ import os
 
 # Our modules
 import siview.common.util.config as util_config
-import siview.common.default_ini_file_content as default_content
 import siview.common.util.misc as util_misc
 
 
@@ -37,23 +36,15 @@ def set_path(type_, path):
 
 
 class Config(util_config.BaseConfig):
-    
-    def __init__(self, filename="analysis.ini"):  #default_content.INI_NAME):
+    def __init__(self):
 
         # This base class initializes itself with the Default values from
         # 'default_ini_file_contents.py', then checks these values against the
         # actual values in the (maybe) existent INI file. If some values are
         # not yet in the INI file, the default values are used automagically.
 
-        util_config.BaseConfig.__init__(self, filename)
+        util_config.BaseConfig.__init__(self, "analysis.ini")
 
-    @property
-    def show_wx_inspector(self):
-        return ("debug" in self) and                        \
-               ("show_wx_inspector" in self["debug"]) and   \
-               self["debug"].as_bool("show_wx_inspector")
-       
-        
     def get_path(self, type_):
         """
         Given a file type (as a string), returns the most recent path from 

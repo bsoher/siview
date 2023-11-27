@@ -6,8 +6,7 @@ import os
 
 # Our modules
 import siview.common.util.time_ as util_time
-import siview.common.util.xml_ as util_xml
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 
 # Set up the app-wide logger
 logger = logging.getLogger()
@@ -42,11 +41,11 @@ class NullHandler(logging.FileHandler):
 class ImportFileHandler(logging.FileHandler):
     def __init__(self):
         # Create a unique filename for this import.
-        self._filename = "siview_import."
+        self._filename = "vespa_import."
         self._filename += util_time.filename_timestamp()
         self._filename += ".txt"
         
-        self._filename = os.path.join(misc.get_data_dir(), "logs", self._filename)
+        self._filename = os.path.join(util_misc.get_data_dir(), "logs", self._filename)
         
         logging.FileHandler.__init__(self, self._filename)
 
@@ -57,3 +56,21 @@ class ImportFileHandler(logging.FileHandler):
     filename = property(__get_filename)
     
 
+class DatabaseFileHandler(logging.FileHandler):
+    def __init__(self):
+        # Create a filename for the database log.
+        self._filename = "vespa_database."
+        self._filename += util_time.filename_timestamp()
+        self._filename += ".txt"
+        
+        self._filename = os.path.join(util_misc.get_data_dir(), "logs", 
+                                      self._filename)
+                
+        logging.FileHandler.__init__(self, self._filename)
+
+        formatter = logging.Formatter('%(asctime)s %(levelname)-8s: %(message)s')
+        self.setFormatter(formatter)
+
+    def __get_filename(self): return self._filename
+    filename = property(__get_filename)
+    

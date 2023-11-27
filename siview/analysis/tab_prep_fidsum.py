@@ -8,20 +8,20 @@ import matplotlib.cm as cm
 from pubsub import pub as pubsub
 
 # Our modules
-import vespa.analysis.tab_base as tab_base
-import vespa.analysis.prefs as prefs_module
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
-import vespa.analysis.auto_gui.fidsum as fidsum
-import vespa.analysis.functors.funct_fidsum_coil_combine as coil_combine
-import vespa.analysis.functors.funct_fidsum_exclude as exclude_methods
-import vespa.analysis.functors.funct_fidsum_correction as correction_methods
-import vespa.analysis.dialog_dataset_browser as dialog_dataset_browser
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.wx_gravy.common_dialogs as common_dialogs
+import siview.analysis.tab_base as tab_base
+import siview.analysis.prefs as prefs_module
+import siview.analysis.util_menu as util_menu
+#import siview.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
+import siview.analysis.auto_gui.fidsum as fidsum
+import siview.analysis.functors.funct_fidsum_coil_combine as coil_combine
+import siview.analysis.functors.funct_fidsum_exclude as exclude_methods
+import siview.analysis.functors.funct_fidsum_correction as correction_methods
+import siview.analysis.dialog_dataset_browser as dialog_dataset_browser
+import siview.common.wx_gravy.util as wx_util
+import siview.common.wx_gravy.common_dialogs as common_dialogs
 
-from vespa.analysis.dialog_user_prior import DialogUserPrior
-from vespa.analysis.plot_panel_prep_fidsum import   PlotPanelPrepFidsum, \
+from siview.analysis.dialog_user_prior import DialogUserPrior
+from siview.analysis.plot_panel_prep_fidsum import   PlotPanelPrepFidsum, \
                                                     PlotPanelPrepFidsumSeries, \
                                                     PlotPanelPrepFidsumImage
 

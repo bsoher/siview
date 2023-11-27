@@ -105,8 +105,8 @@ class Prefs(object, metaclass=abc.ABCMeta):
         # Create each auto name as an attr and initialize it to False.
         f = lambda name: setattr(self, name, False)
         list(map(f, self._auto_names))
-		
-		#for name in self._auto_names:
+
+        #for name in self._auto_names:
         #    setattr(self, name, False)
 
         # In a few of my methods I need to map a menu item id to the name of
@@ -189,7 +189,7 @@ class Prefs(object, metaclass=abc.ABCMeta):
         (not just automatic ones). Attributes that start with underscore
         are ignored.
 
-        Unlike many other objects, there is no option for deflating
+        Unlike many other objects in Vespa, there is no option for deflating
         prefs to XML.
         """
         return dict( (key, value) for key, value in list(self.__dict__.items()) if not key.startswith('_') )
@@ -200,7 +200,7 @@ class Prefs(object, metaclass=abc.ABCMeta):
         dict is a ConfigObj instance, automatic attributes will be 
         converted to boolean during inflation.
 
-        Unlike many other objects, there is no option for inflating
+        Unlike many other objects in Vespa, there is no option for inflating
         prefs from XML.
         """
         is_configobj = (hasattr(source, "as_bool"))

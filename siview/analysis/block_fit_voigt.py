@@ -6,16 +6,16 @@ import numpy as np
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.constants as constants
-import vespa.analysis.block_fit_identity as block_fit_identity
-import vespa.analysis.chain_fit_voigt as chain_fit_voigt
-import vespa.common.mrs_prior as mrs_prior
-import vespa.common.util.xml_ as util_xml
+import siview.analysis.constants as constants
+import siview.analysis.block_fit_identity as block_fit_identity
+import siview.analysis.chain_fit_voigt as chain_fit_voigt
+import siview.common.mrs_prior as mrs_prior
+import siview.common.util.xml_ as util_xml
 
-from vespa.common.constants import Deflate
-from vespa.analysis.constants import FitLineshapeModel
-from vespa.analysis.constants import FitMacromoleculeMethod
-from vespa.analysis.constants import FitMacromoleculeMethodInitVal
+from siview.common.constants import Deflate
+from siview.analysis.constants import FitLineshapeModel
+from siview.analysis.constants import FitMacromoleculeMethod
+from siview.analysis.constants import FitMacromoleculeMethodInitVal
 
 
 

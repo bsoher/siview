@@ -5,7 +5,7 @@ import wx
 import numpy as np
 
 # Our modules
-import vespa.common.wx_gravy.plot_panel_spectrum as plot_panel_spectrum
+import siview.common.wx_gravy.plot_panel_spectrum as plot_panel_spectrum
 
 
 

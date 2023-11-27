@@ -6,14 +6,14 @@ import numpy as np
 from xml.etree.cElementTree import Element
 
 # Our modules
-import vespa.analysis.block_prep_identity as block_prep_identity
-import vespa.analysis.chain_prep_fidsum as chain_prep_fidsum
-import vespa.analysis.block as block
+import siview.analysis.block_prep_identity as block_prep_identity
+import siview.analysis.chain_prep_fidsum as chain_prep_fidsum
+import siview.analysis.block as block
 
-import vespa.common.util.xml_ as util_xml
+import siview.common.util.xml_ as util_xml
 
-from vespa.analysis.mrs_user_prior import UserPrior
-from vespa.common.constants import Deflate
+from siview.analysis.mrs_user_prior import UserPrior
+from siview.common.constants import Deflate
 
 
 

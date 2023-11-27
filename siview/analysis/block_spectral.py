@@ -9,9 +9,10 @@ from xml.etree.cElementTree import Element
 # Our modules
 import siview.analysis.block_spectral_identity as block_spectral_identity
 import siview.analysis.chain_spectral as chain_spectral
-import siview.analysis.functors.funct_water_filter as funct_water
 import siview.analysis.svd_output as svd_output_module
+import siview.analysis.functors.funct_water_filter as funct_water
 import siview.common.util.xml_ as util_xml
+import siview.common.util.generic_spectral as util_spectral
 from siview.common.constants import Deflate
 
 
@@ -833,11 +834,11 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
     def _reset_dimensional_data(self, dataset):
         """Resets (to zero) and resizes dimensionally-dependent data"""
 
-        dims = dataset.spectral_dims
+        dims = dataset.spectral_dims        # bjs si
 
         if self.data is None and not self.behave_as_preset:
             # there are no results to maintain
-            self.data             = np.zeros(tuple(dims[::-1]), dtype='complex64')
+            self.data             = np.zeros(tuple(dims[::-1]), dtype='complex64')      # bjs si
             self._phase_0         = np.zeros(dims[1:])
             self._phase_1         = np.zeros(dims[1:])
             self._frequency_shift = np.zeros(dims[1:])

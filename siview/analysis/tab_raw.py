@@ -4,11 +4,11 @@
 import wx
 
 # Our modules
-import vespa.analysis.tab_base as tab_base
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.auto_gui.raw as raw
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.util.misc as util_misc
+import siview.analysis.tab_base as tab_base
+import siview.analysis.util_menu as util_menu
+import siview.analysis.auto_gui.raw as raw
+import siview.common.wx_gravy.util as wx_util
+import siview.common.util.misc as util_misc
 
 
 #------------------------------------------------------------------------------

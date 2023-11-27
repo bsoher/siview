@@ -9,18 +9,18 @@ import wx
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ColumnSorterMixin
 
 # Our modules
-import vespa.analysis.tab_base as tab_base
-import vespa.analysis.constants as constants
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.prefs as prefs_module
-import vespa.analysis.figure_layouts as figure_layouts
-import vespa.analysis.util_analysis_config as util_analysis_config
-import vespa.analysis.dialog_dataset_browser as dialog_dataset_browser
-import vespa.analysis.auto_gui.watref as watref
+import siview.analysis.tab_base as tab_base
+import siview.analysis.constants as constants
+import siview.analysis.util_menu as util_menu
+import siview.analysis.prefs as prefs_module
+import siview.analysis.figure_layouts as figure_layouts
+import siview.analysis.util_analysis_config as util_analysis_config
+import siview.analysis.dialog_dataset_browser as dialog_dataset_browser
+import siview.analysis.auto_gui.watref as watref
 
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.wx_gravy.common_dialogs as common_dialogs
-import vespa.common.util.misc as util_misc
+import siview.common.wx_gravy.util as wx_util
+import siview.common.wx_gravy.common_dialogs as common_dialogs
+import siview.common.util.misc as util_misc
 
 from matplotlib.backends.backend_pdf import PdfPages
 

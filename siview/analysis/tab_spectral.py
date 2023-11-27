@@ -8,37 +8,41 @@ from xml.etree.cElementTree import Element
 # 3rd party modules
 import wx
 import wx.grid as gridlib
+import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit ?? Not anymore in wxPython 4.0.6 ??
 import numpy as np
 from pubsub import pub as pubsub
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ColumnSorterMixin
 
 # Our modules
-import vespa.analysis.mrs_dataset as mrs_dataset
-import vespa.analysis.tab_base as tab_base
-import vespa.analysis.constants as constants
-import vespa.analysis.util_menu as util_menu
-import vespa.analysis.prefs as prefs_module
-import vespa.analysis.util_analysis_config as util_analysis_config
-import vespa.analysis.dialog_dataset_browser as dialog_dataset_browser
-import vespa.analysis.auto_gui.spectral as spectral
-import vespa.analysis.functors.funct_ecc as funct_ecc
-import vespa.analysis.functors.funct_water_filter as funct_watfilt
+import siview.analysis.mrs_dataset as mrs_dataset
+import siview.analysis.tab_base as tab_base
+import siview.analysis.constants as constants
+import siview.analysis.util_menu as util_menu
+import siview.analysis.prefs as prefs_module
+import siview.analysis.util_analysis_config as util_analysis_config
+import siview.analysis.dialog_dataset_browser as dialog_dataset_browser
+import siview.analysis.auto_gui.spectral as spectral
+import siview.analysis.functors.funct_ecc as funct_ecc
+import siview.analysis.functors.funct_water_filter as funct_watfilt
 
-from vespa.analysis.plot_panel_spectral import PlotPanelSpectral
-from vespa.analysis.plot_panel_svd_filter import PlotPanelSvdFilter
+from siview.analysis.auto_gui.image_pane import ImagePaneUI
 
-import vespa.common.wx_gravy.util as wx_util
-import vespa.common.constants as common_constants
-import vespa.common.wx_gravy.common_dialogs as common_dialogs
-import vespa.common.util.misc as util_misc
-import vespa.common.util.ppm as util_ppm
-import vespa.common.util.fileio as util_fileio
-import vespa.common.util.export as util_export
-import vespa.common.util.xml_ as util_xml
-import vespa.common.util.time_ as util_time
-import vespa.common.mrs_data_raw as mrs_data_raw
+from siview.analysis.plot_panel_spectral import PlotPanelSpectral
+from siview.analysis.image_panel_siview import ImagePanelSiview
+from siview.analysis.plot_panel_svd_filter import PlotPanelSvdFilter
 
-from vespa.common.constants import DEGREES_TO_RADIANS
+import siview.common.wx_gravy.util as wx_util
+import siview.common.constants as common_constants
+import siview.common.wx_gravy.common_dialogs as common_dialogs
+import siview.common.util.misc as util_misc
+import siview.common.util.ppm as util_ppm
+import siview.common.util.fileio as util_fileio
+import siview.common.util.export as util_export
+import siview.common.util.xml_ as util_xml
+import siview.common.util.time_ as util_time
+import siview.common.mrs_data_raw as mrs_data_raw
+
+from siview.common.constants import DEGREES_TO_RADIANS
 
 
 #------------------------------------------------------------------------------
@@ -290,7 +294,7 @@ def derived_dataset(ds, dsB, view, _tab_dataset, top, mode):
 
         # Convert Raw to Dataset - from util_file_import.get_datasets() line 356-ish
         block_classes = {}
-        block_classes["raw"] = getattr(importlib.import_module('vespa.analysis.block_raw_edit'), 'BlockRawEdit')
+        block_classes["raw"] = getattr(importlib.import_module('siview.analysis.block_raw_edit'), 'BlockRawEdit')
         derived = mrs_dataset.dataset_from_raw(met, block_classes, ds.zero_fill_multiplier)
 
         # set up associated datasets in original and derived objects
@@ -368,9 +372,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         self.user_button_area_fname = ''
 
-        # _svd_scale_intialized performs the same role as
-        # tab_base.Tab._scale_intialized (q.v.)
-        self._svd_scale_intialized = False
+        # _svd_scale_initialized performs the same role as
+        # tab_base.Tab._scale_initialized (q.v.)
+        self._svd_scale_initialized = False
 
         # Plotting is disabled during some of init. That's because the plot
         # isn't ready to plot, but the population of some controls
@@ -415,6 +419,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         #------------------------------------------------------------
         # Set window events
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_tab_changed, self.NotebookSpectral)
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.on_splitter, self.panel_image.ImageSplitterWindow)
 
         # If the sash position isn't recorded in the INI file, we use the
         # arbitrary-ish value of 400.
@@ -422,6 +427,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             self._prefs.sash_position_main = 400
         if not self._prefs.sash_position_svd:
             self._prefs.sash_position_svd = 400
+        if not self._prefs.sash_position_image:
+            self._prefs.sash_position_image = 500
+
 
         # Under OS X, wx sets the sash position to 10 (why 10?) *after*
         # this method is done. So setting the sash position here does no
@@ -431,6 +439,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                      self._prefs.sash_position_main, True)
         wx.CallAfter(self.SplitterWindowSvd.SetSashPosition,
                      self._prefs.sash_position_svd, True)
+        wx.CallAfter(self.panel_image.ImageSplitterWindow.SetSashPosition,
+                     self._prefs.sash_position_image, True)
         wx.CallAfter(self.on_splitter)
 
 
@@ -556,10 +566,22 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                                 funct_watfilt.HAM_EXTRAPOLATION_POINTS_MAX))
 
         #-------------------------------------------------------------
-        # Dataset View setup
+        # Set up the view tabs
         #-------------------------------------------------------------
 
-        self.view = PlotPanelSpectral(self.PanelViewSpectral,
+        self.AuiNotebookSizer = self.PanelViewSpectral.GetContainingSizer()
+        self.PanelViewSpectral.Destroy()
+
+        style =  aui.AUI_NB_TAB_SPLIT | \
+                 aui.AUI_NB_TAB_MOVE | \
+                 aui.AUI_NB_TAB_EXTERNAL_MOVE | \
+                 wx.NO_BORDER | \
+                 aui.AUI_NB_BOTTOM
+
+        self.tab_notebook = aui.AuiNotebook(self.window_1_pane_2, agwStyle=style)   # bjs si - rename in wxglade
+
+        self.panel_view = wx.Panel(self.tab_notebook, -1)
+        self.view = PlotPanelSpectral(self.panel_view,
                                       self,
                                       self._tab_dataset,
                                       naxes=3,
@@ -588,9 +610,39 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.view, 1, wx.LEFT | wx.TOP | wx.EXPAND)
-        self.PanelViewSpectral.SetSizer(sizer)
+        self.panel_view.SetSizer(sizer)
         self.view.Fit()
         self.view.change_naxes(1)
+
+        self.panel_image = ImagePaneUI(self.tab_notebook, wx.ID_ANY)
+        self.image = ImagePanelSiview( self.panel_image.PanelImagePlot,
+                                       self,
+                                       self._tab_dataset,
+                                       naxes=2,
+                                       data=[],
+                                       vertOn=True,
+                                       horizOn=True,
+                                       layout='horizontal',
+                                      )
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.image, 1, wx.LEFT | wx.TOP | wx.EXPAND)
+        self.panel_image.PanelImagePlot.SetSizer(sizer)
+        self.image.Fit()
+
+
+        #------------------------------------------------------------------
+        # Insert all panels into AUI Notebook and decorate as needed
+
+        # The name of the stock tab art changed somewhere between wx 2.8 and 3.0.
+        if hasattr(aui, 'AuiDefaultTabArt'):
+            tab_art_provider = aui.AuiDefaultTabArt
+        else:
+            tab_art_provider = aui.AuiGenericTabArt
+        self.tab_notebook.SetArtProvider(tab_art_provider())
+        self.tab_notebook.AddPage(self.panel_view," Spectrum ",False)
+        self.tab_notebook.AddPage(self.panel_image," Images ",False)
+
+        self.AuiNotebookSizer.Add(self.tab_notebook, 1, wx.EXPAND, 0)
 
         #------------------------------------------------------------
         # SVD tab settings
@@ -1442,6 +1494,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         # This is sometimes called programmatically, in which case event is None
         self._prefs.sash_position_main = self.SplitterWindow.GetSashPosition()
         self._prefs.sash_position_svd = self.SplitterWindowSvd.GetSashPosition()
+        self._prefs.sash_position_image = self.panel_image.ImageSplitterWindow.GetSashPosition()
 
 
     def on_combo_dataB(self, event):
@@ -2154,10 +2207,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
             data = [[data1], [data2], [data3]]
             self.view_svd.set_data(data)
-            self.view_svd.update(no_draw=True, set_scale=not self._svd_scale_intialized)
+            self.view_svd.update(no_draw=True, set_scale=not self._svd_scale_initialized)
 
-            if not self._svd_scale_intialized:
-                self._svd_scale_intialized = True
+            if not self._svd_scale_initialized:
+                self._svd_scale_initialized = True
 
             ph0 = self.dataset.get_phase_0(voxel)
             ph1 = self.dataset.get_phase_1(voxel)
@@ -2197,10 +2250,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             # these data will use default line colors in view  data1 == data2
             data = [[data1], [data2], [data3]]
             self.view.set_data(data)
-            self.view.update(no_draw=True, set_scale=not self._scale_intialized)
+            self.view.update(no_draw=True, set_scale=not self._scale_initialized)
 
-            if not self._scale_intialized:
-                self._scale_intialized = True
+            if not self._scale_initialized:
+                self._scale_initialized = True
 
             # we take this opportunity to ensure that our phase values reflect
             # the values in the block.

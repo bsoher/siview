@@ -5,8 +5,8 @@ import wx
 import numpy as np
 
 # Our modules
-import vespa.common.util.misc as util_misc
-import vespa.common.wx_gravy.plot_panel_spectrum as plot_panel_spectrum
+import siview.common.util.misc as util_misc
+import siview.common.wx_gravy.plot_panel_spectrum as plot_panel_spectrum
 
 
 class PlotPanelSvdFilter(plot_panel_spectrum.PlotPanelSpectrum):

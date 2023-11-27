@@ -7,14 +7,24 @@ import gzip
 # 3rd party modules
 
 # Our modules
-import siview.common.util.misc as misc
+import siview.common.util.misc as util_misc
 import siview.common.util.time_ as util_time
 import siview.common.util.logging_ as util_logging
 import siview.common.constants as constants
+import siview.common.mrs_experiment as mrs_experiment
+import siview.common.mrs_metabolite as mrs_metabolite
+import siview.common.mrs_pulse_sequence as mrs_pulse_sequence 
+import siview.common.rfp_transform_kernel as rfp_transform_kernel
+import siview.common.rfp_pulse_design as rfp_pulse_design
+
+from siview.common.constants import Deflate
+
+#import siview.common.rfp_pulse_project as rfp_pulse_project
+#from siview.common.rfp_pulse_design import _convert_project_to_design
 
 
 def get_element_tree(filename):
-    """Given the name of an export file, returns the contents
+    """Given the name of a Vespa export file, returns the contents
     represented as an ElementTree.ElementTree.
 
     It doesn't matter if the file is compressed or not.
@@ -22,13 +32,13 @@ def get_element_tree(filename):
     This function will raise IOError if there's problems reading the file
     (doesn't exist, no read permission, etc.).
 
-    It will raise SyntaxError if the content isn't an export file.
+    It will raise SyntaxError if the content isn't a Vespa export.
     """
     tree = None
 
-    # misc.is_gzipped() calls open(), and open() raises IOError if the
+    # util_misc.is_gzipped() calls open(), and open() raises IOError if the
     # file doesn't exist or if it exists but isn't readable.
-    if misc.is_gzipped(filename):
+    if util_misc.is_gzipped(filename):
         f = gzip.GzipFile(filename, "rb")
     else:
         f = open(filename, "rb")
@@ -165,61 +175,349 @@ class Importer(object):
                 log.removeHandler(self.file_handler)
 
 
-#class ExperimentImporter(Importer):
-#    def __init__(self, source, db):
-#        Importer.__init__(self, source, db)
-#
-#
-#    def go(self, add_history_comment=True):
-#        log = logging.getLogger(util_logging.Log.IMPORT)
-#
-#        for element in self.root.getiterator("experiment"):
-#            self.found_count += 1
-#            id_ = element.get("id")
-#
-#            if id_ and self.db.count_experiments(id_):
-#                # Don't bother to import this; it's already in the database.
-#                log.info("Ignoring experiment %s, already in database" % id_)
-#            else:
-#                # The id doesn't exist, so the import should proceed. However, I
-#                # mustn't create a name conflict with an existing experiment.
-#                # Also, I need to ensure that the pulse sequence (if any) and
-#                # metabolite(s) (if any) referenced by this experiment exist.
-#                importer = PulseSequenceImporter(element, self.db)
-#                importer.go(add_history_comment)
-#
-#                # There will be zero or one pulse sequences
-#                pulse_sequence = importer.imported[0] if importer.imported else None
-#
-#                # There should be one or more metabs, but this code doesn't
-#                # need to assume that there are any at all.
-#                importer = MetaboliteImporter(element, self.db)
-#                importer.go(add_history_comment)
-#
-#                experiment = mrs_experiment.Experiment(element)
-#                
-#                # Imported objects are only public if they have a UUID. All of
-#                # the objects we export have a UUID but 3rd party formats 
-#                # converted to our format won't.
-#                experiment.is_public = bool(experiment.id)
-#
-#                # Generate a unique name.
-#                experiment.name = self.db.find_unique_name(experiment, "import")
-#
-#                if add_history_comment:
-#                    # Append a comment marking the import
-#                    _add_comment(experiment)
-#
-#                log.info("Importing experiment %s (%s)..." % \
-#                                                (experiment.id, experiment.name))
-#
-#                self.db.insert_experiment(experiment)
-#
-#                self.imported.append(experiment)
-#                
-#        self.post_import()
+class ExperimentImporter(Importer):
+    def __init__(self, source, db):
+        Importer.__init__(self, source, db)
 
 
+    def go(self, add_history_comment=True):
+        log = logging.getLogger(util_logging.Log.IMPORT)
+
+        for element in self.root.getiterator("experiment"):
+            self.found_count += 1
+            id_ = element.get("id")
+
+            if id_ and self.db.count_experiments(id_):
+                # Don't bother to import this; it's already in the database.
+                log.info("Ignoring experiment %s, already in database" % id_)
+            else:
+                # The id doesn't exist, so the import should proceed. However, I
+                # mustn't create a name conflict with an existing experiment.
+                # Also, I need to ensure that the pulse sequence (if any) and
+                # metabolite(s) (if any) referenced by this experiment exist.
+                importer = PulseSequenceImporter(element, self.db)
+                importer.go(add_history_comment)
+
+                # There will be zero or one pulse sequences
+                pulse_sequence = importer.imported[0] if importer.imported else None
+
+                # There should be one or more metabs, but this code doesn't
+                # need to assume that there are any at all.
+                importer = MetaboliteImporter(element, self.db)
+                importer.go(add_history_comment)
+
+                experiment = mrs_experiment.Experiment(element)
+                
+                # Imported objects are only public if they have a UUID. All of
+                # the objects we export have a UUID but 3rd party formats 
+                # converted to our format won't.
+                experiment.is_public = bool(experiment.id)
+
+                # Generate a unique name.
+                experiment.name = self.db.find_unique_name(experiment, "import")
+
+                if add_history_comment:
+                    # Append a comment marking the import
+                    _add_comment(experiment)
+
+                log.info("Importing experiment %s (%s)..." % \
+                                                (experiment.id, experiment.name))
+
+                self.db.insert_experiment(experiment)
+
+                self.imported.append(experiment)
+                
+        self.post_import()
+
+
+class MetaboliteImporter(Importer):
+    def __init__(self, source, db):
+        Importer.__init__(self, source, db)
+
+
+    def go(self, add_history_comment=True):
+        log = logging.getLogger(util_logging.Log.IMPORT)
+
+        for element in self.root.getiterator("metabolite"):
+            self.found_count += 1
+            id_ = element.get("id")
+
+            if id_ and self.db.count_metabolites(id_):
+                # Don't bother to import this; it's already in the database.
+                log.info("Ignoring metabolite %s, already in database" % id_)
+            else:
+                # The id doesn't exist, so the import should proceed. However,
+                # I mustn't create a name conflict with an existing metab.
+                metabolite = mrs_metabolite.Metabolite(element)
+
+                # Imported objects are only public if they have a UUID. All of
+                # the objects we export have a UUID but 3rd party formats 
+                # converted to our format won't.
+                metabolite.is_public = bool(metabolite.id)
+
+                # Generate a unique name.
+                metabolite.name = self.db.find_unique_name(metabolite, "import")
+
+                if add_history_comment:
+                    # Append a comment marking the import
+                    _add_comment(metabolite)
+
+                log.info("Importing metabolite %s (%s)..." % \
+                                            (metabolite.id, metabolite.name))
+
+                self.db.insert_metabolite(metabolite)
+
+                self.imported.append(metabolite)
+
+        self.post_import()
+
+
+
+# class PulseProjectImporter(Importer):
+#     """
+#     As of version 0.8.6 the Pulse application replaced RFPulse in siview. 
+# 
+#     Initial Fix - When we import PulseProjects or PulseSequences that contain a 
+#     PulseProject, we convert them into PulseDesigns. For the most part, we import 
+#     the PulseProject as usual, then convert and insert as a PulseDesign.
+# 
+#     Fix as of Vespa 1.0.0 - this version did the switch to Py3 and a lot of 
+#     refactor and simplification. As a result, Vespa no longer supports PulseProject
+#     conversion *internally*. This allowed us to remove a bunch of deprecated file.
+#     If needed, we can create a standalone rususitaton script to do the convert. But
+#     for now, out it goes.  I'll leave this here to document, bjs 2021-03-07
+# 
+#     """
+# 
+#     def __init__(self, source, db):
+#         Importer.__init__(self, source, db)
+#
+#
+#     def go(self, add_history_comment=True):
+#         log = logging.getLogger(util_logging.Log.IMPORT)
+#
+#         for element in self.root.getiterator("pulse_project"):
+#
+#             self.found_count += 1
+#             id_ = element.get("id")
+#
+#             # Because PulseProject objects need to be converted into PulseDesign
+#             # objects in PulseSequenceImporter code, we always instantiate them
+#             # here. We may not insert them into the database if already there.
+#
+#             pulse_project = rfp_pulse_project.PulseProject(element)
+#
+#             # Imported objects are only public if they have a UUID. All of
+#             # the objects we export have a UUID but 3rd party formats
+#             # converted to our format won't.
+#             pulse_project.is_public = bool(pulse_project.id)
+#
+#             # Generate a unique name.
+#             pulse_project.name = self.db.find_unique_name(pulse_project, "import")
+#
+#             if add_history_comment:
+#                 # Append a comment marking the import
+#                 _add_comment(pulse_project)
+#
+#             # done massaging pulse_project import, now convert
+#             pulse_design = _convert_project_to_design(self.db, pulse_project)
+#
+#             if id_ and self.db.count_pulse_designs(id_):
+#                 # Don't bother to import this; it's already in the database.
+#                 log.info("Ignoring pulse project, there is a  pulse design with id = %s, already in database" % id_)
+#             else:
+#                 # The id doesn't exist, so the conversion and insert should proceed.
+#                 log.info("Importing and converting pulse project to pulse design %s (%s)..." % \
+#                                     (pulse_project.id, pulse_project.name))
+#
+#                 self.db.insert_pulse_design(pulse_design)
+#
+#                 self.imported.append(pulse_design)
+#
+#         self.post_import()
+
+
+
+class PulseDesignImporter(Importer):
+    def __init__(self, source, db):
+        Importer.__init__(self, source, db)
+
+
+    def go(self, add_history_comment=True):
+        log = logging.getLogger(util_logging.Log.IMPORT)
+
+        for element in self.root.getiterator("pulse_design"):
+            self.found_count += 1
+            id_ = element.get("id")
+
+            if id_ and self.db.count_pulse_designs(id_):
+                # Don't bother to import this; it's already in the database.
+                log.info("Ignoring pulse design %s, already in database" % id_)
+            else:
+                # The id doesn't exist, so the import should proceed. However,
+                # I mustn't create a name conflict with an existing pulse 
+                # design.
+                pulse_design = rfp_pulse_design.PulseDesign(element)
+
+                # Imported objects are only public if they have a UUID. All of
+                # the objects we export have a UUID but 3rd party formats 
+                # converted to our format won't.
+                pulse_design.is_public = bool(pulse_design.id)
+
+                # Generate a unique name.
+                pulse_design.name = self.db.find_unique_name(pulse_design, "import")
+
+                if add_history_comment:
+                    # Append a comment marking the import
+                    _add_comment(pulse_design)
+
+                log.info("Importing pulse design %s (%s)..." % \
+                                    (pulse_design.id, pulse_design.name))
+
+                self.db.insert_pulse_design(pulse_design)
+
+                self.imported.append(pulse_design)
+
+        self.post_import()
+        
+
+class PulseSequenceImporter(Importer):
+    def __init__(self, source, db):
+        Importer.__init__(self, source, db)
+
+
+    def go(self, add_history_comment=True):
+        log = logging.getLogger(util_logging.Log.IMPORT)
+
+        for element in self.root.getiterator("pulse_sequence"):
+            self.found_count += 1
+            id_ = element.get("id")
+
+            if id_ and self.db.count_pulse_sequences(id_):
+                # Don't bother to import this; it's already in the database.
+                log.info("Ignoring pulse sequence %s, already in database" % id_)
+            else:
+                # Before creating the pulse seq, I need to ensure that any
+                # pulse projects or pulse designs that it references exist.
+                
+                # As of version 0.8.6, Pulse has replaced RFPulse, and there
+                # should only be zero or more PulseDesign objects that are part
+                # of the sequence. If this is an import of a PulseSequence older
+                # than 0.8.6 then there may be a PulseProject object in it. But,
+                # there will ONLY be PulseProjects OR PulseDesigns, not both, so 
+                # I run both and stop if any are found.
+                importer = PulseDesignImporter(element, self.db)
+                importer.go(add_history_comment)
+                
+                if importer.imported == []:
+
+                    # check if any PulseProjects in this import
+                    for bob in element.getiterator("pulse_project"):
+                        seqname = str(bob.findtext('name'))
+                        msg = "An RFPulse PulseProject object was found in this pulse sequence. \n name = %s, id = %s. \nVespa >= 1.0.0. does not support RFPulse-PulseProject conversions. \nThis pulse sequence will not be imported.  Returning. " % (seqname, id_ )
+                        print(msg)
+                        break
+
+#                    # As of version 1.0.0 there is NO support for RFPulse/PulseProject
+#                    # so we just pop up a warning here re. deprecation
+#
+#                    importer = PulseProjectImporter(element, self.db)
+#                    importer.go(add_history_comment)
+#
+#                    if importer.imported != []:
+#                        # This has PulseProjects in it. The importer has
+#                        # converted them to PulseDesigns. If they did not
+#                        # exist in the DB, they have been inserted into the
+#                        # pulse_designs table. But the PulseSequence object
+#                        # needs to have 'pulse_design' tags in it, not
+#                        # 'pulse_project' tags, so we insert the converted
+#                        # objects into the eTree. We don't have to remove the
+#                        # 'pulse_project' elements because they are ignored
+#                        # from here on.
+#                        for pulse_design in importer.imported:
+#                            element.append(pulse_design.deflate(Deflate.ETREE))
+
+                # Mustn't create a name conflict with an existing pulse sequence.
+                pulse_sequence = mrs_pulse_sequence.PulseSequence(element)
+
+                # Imported objects are only public if they have a UUID. All of
+                # the objects we export have a UUID but 3rd party formats 
+                # converted to our format won't.
+                pulse_sequence.is_public = bool(pulse_sequence.id)
+
+                i = 0
+                name = pulse_sequence.name
+                while self.db.count_pulse_sequences(name=name):
+                    # name exists. Try appending a date stamp to the name
+                    name = "%s_%s_import" % (pulse_sequence.name,
+                                        util_time.now(util_time.ISO_DATE_FORMAT))
+
+                    if i:
+                        # This is not the first time through this loop, so
+                        # I start appending numbers in addition to the date.
+                        name += "_%d" % i
+
+                    i += 1
+
+                # Now the name is unique.
+                pulse_sequence.name = name
+
+                if add_history_comment:
+                    # Append a comment marking the import
+                    _add_comment(pulse_sequence)
+
+                log.info("Importing pulse sequence %s (%s)..." % \
+                                    (pulse_sequence.id, pulse_sequence.name))
+
+                self.db.insert_pulse_sequence(pulse_sequence)
+
+                self.imported.append(pulse_sequence)
+
+        self.post_import()
+
+
+
+class TransformKernelImporter(Importer):
+    def __init__(self, source, db):
+        Importer.__init__(self, source, db)
+
+
+    def go(self, add_history_comment=True):
+        log = logging.getLogger(util_logging.Log.IMPORT)
+
+        for element in self.root.getiterator("transform_kernel"):
+            self.found_count += 1
+            id_ = element.get("id")
+
+            if id_ and self.db.count_transform_kernels(id_):
+                # Don't bother to import this; it's already in the database.
+                log.info("Ignoring transform kernel %s, already in database" % id_)
+            else:
+                # The id doesn't exist, so the import should proceed. However,
+                # I mustn't create a name conflict with an existing pulse 
+                # project.
+                transform_kernel = rfp_transform_kernel.TransformKernel(element)
+
+                # Imported objects are only public if they have a UUID. All of
+                # the objects we export have a UUID but 3rd party formats 
+                # converted to our format won't.
+                transform_kernel.is_public = bool(transform_kernel.id)
+
+                # Generate a unique name.
+                transform_kernel.name = self.db.find_unique_name(transform_kernel, "import")
+
+                if add_history_comment:
+                    # Append a comment marking the import
+                    _add_comment(transform_kernel)
+
+                log.info("Importing transform kernel %s (%s)..." % \
+                                    (transform_kernel.id, transform_kernel.name))
+
+                self.db.insert_transform_kernel(transform_kernel)
+
+                self.imported.append(transform_kernel)
+
+        self.post_import()
 
 
 ##### Functions for Internal Use Only  ##################################

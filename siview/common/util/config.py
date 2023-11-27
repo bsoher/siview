@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014-2019 Brian J Soher - All Rights Reserved
+# Copyright (c) 2023 Brian J Soher - All Rights Reserved
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are not permitted without explicit permission.
@@ -11,7 +11,6 @@
 import os
 
 # 3rd party modules
-import configobj
 
 # need for inline processing - no wx
 try:
@@ -20,10 +19,9 @@ except:
     wx = None
 
 # Our modules
+import siview.common.configobj as configobj
 import siview.common.util.misc as util_misc
-import siview.common.default_ini_file_content as default_content
-
-
+import siview.common.default_ini_file_content as default_ini_file_content
 
 def get_last_export_path():
     """A shortcut for the Config object method of the same name."""
@@ -35,7 +33,7 @@ def set_last_export_path(path):
     config = SIViewConfig()
     config.set_last_export_path(path)
     config.write()
-    
+
 
 class BaseConfig(configobj.ConfigObj):
     """This abstract base class is a special purpose version of a 
@@ -71,9 +69,9 @@ class BaseConfig(configobj.ConfigObj):
         # I build my initial/base config from the the default INI content
         ini_name = os.path.basename(filename)
         ini_name, _ = os.path.splitext(ini_name)
-        default = default_content.DEFAULT_INI_FILE_CONTENT[ini_name]        
+        default = default_ini_file_content.DEFAULT_INI_FILE_CONTENT[ini_name]        
         default = default.split("\n")
-        configobj.ConfigObj.__init__(self, default, encoding="utf-8")
+        configobj.ConfigObj.__init__(self, infile=default, encoding="utf-8")
         
         # Since I initialized my base class with a list instead of providing
         # a filename, self.filename is still None. That needs to be corrected.
@@ -81,7 +79,7 @@ class BaseConfig(configobj.ConfigObj):
         self.filename = filename
         
         # Any settings the user provides trump the defaults
-        user_config = configobj.ConfigObj(filename, encoding="utf-8")
+        user_config = configobj.ConfigObj(infile=filename, encoding="utf-8")
         
         self.merge(user_config)
 
