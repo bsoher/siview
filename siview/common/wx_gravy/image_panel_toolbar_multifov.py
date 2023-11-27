@@ -241,7 +241,7 @@ class ImagePanelToolbarMultiFov(wx.Panel):
     def _default_data(self):
         data = []
         for i in range(self.naxes):
-            data.append([self._dist(128),])
+            data.append( [{'data':self._dist(128), 'fov':240.0},] )
         return data
 
 
@@ -283,33 +283,33 @@ class ImagePanelToolbarMultiFov(wx.Panel):
         """ placeholder, overload for user defined event handling """
         self._dprint('debug::on_scroll,     button='+str(button)+'  step='+str(step)+'  Index = '+str(iplot))
 
-    def on_motion(self, xloc, yloc, iplot):
+    def on_motion(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_motion,          xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+        self._dprint('debug::on_motion,          xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos)+'  Index = '+str(iplot))
         
-    def on_select(self, xloc, yloc, iplot):
+    def on_select(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_select,          xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+        self._dprint('debug::on_select,          xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos)+'  Index = '+str(iplot))
 
-    def on_panzoom_release(self, xloc, yloc):
+    def on_panzoom_release(self, xloc, yloc, xpos, ypos):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_panzoom_release, xloc='+str(xloc)+'  yloc='+str(yloc))
+        self._dprint('debug::on_panzoom_release, xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos))
         
-    def on_panzoom_motion(self, xloc, yloc, iplot):
+    def on_panzoom_motion(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_panzoom_motion,  xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+        self._dprint('debug::on_panzoom_motion,  xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos)+'  Index = '+str(iplot))
 
-    def on_level_press(self, xloc, yloc, iplot):
+    def on_level_press(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_level_press,     xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+        self._dprint('debug::on_level_press,     xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos)+'  Index = '+str(iplot))
 
-    def on_level_release(self, xloc, yloc):
+    def on_level_release(self, xloc, yloc, xpos, ypos):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_level_release,   xloc='+str(xloc)+'  yloc='+str(yloc))
+        self._dprint('debug::on_level_release,   xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos))
 
-    def on_level_motion(self, xloc, yloc, iplot):
+    def on_level_motion(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
-        self._dprint('debug::on_level_motion,    xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+        self._dprint('debug::on_level_motion,    xloc='+str(xloc)+'  yloc='+str(yloc)+'  xpos='+str(xpos)+'  ypos='+str(ypos)+'  Index = '+str(iplot))
 
     #=======================================================
     #
@@ -952,7 +952,7 @@ class NavToolbarMultiFov(NavigationToolbar2, wx.ToolBar):
                 for line in self.vlines + self.hlines:
                     line.set_visible(False)
                 self.dynamic_update()
-                self.parent.on_level_press(xloc, yloc, iplot)
+                self.parent.on_level_press(xloc, yloc, xpos, ypos, iplot)
             elif self.mode == '':
                 # no toggle buttons on
                 # but, maybe we want to show crosshair cursors
@@ -991,18 +991,18 @@ class NavToolbarMultiFov(NavigationToolbar2, wx.ToolBar):
         # get bounded location and call user event
         xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
         if self.mode == 'pan/zoom':
-            self.parent.on_panzoom_release(xloc, yloc)
+            self.parent.on_panzoom_release(xloc, yloc, xpos, ypos)
         elif self.mode == 'zoom rect':
             pass
         elif self.mode == 'width/level':
-            self.parent.on_level_release(xloc, yloc)
+            self.parent.on_level_release(xloc, yloc, xpos, ypos)
         elif self.mode == '':
             # no toggle buttons on
             self.parent.select_is_held = False
-            self.parent.on_select(xloc, yloc, iplot)
+            self.parent.on_select(xloc, yloc, xpos, ypos, iplot)
         else:
             # catch all
-            self.parent.on_select(xloc, yloc)
+            self.parent.on_select(xloc, yloc, xpos, ypos)
 
 
     def leave(self, event):
@@ -1036,17 +1036,17 @@ class NavToolbarMultiFov(NavigationToolbar2, wx.ToolBar):
 
         if self.mode == 'pan/zoom' and (self._button_pressed == 1 or self._button_pressed == 3):
             if iplot is not None:
-                self.parent.on_panzoom_motion(xloc, yloc, iplot)
+                self.parent.on_panzoom_motion(xloc, yloc, xpos, ypos, iplot)
         elif self.mode == 'zoom rect' and (self._button_pressed == 1 or self._button_pressed == 3):
             if iplot is None:
                 pass
         elif self.mode == 'width/level' and self._button_pressed == 3:
             if iplot is not None:
-                self.parent.on_level_motion(xloc, yloc, iplot)
+                self.parent.on_level_motion(xloc, yloc, xpos, ypos, iplot)
         elif self.mode == '':
             if iplot is not None:
                 # no toggle buttons on
-                self.parent.on_motion(xloc, yloc, iplot)
+                self.parent.on_motion(xloc, yloc, xpos, ypos, iplot)
 
                 if self._cursors and self.vertOn:
                     for i,line in enumerate(self.vlines):
@@ -1064,7 +1064,7 @@ class NavToolbarMultiFov(NavigationToolbar2, wx.ToolBar):
         else:
             if iplot is not None:
                 # catch all
-                self.parent.on_motion(xloc, yloc, iplot)
+                self.parent.on_motion(xloc, yloc, xpos, ypos, iplot)
             
   
     def mouse_move(self, event):
@@ -1468,7 +1468,7 @@ class util_CreateMenuBar:
         self2.Bind(wx.EVT_MENU, handler, menuItem)
         
         
-class DemoImagePanel(ImagePanelToolbar2):
+class DemoImagePanel(ImagePanelToolbarMultiFov):
     """Plots several lines in distinct colors."""
 
     # Activate event messages
@@ -1478,7 +1478,7 @@ class DemoImagePanel(ImagePanelToolbar2):
         # statusbar has to be here for NavToolbarMultiFov to discover on init()
         self.statusbar = statusbar
         # initiate plotter
-        sizer = ImagePanelToolbar2.__init__( self, 
+        sizer = ImagePanelToolbarMultiFov.__init__( self,
                                              parent, 
                                              vertOn=True,
                                              horizOn=True, 
@@ -1493,14 +1493,14 @@ class DemoImagePanel(ImagePanelToolbar2):
         
         self.statusbar = statusbar
 
-    def on_motion(self, xloc, yloc, iplot):
+    def on_motion(self, xloc, yloc, xpos, ypos, iplot):
         value = self.data[iplot][0]['data'][int(round(xloc))][int(round(yloc))]
         self.top.statusbar.SetStatusText( " Value = %s" % (str(value), ), 0)
         self.top.statusbar.SetStatusText( " X,Y = %i,%i" % (int(round(xloc)),int(round(yloc))) , 1)
         self.top.statusbar.SetStatusText( " " , 2)
         self.top.statusbar.SetStatusText( " " , 3)
 
-    def on_panzoom_motion(self, xloc, yloc, iplot):
+    def on_panzoom_motion(self, xloc, yloc, xpos, ypos, iplot):
         axes = self.axes[iplot]
         xmin,xmax = axes.get_xlim()
         ymax,ymin = axes.get_ylim()         # max/min flipped here because of y orient top/bottom
@@ -1511,7 +1511,7 @@ class DemoImagePanel(ImagePanelToolbar2):
         self.top.statusbar.SetStatusText(( " delta X,Y = %.1f,%.1f " % (xdelt,ydelt )), 2)
         self.top.statusbar.SetStatusText( " " , 3)
 
-    def on_level_motion(self, xloc, yloc, iplot):
+    def on_level_motion(self, xloc, yloc, xpos, ypos, iplot):
         self.top.statusbar.SetStatusText( " " , 0)
         self.top.statusbar.SetStatusText(( " Width = %i " % (self.width[iplot],)), 1)
         self.top.statusbar.SetStatusText(( " Level = %i " % (self.level[iplot],)), 2)
