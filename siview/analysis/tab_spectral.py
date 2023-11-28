@@ -30,6 +30,7 @@ from siview.analysis.auto_gui.image_pane import ImagePaneUI
 from siview.analysis.plot_panel_spectral import PlotPanelSpectral
 from siview.analysis.image_panel_siview import ImagePanelSiview
 from siview.analysis.plot_panel_svd_filter import PlotPanelSvdFilter
+from siview.analysis.image_control_panel import ImageControlPanel
 
 import siview.common.wx_gravy.util as wx_util
 import siview.common.constants as common_constants
@@ -614,22 +615,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.view.Fit()
         self.view.change_naxes(1)
 
-#        self.panel_image = ImagePaneUI(self.tab_notebook, wx.ID_ANY)
-        self.panel_image = ImagePaneUI(self, wx.ID_ANY)
-        self.image = ImagePanelSiview( self.panel_image.PanelImagePlot,
-                                       self,
-                                       self._tab_dataset,
-                                       naxes=2,
-                                       data=[],
-                                       vertOn=True,
-                                       horizOn=True,
-                                       layout='horizontal',
-                                      )
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.image, 1, wx.LEFT | wx.TOP | wx.EXPAND)
-        self.panel_image.PanelImagePlot.SetSizer(sizer)
-        self.image.Fit()
-
+        self.panel_image = ImageControlPanel(self.tab_notebook, self, self._tab_dataset)
+        self.image = self.panel_image.image
 
         #------------------------------------------------------------------
         # Insert all panels into AUI Notebook and decorate as needed

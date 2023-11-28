@@ -11,7 +11,6 @@
 
 # 3rd party modules
 import wx
-import siview.common.wx_gravy.image_panel_toolbar as image_panel_toolbar
 from siview.common.wx_gravy.image_panel_toolbar_multifov import ImagePanelToolbarMultiFov
         
 
@@ -38,7 +37,7 @@ class ImagePanelSiview(ImagePanelToolbarMultiFov):
 
 
     # EVENT FUNCTIONS -----------------------------------------------
-    
+
     def on_motion(self, xloc, yloc, xpos, ypos, iplot):
        
         xvox, yvox, zvox = self.tab_dataset.voxel
@@ -62,19 +61,19 @@ class ImagePanelSiview(ImagePanelToolbarMultiFov):
 
     def on_scroll(self, button, step, iplot):
 
-        xvox, yvox, zvox = self.tab.voxel
+        xvox, yvox, zvox = self.tab_dataset.voxel
         step = 1 if step>0 else -1
         dims = self.tab.dataset.spectral_dims
-        tmp = self.tab.voxel[2] + step
+        tmp = self.tab_dataset.voxel[2] + step
         tmp = tmp if tmp>0 else 0
         tmp = tmp if tmp<dims[2]-1 else dims[2]-1
-        self.tab.voxel[2] = tmp
+        self.tab_dataset.voxel[2] = tmp
         zvox = tmp
-        self.tab.process()
-        self.tab.plot()
-        self.tab.show()
-        self.top.statusbar.SetStatusText( " Cursor X,Y,Slc=%i,%i,%i" % (xvox,yvox,zvox), 0)
-        self.top.statusbar.SetStatusText( " Plot X,Y,Slc=%i,%i,%i"   % (xvox,yvox,zvox), 3)
+        # self.tab.process()
+        # self.tab.plot()
+        # self.tab.show()
+        # self.top.statusbar.SetStatusText( " Cursor X,Y,Slc=%i,%i,%i" % (xvox,yvox,zvox), 0)
+        # self.top.statusbar.SetStatusText( " Plot X,Y,Slc=%i,%i,%i"   % (xvox,yvox,zvox), 3)
 
 
     def on_select(self, xloc, yloc, xpos, ypos, iplot):
@@ -90,7 +89,7 @@ class ImagePanelSiview(ImagePanelToolbarMultiFov):
 
             
     def on_panzoom_release(self, xloc, yloc, xpos, ypos):
-        xvox, yvox, zvox = self.tab.voxel
+        xvox, yvox, zvox = self.tab_dataset.voxel
         self.top.statusbar.SetStatusText(" ", 0)
         self.top.statusbar.SetStatusText(" ", 1)
         self.top.statusbar.SetStatusText(" ", 2)
@@ -110,7 +109,7 @@ class ImagePanelSiview(ImagePanelToolbarMultiFov):
 
 
     def on_level_release(self, xloc, yloc, xpos, ypos):
-        xvox, yvox, zvox = self.tab.voxel
+        xvox, yvox, zvox = self.tab_dataset.voxel
         self.top.statusbar.SetStatusText(" ", 0)
         self.top.statusbar.SetStatusText(" ", 1)
         self.top.statusbar.SetStatusText(" ", 2)
@@ -125,7 +124,7 @@ class ImagePanelSiview(ImagePanelToolbarMultiFov):
 
         
     def on_level_motion(self, xloc, yloc, xpos, ypos, iplot):
-        xvox, yvox, zvox = self.tab.voxel
+        xvox, yvox, zvox = self.tab_dataset.voxel
         self.top.statusbar.SetStatusText( " " , 0)
         self.top.statusbar.SetStatusText( " Width = %i " % (self.width[iplot],), 1)
         self.top.statusbar.SetStatusText( " Level = %i " % (self.level[iplot],), 2)
