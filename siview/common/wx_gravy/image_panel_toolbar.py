@@ -1027,7 +1027,9 @@ class NavigationToolbar3Wx(NavigationToolbar2, wx.ToolBar):
             for i,axes in enumerate(self.parent.axes):
                 if axes == event.inaxes:
                     iplot = i
-        
+
+        # print("mode ="+str(self.mode)+"  button_pressed = "+str(self._button_pressed))
+
         if self.mode == 'pan/zoom' and (self._button_pressed == 1 or self._button_pressed == 3):
             if iplot is not None:
                 self.parent.on_panzoom_motion(xloc, yloc, iplot)

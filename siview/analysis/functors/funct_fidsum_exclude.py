@@ -4,8 +4,8 @@
 import numpy as np
 
 # Vespa imports
-from vespa.analysis.algos.fida_rmbadaverages    import op_rmbadaverages
-from vespa.analysis.algos.fida_rmNworstaverages import op_rmNworstaverages
+from siview.analysis.algos.fida_rmbadaverages    import op_rmbadaverages
+from siview.analysis.algos.fida_rmNworstaverages import op_rmNworstaverages
 
 EXCLUDE_MENU_ITEMS = ['Manual',
                       'Remove Bad Averages (fid-a)',
