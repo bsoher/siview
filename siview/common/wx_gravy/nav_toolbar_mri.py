@@ -25,10 +25,11 @@ from matplotlib import (backend_tools as tools, cbook)
 from wx.lib.embeddedimage import PyEmbeddedImage
 
 
-LEVMAX =  383
-LEVMIN = -127
-WIDMAX =  255
-WIDMIN =    0
+LEVMAX =  2048
+LEVMIN = -2048
+WIDMAX =  4096
+WIDMIN =    1
+WIDSTR =  255
 LEVSTR =  128
 
 #------------------------------------------------------------------------------
@@ -76,9 +77,6 @@ class NavToolbarMri(wx.ToolBar):
       :meth:`draw_rubberband` (optional)
          draw the zoom to rect "rubberband" rectangle
 
-      :meth:`set_message` (optional)
-         display message
-
       :meth:`set_history_buttons` (optional)
          you can change the history back / forward buttons to
          indicate disabled / enabled state.
@@ -120,7 +118,6 @@ class NavToolbarMri(wx.ToolBar):
                  horizOn=False,
                  lcolor='gold',
                  lw=0.5,
-                 coordinates=True,
                  style=wx.TB_BOTTOM ):
 
         wx.ToolBar.__init__(self, canvas.GetParent(), -1)
@@ -137,28 +134,17 @@ class NavToolbarMri(wx.ToolBar):
 
             bmp = nav3_catalog[image_file].GetBitmap()
 
-            self.wx_ids[text] = wx.NewId()
+            self.wx_ids[text] = wx.NewIdRef()
             if text in ['Pan', 'Level', 'Crosshairs']:
                 self.AddCheckTool(self.wx_ids[text], ' ', bmp, shortHelp=text, longHelp=tooltip_text)
             elif text in ['Zoom', 'Subplots']:
                 pass  # don't want this in my toolbar
-                # self.AddTool(self.wx_ids[text],       # NB. bjs - this is not tested
-                #              bitmap=bmp,              # adapted from backend_wx.py
-                #              bmpDisabled=wx.NullBitmap,   # in NavigationToolbar2Wx
-                #              label=text,
-                #              shortHelp=tooltip_text,
-                #              kind=(wx.ITEM_NORMAL))
+                # NB. bjs - this is not tested
+                # self.AddTool(self.wx_ids[text], bitmap=bmp, bmpDisabled=wx.NullBitmap, label=text, shortHelp=text, longHelp=tooltip_text, kind=(wx.ITEM_NORMAL))
             else:
-                #self.AddSimpleTool(self.wx_ids[text], bmp, shortHelpString=text, longHelpString=tooltip_text)
                 self.AddTool(self.wx_ids[text], bitmap=bmp, bmpDisabled=wx.NullBitmap, label=text, shortHelp=text, longHelp=tooltip_text)
 
             self.Bind(wx.EVT_TOOL, getattr(self, callback), id=self.wx_ids[text])
-
-        self._coordinates = coordinates
-        if self._coordinates:
-            self.AddStretchableSpace()
-            self._label_text = wx.StaticText(self, style=wx.ALIGN_RIGHT)
-            self.AddControl(self._label_text)
 
         self.Realize()
 
@@ -170,9 +156,11 @@ class NavToolbarMri(wx.ToolBar):
         # This cursor will be set after the initial draw.
         self._last_cursor = tools.Cursors.POINTER
 
-        self._id_press   = self.canvas.mpl_connect( 'button_press_event', self.zoom_pan_level_handler)
-        self._id_release = self.canvas.mpl_connect( 'button_release_event', self.zoom_pan_level_handler)
-        self._id_drag    = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
+        self._id_press     = self.canvas.mpl_connect( 'button_press_event', self.zoom_pan_level_handler)
+        self._id_release   = self.canvas.mpl_connect( 'button_release_event', self.zoom_pan_level_handler)
+        self._id_drag      = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
+        self._id_ax_leave  = self.canvas.mpl_connect( 'axes_leave_event', self.leave)
+        self._id_fig_leave = self.canvas.mpl_connect( 'figure_leave_event', self.leave)
         self._pan_info   = None
         self._zoom_info  = None
         self._level_info = None
@@ -185,10 +173,14 @@ class NavToolbarMri(wx.ToolBar):
         self.parent = parent
         self.statusbar = self.parent.statusbar
         self.prevxy = [0,0]
-
-        # turn off crosshairs when mouse outside canvas
-        self._id_ax_leave  = self.canvas.mpl_connect('axes_leave_event', self.leave)
-        self._id_fig_leave = self.canvas.mpl_connect('figure_leave_event', self.leave)
+        self.widmax = 4096
+        self.widmin = 1
+        self.levmax = 2048
+        self.levmin = -2048
+        self.nstep_cmap = 256.0   # number of levels in the cmap
+        self.width = [float(WIDSTR) for a in self.canvas.figure.get_axes()]
+        self.level = [float(LEVSTR) for a in self.canvas.figure.get_axes()]
+        self.cmap = cm.gray
 
         # set up control params for crosshair functionality
         self._crosshairs = False
@@ -236,6 +228,11 @@ class NavToolbarMri(wx.ToolBar):
         self.set_history_buttons()
         self._update_view()
 
+    def update(self):
+        """Reset the Axes stack."""
+        self._nav_stack.clear()
+        self.set_history_buttons()
+
     def push_current(self):
         """Push the current view limits and position onto the stack."""
         self._nav_stack.push(
@@ -266,35 +263,6 @@ class NavToolbarMri(wx.ToolBar):
             ax._set_position(pos_active, 'active')
         self.canvas.draw_idle()
 
-
-    def update(self):
-        """Reset the Axes stack."""
-        self._nav_stack.clear()
-        self.set_history_buttons()
-
-
-    def get_canvas(self, frame, fig):
-        # saw this in NavigationToolbar2WxAgg, so included here
-        return FigureCanvasWxAgg(frame, -1, fig)
-
-
-    def _update_cursor(self, event):
-        """
-        Update the cursor after a mouse move event or a tool (de)activation.
-        """
-        if self.mode and event.inaxes and event.inaxes.get_navigate():
-            if (self.mode == _Mode.ZOOM and self._last_cursor != tools.Cursors.SELECT_REGION):
-                self.canvas.set_cursor(tools.Cursors.SELECT_REGION)
-                self._last_cursor = tools.Cursors.SELECT_REGION
-            elif (self.mode == _Mode.PAN and self._last_cursor != tools.Cursors.MOVE):
-                self.canvas.set_cursor(tools.Cursors.MOVE)
-                self._last_cursor = tools.Cursors.MOVE
-            elif (self.mode == _Mode.LEVEL and self._last_cursor != tools.Cursors.SELECT_REGION):
-                self.canvas.set_cursor(tools.Cursors.SELECT_REGION)
-                self._last_cursor = tools.Cursors.SELECT_REGION
-        elif self._last_cursor != tools.Cursors.POINTER:
-            self.canvas.set_cursor(tools.Cursors.POINTER)
-            self._last_cursor = tools.Cursors.POINTER
 
     @contextmanager
     def _wait_cursor_for_draw_cm(self):
@@ -340,7 +308,6 @@ class NavToolbarMri(wx.ToolBar):
                 return s
         return ""
 
-
     def _update_buttons_checked(self):
         # from backend_wx.py - bjs update for Level
         if "Pan" in self.wx_ids:
@@ -350,12 +317,10 @@ class NavToolbarMri(wx.ToolBar):
         if "Level" in self.wx_ids:
             self.ToggleTool(self.wx_ids["Level"], self.mode.name == "LEVEL")
 
-
     def leave(self, event):
         """ Turn off the xrosshairs as we move mouse outside axes or figure """
         for line in self.vlines+self.hlines: line.set_visible(False)
         self.canvas.draw_idle()
-
 
     def crosshairs(self, *args):
         """
@@ -371,7 +336,6 @@ class NavToolbarMri(wx.ToolBar):
             self._crosshairs = True
             if 'Crosshairs' in list(self.wx_ids.keys()):
                 self.ToggleTool(self.wx_ids['Crosshairs'], True)
-
 
     def zoom_pan_level_handler(self, event):
         if self.mode == _Mode.PAN:
@@ -402,7 +366,6 @@ class NavToolbarMri(wx.ToolBar):
         Pan with left button, zoom with right.
         """
         if not self.canvas.widgetlock.available(self):
-            self.set_message("pan unavailable")
             return
         if self.mode == _Mode.PAN:
             self.mode = _Mode.NONE
@@ -421,8 +384,6 @@ class NavToolbarMri(wx.ToolBar):
         if (event.button not in [MouseButton.LEFT, MouseButton.RIGHT]
                 or event.x is None or event.y is None):
             return
-        # axes = [a for a in self.canvas.figure.get_axes()
-        #         if a.in_axes(event) and a.get_navigate() and a.can_pan()]
         axes = [(i,a) for i,a in enumerate(self.canvas.figure.get_axes())
                 if a.in_axes(event) and a.get_navigate() and a.can_pan()]
         if not axes:
@@ -451,7 +412,6 @@ class NavToolbarMri(wx.ToolBar):
         iplot = self._pan_info.axes[0][0]
         self.parent.on_panzoom_motion(xloc, yloc, iplot)
 
-
     def release_pan(self, event):
         """Callback for mouse button release in pan/zoom mode."""
         if self._pan_info is None:
@@ -467,10 +427,8 @@ class NavToolbarMri(wx.ToolBar):
         xloc, yloc = self.get_bounded_xyloc(event)
         self.parent.on_panzoom_release(xloc, yloc)
 
-
     def zoom(self, *args):
         if not self.canvas.widgetlock.available(self):
-            self.set_message("zoom unavailable")
             return
         """Toggle zoom to rect mode."""
         if self.mode == _Mode.ZOOM:
@@ -514,7 +472,6 @@ class NavToolbarMri(wx.ToolBar):
             line.set_visible(False)
         self.canvas.draw_idle()
 
-
     def drag_zoom(self, event):
         """Callback for dragging in zoom mode."""
         start_xy = self._zoom_info.start_xy
@@ -534,7 +491,6 @@ class NavToolbarMri(wx.ToolBar):
 
         self.draw_rubberband(event, x1, y1, x2, y2)
         # NB. bjs - no parent event call here, yet ...
-
 
     def release_zoom(self, event):
         """Callback for mouse button release in zoom to rect mode."""
@@ -582,8 +538,7 @@ class NavToolbarMri(wx.ToolBar):
         self.canvas.draw_idle()
         self._zoom_info = None
         self.push_current()
-
-        xloc, yloc = self.get_bounded_xyloc(event)
+        # NB. bjs - no parent event call here, yet ...
 
 
     def level(self, *args):
@@ -593,7 +548,6 @@ class NavToolbarMri(wx.ToolBar):
         Change image with right button up/down left/right
         """
         if not self.canvas.widgetlock.available(self):
-            self.set_message("level unavailable")
             return
         if self.mode == _Mode.LEVEL:
             self.mode = _Mode.NONE
@@ -610,7 +564,7 @@ class NavToolbarMri(wx.ToolBar):
     def press_level(self, event):
         """Callback for mouse button press in width/level mode."""
 
-        if (event.button not in [MouseButton.LEFT, MouseButton.RIGHT]
+        if (event.button not in [MouseButton.RIGHT,]
                 or event.x is None or event.y is None):
             return
         axes = [(i,a) for i,a in enumerate(self.canvas.figure.get_axes())
@@ -637,48 +591,41 @@ class NavToolbarMri(wx.ToolBar):
         xloc, yloc = self.get_bounded_xyloc(event)
         self.parent.on_level_press(xloc, yloc, axes[0][0])
 
-
     def drag_level(self, event):
         """Callback for dragging in width/level mode."""
 
+        xprev, yprev = self.prevxy
+        xdelt = int((event.x - xprev))
+        ydelt = int((event.y - yprev))
+
         for item in self._level_info.axes:
             indx, ax = item
-            xprev, yprev = self.prevxy
-
-            xdelt = int((event.x - xprev))
-            ydelt = int((event.y - yprev))
 
             if abs(ydelt) >= abs(xdelt):
-                self.parent.level[indx] += ydelt
+                self.level[indx] = max(LEVMIN, min(LEVMAX, self.level[indx]+ydelt))
             else:
-                self.parent.width[indx] += xdelt
+                self.width[indx] = max(WIDMIN, min(WIDMAX, self.width[indx]+xdelt))
 
-            vmax0 = self.parent.vmax_orig[indx]
-            vmin0 = self.parent.vmin_orig[indx]
-            wid = max(WIDMIN, min(WIDMAX, self.parent.width[indx]))
-            lev = max(LEVMIN, min(LEVMAX, self.parent.level[indx]))
-            vtot = vmax0 - vmin0
-            vmid = vmin0 + vtot * (lev / WIDMAX)
-            vwid = vtot * (wid / WIDMAX)
-            vmin = vmid - (vwid / 2.0)
-            vmax = vmid + (vwid / 2.0)
+            wid = self.width[indx]
+            lev = self.level[indx]
 
-            self.parent.vmax[indx] = vmax
-            self.parent.vmin[indx] = vmin
-            self.parent.width[indx] = wid  # need this in case values were
-            self.parent.level[indx] = lev  # clipped by MIN MAX bounds
+            npts = self.levmax - self.levmin    # typical 8192
+            nstep = float(self.nstep_cmap)
+            cmarr = (np.arange(npts) + self.levmin) * (1.0/wid) + 0.5  # .5 is ctr of cmap range
+            cmarr = np.roll(cmarr, int(lev - LEVSTR))
+            cmarr = cmarr[int((npts-nstep)*0.5):int((npts+nstep)*0.5)]
+            cmarr = np.clip(cmarr, 0.0, 1.0)
 
-            #self.parent.update_images(index=indx)
+            newcmp = ListedColormap(self.cmap(cmarr))
+            ax.images[0].set(cmap=newcmp)
 
-            # prep new 'last' location for next event call
             self.prevxy = [event.x, event.y]
 
         self.canvas.draw_idle()
 
         xloc, yloc = self.get_bounded_xyloc(event)
         iplot = self._level_info.axes[0][0]
-        self.parent.on_level_motion(xloc, yloc, iplot)
-
+        self.parent.on_level_motion(xloc, yloc, iplot, wid, lev)
 
     def release_level(self, event):
         """Callback for mouse button release in width/level mode."""
@@ -695,15 +642,13 @@ class NavToolbarMri(wx.ToolBar):
         xloc, yloc = self.get_bounded_xyloc(event)
         self.parent.on_level_release(xloc, yloc)
 
-
     def press_local(self, event):
         # no toggle buttons on, but maybe we want to show crosshairs
         self.parent.select_is_held = True
-        if self._cursors:
+        if self._crosshairs:
             for line in self.vlines + self.hlines:
                 line.set_visible(True)
         self.canvas.draw_idle()
-
 
     def release_local(self, event):
         # no toggle buttons on
@@ -716,13 +661,9 @@ class NavToolbarMri(wx.ToolBar):
                 iplot = i
         self.parent.on_select(xloc, yloc, iplot)
 
-
     def mouse_move(self, event):
+
         self._update_cursor(event)
-
-        # bjs - comment out for now
-        # self.set_message(self._mouse_event_to_message(event))
-
         if not event.inaxes:
             return
 
@@ -745,281 +686,6 @@ class NavToolbarMri(wx.ToolBar):
                     line.set_visible(True)
             self.canvas.draw_idle()
 
-
-
-
-
-    #-----------------------------------------------------------------------------
-    # bjs original methods
-
-    # def on_motion(self, event):
-    #     # The following limit when motion events are triggered
-    #
-    #     if not event.inaxes and self.mode == '':
-    #         return
-    #     if not event.inaxes and not self._button_pressed:
-    #         # When we are in pan or zoom or level and the mouse strays outside
-    #         # the canvas, we still want to have events even though the xyloc
-    #         # can not be properly calculated. We are reporting other things
-    #         # that do not need xylocs for like width/level values.
-    #         return
-    #
-    #     xloc, yloc = self.get_bounded_xyloc(event)
-    #
-    #     iplot = None
-    #     if self._xypress:
-    #         item = self._xypress[0]
-    #         axis, iplot = item[0], item[1]
-    #     else:
-    #         axis = None
-    #         for i, axes in enumerate(self.parent.axes):
-    #             if axes == event.inaxes:
-    #                 iplot = i
-    #
-    #     # print("mode ="+str(self.mode)+"  button_pressed = "+str(self._button_pressed))
-    #
-    #     if self.mode == 'pan/zoom' and (self._button_pressed == 1 or self._button_pressed == 3):
-    #         if iplot is not None:
-    #             self.parent.on_panzoom_motion(xloc, yloc, iplot)
-    #     elif self.mode == 'zoom rect' and (self._button_pressed == 1 or self._button_pressed == 3):
-    #         if iplot is None:
-    #             pass
-    #     elif self.mode == 'width/level' and self._button_pressed == 3:
-    #         if iplot is not None:
-    #             self.parent.on_level_motion(xloc, yloc, iplot)
-    #     elif self.mode == '':
-    #         if iplot is not None:
-    #             # no toggle buttons on
-    #             self.parent.on_motion(xloc, yloc, iplot)
-    #
-    #             if self._cursors and self.vertOn:
-    #                 for line in self.vlines:
-    #                     line.set_xdata((xloc, xloc))
-    #                     line.set_visible(True)
-    #             if self._cursors and self.horizOn:
-    #                 for line in self.hlines:
-    #                     line.set_ydata((yloc, yloc))
-    #                     line.set_visible(True)
-    #             self.canvas.draw_idle()
-    #             # self.dynamic_update()
-    #     else:
-    #         if iplot is not None:
-    #             # catch all
-    #             self.parent.on_motion(xloc, yloc, iplot)
-
-    # def drag_pan(self, event):
-    #     NavigationToolbar2.drag_pan(self, event)
-    #     self.mouse_move(event)
-        
-        
-    # def level(self, *args):
-    #     """Activate the width/level tool. change values with right button up/down left/right"""
-    #
-    #     for item in ['Zoom', 'Pan']:
-    #         if item in list(self.wx_ids.keys()): self.ToggleTool(self.wx_ids[item], False)
-    #
-    #     self.local_setup_before_event()
-    #
-    #     if not self.canvas.widgetlock.available(self):
-    #         self.set_message("level unavailable")
-    #         return
-    #
-    #     if self.mode == _Mode.LEVEL:
-    #         self.mode = _Mode.NONE
-    #         self.canvas.widgetlock.release(self)
-    #     else:
-    #         self.mode = _Mode.LEVEL
-    #         if self._idPress is not None:
-    #             self._idPress = self.canvas.mpl_disconnect(self._idPress)
-    #         if self._idRelease is not None:
-    #             self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
-    #         self._idPress   = self.canvas.mpl_connect( 'button_press_event',   self.press_level)
-    #         self._idRelease = self.canvas.mpl_connect( 'button_release_event', self.release_level)
-    #         self.canvas.widgetlock(self)
-    #
-    #     for a in self.canvas.figure.get_axes():
-    #         a.set_navigate_mode(self.mode._navigate_mode)
-    #
-    #     self.set_message(self.mode)
-    #
-    #     self.local_setup_after_event()  # bjs - may not need this here, not part of super class
-
- 
-    # def press_level(self, event):
-    #     """the press mouse button in width/level mode callback"""
-    #
-    #     if event.button == 3:
-    #         self._button_pressed = 3
-    #     else:
-    #         self._button_pressed = None
-    #         return
-    #
-    #     x, y = event.x, event.y
-    #
-    #     # push the current view to define home if stack is empty
-    #     if self._nav_stack() is None:
-    #         self.push_current()
-    #
-    #     self._xypress = []
-    #     for i, a in enumerate(self.canvas.figure.get_axes()):
-    #         if (x is not None and y is not None and a.in_axes(event) and a.get_navigate() and a.can_pan()):
-    #             self._xypress.append([a, i, event.x, event.y])
-    #             self.canvas.mpl_disconnect(self._idDrag)
-    #             self._idDrag = self.canvas.mpl_connect('motion_notify_event', self.drag_level)
-    #
-    #     self.press_local(event)
- 
- 
-    # def drag_level(self, event):
-    #     """the drag callback in width/level mode"""
-    #
-    #     for a, indx, xprev, yprev in self._xypress:
-    #
-    #         xdelt = int((event.x-xprev))
-    #         ydelt = int((event.y-yprev))
-    #
-    #         if abs(ydelt) >= abs(xdelt):
-    #             self.parent.level[indx] += ydelt
-    #         else:
-    #             self.parent.width[indx] += xdelt
-    #
-    #         vmax0 = self.parent.vmax_orig[indx]
-    #         vmin0 = self.parent.vmin_orig[indx]
-    #         wid   = max(WIDMIN, min(WIDMAX, self.parent.width[indx]))
-    #         lev   = max(LEVMIN, min(LEVMAX, self.parent.level[indx]))
-    #         vtot  = vmax0 - vmin0
-    #         vmid  = vmin0 + vtot * (lev/WIDMAX)
-    #         vwid  = vtot * (wid/WIDMAX)
-    #         vmin  = vmid - (vwid/2.0)
-    #         vmax  = vmid + (vwid/2.0)
-    #
-    #         self.parent.vmax[indx]  = vmax
-    #         self.parent.vmin[indx]  = vmin
-    #         self.parent.width[indx] = wid   # need this in case values were
-    #         self.parent.level[indx] = lev   # clipped by MIN MAX bounds
-    #
-    #         self.parent.update_images(index=indx)
-    #
-    #         # prep new 'last' location for next event call
-    #         self._xypress[0][2] = event.x
-    #         self._xypress[0][3] = event.y
-    #
-    #     self.mouse_move(event)
-    #
-    #     self.canvas.draw_idle()
-    #     #self.dynamic_update()
-
- 
-    # def release_level(self, event):
-    #     """the release mouse button callback in width/level mode"""
-    #
-    #     if self._button_pressed is None:
-    #         return
-    #     self.canvas.mpl_disconnect(self._idDrag)
-    #     self._idDrag = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
-    #     for a, ind, xlast, ylast in self._xypress:
-    #         pass
-    #     if not self._xypress:
-    #         return
-    #
-    #     self._xypress = []
-    #     self._button_pressed = None
-    #     self.push_current()
-    #     self.release_local(event)
-    #     self.canvas.draw()
-
-
-
-
-
-    # def set_cursor(self, cursor):
-    #     cursor = wx.Cursor(cursord[cursor])
-    #     self.canvas.SetCursor( cursor )
-
-
-
-
-
-
-
-
-    # def on_motion(self, event):
-    #     # The following limit when motion events are triggered
-    #
-    #     if not event.inaxes and self.mode == '':
-    #         return
-    #     if not event.inaxes and not self._button_pressed:
-    #         # When we are in pan or zoom or level and the mouse strays outside
-    #         # the canvas, we still want to have events even though the xyloc
-    #         # can not be properly calculated. We are reporting other things
-    #         # that do not need xylocs for like width/level values.
-    #         return
-    #
-    #     xloc, yloc = self.get_bounded_xyloc(event)
-    #
-    #     iplot = None
-    #     if self._xypress:
-    #         item = self._xypress[0]
-    #         axis, iplot = item[0], item[1]
-    #     else:
-    #         axis = None
-    #         for i,axes in enumerate(self.parent.axes):
-    #             if axes == event.inaxes:
-    #                 iplot = i
-    #
-    #     # print("mode ="+str(self.mode)+"  button_pressed = "+str(self._button_pressed))
-    #
-    #     if self.mode == 'pan/zoom' and (self._button_pressed == 1 or self._button_pressed == 3):
-    #         if iplot is not None:
-    #             self.parent.on_panzoom_motion(xloc, yloc, iplot)
-    #     elif self.mode == 'zoom rect' and (self._button_pressed == 1 or self._button_pressed == 3):
-    #         if iplot is None:
-    #             pass
-    #     elif self.mode == 'width/level' and self._button_pressed == 3:
-    #         if iplot is not None:
-    #             self.parent.on_level_motion(xloc, yloc, iplot)
-    #     elif self.mode == '':
-    #         if iplot is not None:
-    #             # no toggle buttons on
-    #             self.parent.on_motion(xloc, yloc, iplot)
-    #
-    #             if self._cursors and self.vertOn:
-    #                 for line in self.vlines:
-    #                     line.set_xdata((xloc, xloc))
-    #                     line.set_visible(True)
-    #             if self._cursors and self.horizOn:
-    #                 for line in self.hlines:
-    #                     line.set_ydata((yloc, yloc))
-    #                     line.set_visible(True)
-    #             self.canvas.draw_idle()
-    #             #self.dynamic_update()
-    #     else:
-    #         if iplot is not None:
-    #             # catch all
-    #             self.parent.on_motion(xloc, yloc, iplot)
-            
-  
-    # def mouse_move(self, event):
-    #     # call base event
-    #     NavigationToolbar2.mouse_move(self, event)
-    #
-    #     if event.inaxes and self.parent.axes[0].get_navigate_mode():
-    #
-    #         try:
-    #             # for MPL >=3.4 ?? bjs 3.6 for sure
-    #             if (self.parent.axes[0].get_navigate_mode() == 'LEVEL' and self._last_cursor != 4):
-    #                 self.set_cursor(4)
-    #                 self._last_cursor = 4
-    #         except:
-    #             # for MPS <= 3.3 for sure, bjs
-    #             if (self.parent.axes[0].get_navigate_mode() == 'LEVEL' and self._lastCursor != 4):
-    #                 self.set_cursor(4)
-    #                 self._lastCursor = 4
-    #
-    #     # call additional event
-    #     self.on_motion(event)
-
-
     def get_bounded_xyloc(self, event):
         if not event.inaxes:
             return 0,0
@@ -1036,25 +702,33 @@ class NavToolbarMri(wx.ToolBar):
 
         return xloc,yloc
 
-    def _dprint(self, a_string):
-        if self._EVENT_DEBUG:
-            print(a_string)
-    
+    def get_canvas(self, frame, fig):
+        # saw this in NavigationToolbar2WxAgg, so included here
+        return FigureCanvasWxAgg(frame, -1, fig)
+
+    def _update_cursor(self, event):
+        """
+        Update the cursor after a mouse move event or a tool (de)activation.
+        """
+        if self.mode and event.inaxes and event.inaxes.get_navigate():
+            if (self.mode == _Mode.ZOOM and self._last_cursor != tools.Cursors.SELECT_REGION):
+                self.canvas.set_cursor(tools.Cursors.SELECT_REGION)
+                self._last_cursor = tools.Cursors.SELECT_REGION
+            elif (self.mode == _Mode.PAN and self._last_cursor != tools.Cursors.MOVE):
+                self.canvas.set_cursor(tools.Cursors.MOVE)
+                self._last_cursor = tools.Cursors.MOVE
+            elif (self.mode == _Mode.LEVEL and self._last_cursor != tools.Cursors.SELECT_REGION):
+                self.canvas.set_cursor(tools.Cursors.SELECT_REGION)
+                self._last_cursor = tools.Cursors.SELECT_REGION
+        elif self._last_cursor != tools.Cursors.POINTER:
+            self.canvas.set_cursor(tools.Cursors.POINTER)
+            self._last_cursor = tools.Cursors.POINTER
+
 
     #-------------------------------------------------------
 
-
     def set_status_bar(self, statusbar):
         self.statusbar = statusbar
-
-
-    def set_message(self, s):
-        if self.statusbar is not None:
-            pass
-        # # from backend_wx.py
-        # if self._coordinates:
-        #     self._label_text.SetLabel(s)
-
 
     def set_history_buttons(self):
         # from backend_wx.py
@@ -1064,7 +738,6 @@ class NavToolbarMri(wx.ToolBar):
             self.EnableTool(self.wx_ids['Back'], can_backward)
         if 'Forward' in self.wx_ids:
             self.EnableTool(self.wx_ids['Forward'], can_forward)
-
 
     def draw_rubberband(self, event, x0, y0, x1, y1):
         """
@@ -1076,12 +749,10 @@ class NavToolbarMri(wx.ToolBar):
         self.canvas._rubberband_rect = (x0, height - y0, x1, height - y1)
         self.canvas.Refresh()
 
-
     def remove_rubberband(self):
         # from backend_wx.py
         self.canvas._rubberband_rect = None
         self.canvas.Refresh()
-
 
     def save_figure(self, *args):
         # from backend_wx.py
@@ -1096,15 +767,16 @@ class NavToolbarMri(wx.ToolBar):
         dialog.SetFilterIndex(filter_index)
         if dialog.ShowModal() == wx.ID_OK:
             path = pathlib.Path(dialog.GetPath())
-            _log.debug('%s - Save file path: %s', type(self), path)
+#            _log.debug('%s - Save file path: %s', type(self), path)
             fmt = exts[dialog.GetFilterIndex()]
             ext = path.suffix[1:]
             if ext in self.canvas.get_supported_filetypes() and fmt != ext:
-                # looks like they forgot to set the image type drop
-                # down, going with the extension.
-                _log.warning('extension %s did not match the selected '
-                             'image type %s; going with %s',
-                             ext, fmt, ext)
+                pass
+                # # looks like they forgot to set the image type drop
+                # # down, going with the extension.
+                # _log.warning('extension %s did not match the selected '
+                #              'image type %s; going with %s',
+                #              ext, fmt, ext)
                 fmt = ext
             # Save dir for next time, unless empty str (which means use cwd).
             if mpl.rcParams["savefig.directory"]:
@@ -1117,7 +789,6 @@ class NavToolbarMri(wx.ToolBar):
                     caption='Matplotlib error')
                 dialog.ShowModal()
                 dialog.Destroy()
-
 
     def configure_subplots(self, *args):
         if hasattr(self, "subplot_tool"):
@@ -1415,168 +1086,17 @@ getnav3_zoom_to_rectIcon = nav3_zoom_to_rect.GetIcon
 
 # Test Code ------------------------------------------------------------------
 
-class MyFrame(wx.Frame):
-    def __init__(self, title="New Title Please", size=(350,200)):
- 
-        wx.Frame.__init__(self, None, title=title, pos=(150,150), size=size)
-        self.Bind(wx.EVT_CLOSE, self.on_close)
- 
-        util_CreateMenuBar(self)
-
-        self.statusbar = self.CreateStatusBar(4, 0)
- 
-        self.size_small  = 64
-        self.size_medium = 128
-        self.size_large  = 256
- 
-        data1 = { 'data'  : self.dist(self.size_medium),
-                  'alpha' : 1.0
-                }
-
-        data2 = { 'data'  : 100-self.dist(self.size_medium),
-                  'alpha' : 0.5,
-                  'cmap'  : cm.hsv,
-                }
-
-        data = [[data1], [data2]]
-
-        # data1 = {'data': self.dist(self.size_medium),
-        #          'alpha': 1.0
-        #          }
-        #
-        # data = [[data1],]
-         
-        self.nb = wx.Notebook(self, -1, style=wx.BK_BOTTOM)
-         
-        panel1 = wx.Panel(self.nb, -1)
-         
-        self.view = DemoImagePanel(panel1, self, self.statusbar, naxes=2, data=data)
-#        self.view = DemoImagePanel(panel1, self, self.statusbar, naxes=1, data=data)
-
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.view, 1, wx.LEFT | wx.TOP | wx.EXPAND)
-        panel1.SetSizer(sizer)
-        self.view.Fit()    
-     
-        self.nb.AddPage(panel1, "One")
-
-    def menuData(self):
-        return [("&File", (
-                    ("", "", ""),
-                    ("&Quit",    "Quit the program",  self.on_close))),
-                 ("Tests", (
-                     ("Set Small Images - keep norm",  "", self.on_small_images_keep_norm),
-                     ("Set Medium Images - keep norm", "", self.on_medium_images_keep_norm),
-                     ("Set Large Images - keep norm",  "", self.on_large_images_keep_norm),
-                     ("", "", ""),
-                     ("Set Small Images",  "", self.on_small_images),
-                     ("Set Medium Images", "", self.on_medium_images),
-                     ("Set Large Images",  "", self.on_large_images),
-                     ("", "", ""),
-                     ("Placeholder",    "non-event",  self.on_placeholder)))]       
-
-    def on_close(self, event):
-        dlg = wx.MessageDialog(self, 
-            "Do you really want to close this application?",
-            "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        dlg.Destroy()
-        if result == wx.ID_OK:
-            self.Destroy()
-
-    def on_placeholder(self, event):
-        print( "Event handler for on_placeholder - not implemented")
-
-
-    def on_small_images_keep_norm(self, event):
-        self.on_small_images(event, keep_norm=True)
-
-    def on_small_images(self, event, keep_norm=False):
-
-        data1 = { 'data'  : self.dist(self.size_small),
-                  'alpha' : 1.0
-                }
-
-        data2 = { 'data'  : 100-self.dist(self.size_small),
-                  'alpha' : 0.5,
-                  'cmap'  : cm.hsv,
-                }
-        
-        data = [[data1], [data2]]
-
-        self.view.set_data(data, keep_norm=keep_norm)
-        self.view.update(no_draw=True, keep_norm=keep_norm)
-        self.view.canvas.draw()
-
-    def on_medium_images_keep_norm(self, event):
-        self.on_medium_images(event, keep_norm=True)
-
-    def on_medium_images(self, event, keep_norm=False):
-
-        data1 = { 'data'  : self.dist(self.size_medium),
-                  'alpha' : 1.0
-                }
-
-        data2 = { 'data'  : 100-self.dist(self.size_medium),
-                  'alpha' : 0.5,
-                  'cmap'  : cm.hsv,
-                }
-        
-        data = [[data1], [data2]]
-
-        self.view.set_data(data, keep_norm=keep_norm)
-        self.view.update(no_draw=True, keep_norm=keep_norm)
-        self.view.canvas.draw()
-
-    def on_large_images_keep_norm(self, event):
-        self.on_large_images(event, keep_norm=True)
-
-    def on_large_images(self, event, keep_norm=False):
-
-        data1 = { 'data'  : self.dist(self.size_large),
-                  'alpha' : 1.0
-                }
-
-        data2 = { 'data'  : 100-self.dist(self.size_large),
-                  'alpha' : 0.5,
-                  'cmap'  : cm.hsv,
-                }
-        
-        data = [[data1], [data2]]
-
-        self.view.set_data(data, keep_norm=keep_norm)
-        self.view.update(no_draw=True, keep_norm=keep_norm)
-        self.view.canvas.draw()        
-        
-
-
-
-
-#----------------------------------------------------------------
-#----------------------------------------------------------------
-# Saved code
-
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.colors import ListedColormap
+#import matplotlib.pyplot as plt
 
 class CanvasFrame(wx.Frame):
     def __init__(self):
-        super().__init__(None, -1, 'WxPython and Matplotlib', size=(600,600))
+        super().__init__(None, -1, 'WxPython and Matplotlib', size=wx.Size(800,2000))
 
         naxes = 2
-
-        self.width      = [WIDMAX  for i in range(naxes)]
-        self.level      = [LEVSTR  for i in range(naxes)]
-        self.vmax       = [WIDMAX  for i in range(naxes)]
-        self.vmin       = [LEVSTR  for i in range(naxes)]
-        self.vmax_orig  = [WIDMAX  for i in range(naxes)]
-        self.vmin_orig  = [LEVSTR  for i in range(naxes)]
-
         self.data = [self.dist(256) for i in range(naxes)]
-
-        self.imax = [np.max(dat) for dat in self.data]
-        self.imin = [np.min(dat) for dat in self.data]
 
         self.top = wx.GetApp().GetTopWindow()
 
@@ -1597,8 +1117,7 @@ class CanvasFrame(wx.Frame):
                                      vertOn=True,
                                      horizOn=True,
                                      lcolor='gold',
-                                     lw=0.5,
-                                     coordinates=True)
+                                     lw=0.5)
         self.toolbar.Realize()
         # By adding toolbar in sizer, we are able to put it at the bottom
         # of the frame - so appearance is closer to GTK version.
@@ -1644,28 +1163,10 @@ class CanvasFrame(wx.Frame):
         """ placeholder, overload for user defined event handling """
         print('debug::on_level_release,   xloc='+str(xloc)+'  yloc='+str(yloc))
 
-    def on_level_motion(self, xloc, yloc, iplot):
-        wid = float(self.width[iplot])/255.0
-        ctr = float(self.level[iplot])/255.0
-        contr_low = ctr-wid/2.0
-        contr_low = contr_low if contr_low > 0.0 else 0.0
-        contr_hig = ctr+wid/2.0
-        contr_hig = contr_hig if contr_hig < 1.0 else 1.0
-
-        imgmax = self.imax[iplot]
-        imgmin = self.imin[iplot]
-        imglow = imgmin + (imgmax - imgmin) * contr_low
-        imghigh = imgmin + (imgmax - imgmin) * contr_hig
-        width = wid * (imgmax - imgmin)
-        center = ctr * (imgmax - imgmin)
-
-        gray_new = cm.gray
-        newcmp = ListedColormap(gray_new(np.linspace(contr_low, contr_hig, 128)))
-        self.aximg[iplot].set(cmap=newcmp)
-
+    def on_level_motion(self, xloc, yloc, iplot, wid, lev):
         self.top.statusbar.SetStatusText(" ", 0)
-        self.top.statusbar.SetStatusText((" Wid = %i  Lev = %i" % (self.width[iplot],self.level[iplot])), 1)
-        self.top.statusbar.SetStatusText((" Width = %f  Center = %f" % (contr_low, contr_hig,)), 2)
+        self.top.statusbar.SetStatusText((" Wid = %i  Lev = %i" % (int(wid),int(lev))), 1)
+        self.top.statusbar.SetStatusText(" ", 2)
         self.top.statusbar.SetStatusText(" ", 3)
 
     def dist(self, n, m=None):
