@@ -9,10 +9,12 @@ Brian J. Soher, Duke University, 2023
 
 """
 # Python modules
-
-import os
+import time
 import pathlib
-from enum import Enum
+from enum import Enum, IntEnum
+from contextlib import contextmanager
+from collections import namedtuple
+from weakref import WeakKeyDictionary
 
 # third party modules
 import wx
@@ -20,10 +22,6 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.cm as cm
 from matplotlib import (backend_tools as tools, cbook)
-
-from matplotlib.backend_bases          import NavigationToolbar2, cursors
-
-from matplotlib.figure    import Figure
 from wx.lib.embeddedimage import PyEmbeddedImage
 
 
@@ -33,21 +31,19 @@ WIDMAX =  255
 WIDMIN =    0
 LEVSTR =  128
 
-
-
-
-# MPL widlev example
-#
-#http://matplotlib.1069221.n5.nabble.com/Pan-zoom-interferes-with-user-specified-right-button-callback-td12186.html
-
-
-
 #------------------------------------------------------------------------------
 # NavToolbarMri
 #
 # This toolbar is specific to use in canvases that display MRI images.
 #
 #------------------------------------------------------------------------------
+
+class MouseButton(IntEnum):
+    LEFT = 1
+    MIDDLE = 2
+    RIGHT = 3
+    BACK = 8
+    FORWARD = 9
 
 class _Mode(str, Enum):
     NONE  = ""
@@ -63,7 +59,7 @@ class _Mode(str, Enum):
         return self.name if self is not _Mode.NONE else None
 
 
-class NavToolbarMri:
+class NavToolbarMri(wx.ToolBar):
     """
     Based on NavigationToolbar2 in backend_bases.py
     - Base class for the navigation cursor, version 2.
@@ -117,9 +113,17 @@ class NavToolbarMri:
       )
     
     
-    def __init__(self, canvas, parent, vertOn=False, horizOn=False, lcolor='gold', lw=0.5, coordinates=True):
+    def __init__(self,
+                 canvas,
+                 parent,
+                 vertOn=False,
+                 horizOn=False,
+                 lcolor='gold',
+                 lw=0.5,
+                 coordinates=True,
+                 style=wx.TB_BOTTOM ):
 
-        wx.ToolBar.__init__(self, canvas.GetParent(), -1, style=style)
+        wx.ToolBar.__init__(self, canvas.GetParent(), -1)
 
         # bjs - from backend_wx.py NavigationToolbar2Wx
 
@@ -133,8 +137,8 @@ class NavToolbarMri:
 
             bmp = nav3_catalog[image_file].GetBitmap()
 
-            self.wx_ids[text] = wx.NewIdRef()
-            if text in ['Pan', 'Level', 'Cursors']:
+            self.wx_ids[text] = wx.NewId()
+            if text in ['Pan', 'Level', 'Crosshairs']:
                 self.AddCheckTool(self.wx_ids[text], ' ', bmp, shortHelp=text, longHelp=tooltip_text)
             elif text in ['Zoom', 'Subplots']:
                 pass  # don't want this in my toolbar
@@ -145,7 +149,8 @@ class NavToolbarMri:
                 #              shortHelp=tooltip_text,
                 #              kind=(wx.ITEM_NORMAL))
             else:
-                self.AddTool(self.wx_ids[text], ' ', bitmap=bmp, label=text)
+                #self.AddSimpleTool(self.wx_ids[text], bmp, shortHelpString=text, longHelpString=tooltip_text)
+                self.AddTool(self.wx_ids[text], bitmap=bmp, bmpDisabled=wx.NullBitmap, label=text, shortHelp=text, longHelp=tooltip_text)
 
             self.Bind(wx.EVT_TOOL, getattr(self, callback), id=self.wx_ids[text])
 
@@ -179,6 +184,7 @@ class NavToolbarMri:
 
         self.parent = parent
         self.statusbar = self.parent.statusbar
+        self.prevxy = [0,0]
 
         # turn off crosshairs when mouse outside canvas
         self._id_ax_leave  = self.canvas.mpl_connect('axes_leave_event', self.leave)
@@ -415,14 +421,16 @@ class NavToolbarMri:
         if (event.button not in [MouseButton.LEFT, MouseButton.RIGHT]
                 or event.x is None or event.y is None):
             return
-        axes = [a for a in self.canvas.figure.get_axes()
+        # axes = [a for a in self.canvas.figure.get_axes()
+        #         if a.in_axes(event) and a.get_navigate() and a.can_pan()]
+        axes = [(i,a) for i,a in enumerate(self.canvas.figure.get_axes())
                 if a.in_axes(event) and a.get_navigate() and a.can_pan()]
         if not axes:
             return
         if self._nav_stack() is None:
             self.push_current()  # set the home button to this view
         for ax in axes:
-            ax.start_pan(event.x, event.y, event.button)
+            ax[1].start_pan(event.x, event.y, event.button)
         self.canvas.mpl_disconnect(self._id_drag)
         id_drag = self.canvas.mpl_connect("motion_notify_event", self.drag_pan)
         self._pan_info = self._PanInfo( button=event.button, axes=axes, cid=id_drag)
@@ -436,7 +444,7 @@ class NavToolbarMri:
         for ax in self._pan_info.axes:
             # Using the recorded button at the press is safer than the current
             # button, as multiple buttons can get pressed during motion.
-            ax.drag_pan(self._pan_info.button, event.key, event.x, event.y)
+            ax[1].drag_pan(self._pan_info.button, event.key, event.x, event.y)
         self.canvas.draw_idle()
 
         xloc, yloc = self.get_bounded_xyloc(event)
@@ -451,7 +459,7 @@ class NavToolbarMri:
         self.canvas.mpl_disconnect(self._pan_info.cid)
         self._id_drag = self.canvas.mpl_connect( 'motion_notify_event', self.mouse_move)
         for ax in self._pan_info.axes:
-            ax.end_pan()
+            ax[1].end_pan()
         self.canvas.draw_idle()
         self._pan_info = None
         self.push_current()
@@ -484,6 +492,8 @@ class NavToolbarMri:
             return
         axes = [a for a in self.canvas.figure.get_axes()
                 if a.in_axes(event) and a.get_navigate() and a.can_zoom()]
+        # NB. bjs - too complex to add (i, a) info at this point for zoom,
+        #  can look at it again in future when more time to plan
         if not axes:
             return
         if self._nav_stack() is None:
@@ -595,7 +605,7 @@ class NavToolbarMri:
             a.set_navigate_mode(self.mode._navigate_mode)
         self._update_buttons_checked()
 
-    _LevelInfo = namedtuple("_LevelInfo", "button axes cid prevx prevy")
+    _LevelInfo = namedtuple("_LevelInfo", "button axes cid")
 
     def press_level(self, event):
         """Callback for mouse button press in width/level mode."""
@@ -617,8 +627,8 @@ class NavToolbarMri:
 
         self.canvas.mpl_disconnect(self._id_drag)
         id_drag = self.canvas.mpl_connect("motion_notify_event", self.drag_level)
-        self._level_info = self._LevelInfo( button=event.button, axes=axes, cid=id_drag,
-                                            prevx=event.x, prevy=event.y)
+        self._level_info = self._LevelInfo( button=event.button, axes=axes, cid=id_drag)
+        self.prevxy = event.x, event.y
 
         for line in self.vlines + self.hlines:
             line.set_visible(False)
@@ -631,9 +641,9 @@ class NavToolbarMri:
     def drag_level(self, event):
         """Callback for dragging in width/level mode."""
 
-        for item in self._level_info:
-            i, a = item
-            xprev, yprev = self._level_info.prevx, self._level_info.prevy
+        for item in self._level_info.axes:
+            indx, ax = item
+            xprev, yprev = self.prevxy
 
             xdelt = int((event.x - xprev))
             ydelt = int((event.y - yprev))
@@ -658,11 +668,10 @@ class NavToolbarMri:
             self.parent.width[indx] = wid  # need this in case values were
             self.parent.level[indx] = lev  # clipped by MIN MAX bounds
 
-            self.parent.update_images(index=indx)
+            #self.parent.update_images(index=indx)
 
             # prep new 'last' location for next event call
-            self._level_info.prevx = event.x
-            self._level_info.prevy = event.y
+            self.prevxy = [event.x, event.y]
 
         self.canvas.draw_idle()
 
@@ -1026,7 +1035,10 @@ class NavToolbarMri:
         yloc = max(0, min(ymax, yloc))
 
         return xloc,yloc
-    
+
+    def _dprint(self, a_string):
+        if self._EVENT_DEBUG:
+            print(a_string)
     
 
     #-------------------------------------------------------
@@ -1403,105 +1415,6 @@ getnav3_zoom_to_rectIcon = nav3_zoom_to_rect.GetIcon
 
 # Test Code ------------------------------------------------------------------
 
-class util_CreateMenuBar:
-    """
-    Example of the menuData function that needs to be in the program
-    in which you are creating a Menu
-    
-        def menuData(self):
-            return [("&File", (
-                        ("&New",  "New Sketch file",  self.OnNew),
-                        ("&Open", "Open sketch file", self.OnOpen),
-                        ("&Save", "Save sketch file", self.OnSave),
-                        ("", "", ""),
-                        ("&Color", (
-                            ("&Black",    "", self.OnColor,      wx.ITEM_RADIO),
-                            ("&Red",      "", self.OnColor,      wx.ITEM_RADIO),
-                            ("&Green",    "", self.OnColor,      wx.ITEM_RADIO),
-                            ("&Blue",     "", self.OnColor,      wx.ITEM_RADIO),
-                            ("&Other...", "", self.OnOtherColor, wx.ITEM_RADIO))),
-                        ("", "", ""),
-                        ("About...", "Show about window", self.OnAbout),
-                        ("&Quit",    "Quit the program",  self.OnCloseWindow)))]    
-    """
-    def __init__(self, self2):
-        menuBar = wx.MenuBar()
-        for eachMenuData in self2.menuData():
-            menuLabel = eachMenuData[0]
-            menuItems = eachMenuData[1]
-            menuBar.Append(self.createMenu(self2, menuItems), menuLabel)
-        self2.SetMenuBar(menuBar)
-
-    def createMenu(self, self2, menuData):
-        menu = wx.Menu()
-        for eachItem in menuData:
-            if len(eachItem) == 2:
-                label = eachItem[0]
-                subMenu = self.createMenu(self2, eachItem[1])
-                menu.Append(wx.ID_ANY, label, subMenu)
-            else:
-                self.createMenuItem(self2, menu, *eachItem)
-        return menu
-
-    def createMenuItem(self, self2, menu, label, status, handler, kind=wx.ITEM_NORMAL):
-        if not label:
-            menu.AppendSeparator()
-            return
-        menuItem = menu.Append(-1, label, status, kind)
-        self2.Bind(wx.EVT_MENU, handler, menuItem)
-        
-        
-class DemoImagePanel(ImagePanelToolbar2):
-    """Plots several lines in distinct colors."""
-
-    # Activate event messages
-    _EVENT_DEBUG = True
-    
-    def __init__( self, parent, tab, statusbar, **kwargs ):
-        # statusbar has to be here for NavigationToolbar3Wx to discover on init()
-        self.statusbar = statusbar
-        # initiate plotter
-        sizer = ImagePanelToolbar2.__init__( self, 
-                                             parent, 
-                                             vertOn=True, 
-                                             horizOn=True, 
-                                             lcolor='gold',
-                                             lw=0.5,
-                                             **kwargs )  
-        
-        self.tab    = tab
-        self.top    = wx.GetApp().GetTopWindow()
-        self.parent = parent
-        self.count  = 0
-        
-        self.statusbar = statusbar
-
-    def on_motion(self, xloc, yloc, iplot):
-        value = self.data[iplot][0]['data'][int(round(xloc))][int(round(yloc))]
-        self.top.statusbar.SetStatusText( " Value = %s" % (str(value), ), 0)
-        self.top.statusbar.SetStatusText( " X,Y = %i,%i" % (int(round(xloc)),int(round(yloc))) , 1)
-        self.top.statusbar.SetStatusText( " " , 2)
-        self.top.statusbar.SetStatusText( " " , 3)
-
-    def on_panzoom_motion(self, xloc, yloc, iplot):
-        axes = self.axes[iplot]
-        xmin,xmax = axes.get_xlim()
-        ymax,ymin = axes.get_ylim()         # max/min flipped here because of y orient top/bottom
-        xdelt, ydelt = xmax-xmin, ymax-ymin
-        
-        self.top.statusbar.SetStatusText(( " X-range = %.1f to %.1f" % (xmin, xmax)), 0)
-        self.top.statusbar.SetStatusText(( " Y-range = %.1f to %.1f" % (ymin, ymax)), 1)
-        self.top.statusbar.SetStatusText(( " delta X,Y = %.1f,%.1f " % (xdelt,ydelt )), 2)
-        self.top.statusbar.SetStatusText( " " , 3)
-
-    def on_level_motion(self, xloc, yloc, iplot):
-        self.top.statusbar.SetStatusText( " " , 0)
-        self.top.statusbar.SetStatusText(( " Width = %i " % (self.width[iplot],)), 1)
-        self.top.statusbar.SetStatusText(( " Level = %i " % (self.level[iplot],)), 2)
-        self.top.statusbar.SetStatusText( " " , 3)
-
-
-
 class MyFrame(wx.Frame):
     def __init__(self, title="New Title Please", size=(350,200)):
  
@@ -1636,87 +1549,146 @@ class MyFrame(wx.Frame):
         self.view.canvas.draw()        
         
 
-    def dist(self, n, m=None):  
-        """
-        Return a rectangular array in which each pixel = euclidian
-        distance from the origin.
 
-        """
-        n1 = n
-        m1 = m if m else n
-
-        x = np.arange(n1)
-        x = np.array([val**2 if val < (n1-val) else (n1-val)**2 for val in x ])
-        a = np.ndarray((n1,m1),float)   # Make array
-
-        for i in range(int((m1/2)+1)):  # Row loop
-            y = np.sqrt(x + i**2.0)     # Euclidian distance
-            a[i,:] = y                  # Insert the row
-            if i != 0: a[m1-i,:] = y    # Symmetrical
-        return a
 
 
 #----------------------------------------------------------------
 #----------------------------------------------------------------
 # Saved code
 
-# class MyNavigationToolbar(NavigationToolbar2WxAgg):
-#     """
-#     Extend the default wx toolbar with your own event handlers
-#     """
-#     ON_CUSTOM = wx.NewIdRef()
-#     def __init__(self, canvas, cankill):
-#          
-#         # create the default toolbar
-#         NavigationToolbar2WxAgg.__init__(self, canvas)
-#  
-#         # remove the unwanted button
-#         POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6
-#         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN) 
-#  
-#         # for simplicity I'm going to reuse a bitmap from wx, you'll
-#         # probably want to add your own.
-#         self.AddSimpleTool(self.ON_CUSTOM, _load_bitmap('stock_left.xpm'), 'Click me', 'Activate custom contol')
-#         wx.EVT_TOOL(self, self.ON_CUSTOM, self._on_custom)
-#  
-#     def _on_custom(self, evt):
-#         # add some text to the axes in a random location in axes (0,1)
-#         # coords) with a random color
-#  
-#         # get the axes
-#         ax = self.canvas.figure.axes[0]
-#  
-#         # generate a random location can color
-#         x,y = tuple(rand(2))
-#         rgb = tuple(rand(3))
-#  
-#         # add the text and draw
-#         ax.text(x, y, 'You clicked me',
-#                 transform=ax.transAxes,
-#                 color=rgb)
-#         self.canvas.draw()
-#         evt.Skip()
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib.colors import ListedColormap
+
+class CanvasFrame(wx.Frame):
+    def __init__(self):
+        super().__init__(None, -1, 'WxPython and Matplotlib', size=(600,600))
+
+        naxes = 2
+
+        self.width      = [WIDMAX  for i in range(naxes)]
+        self.level      = [LEVSTR  for i in range(naxes)]
+        self.vmax       = [WIDMAX  for i in range(naxes)]
+        self.vmin       = [LEVSTR  for i in range(naxes)]
+        self.vmax_orig  = [WIDMAX  for i in range(naxes)]
+        self.vmin_orig  = [LEVSTR  for i in range(naxes)]
+
+        self.data = [self.dist(256) for i in range(naxes)]
+
+        self.imax = [np.max(dat) for dat in self.data]
+        self.imin = [np.min(dat) for dat in self.data]
+
+        self.top = wx.GetApp().GetTopWindow()
+
+        self.figure = Figure(figsize=(5, 4), dpi=100)
+        self.statusbar = self.CreateStatusBar(4, 0)
+        self.axes = []
+        self.axes.append(self.figure.add_subplot(2, 1, 1))
+        self.axes.append(self.figure.add_subplot(2, 1, 2))
+
+        self.aximg = []
+        for i in range(naxes): self.aximg.append(self.axes[i].imshow(self.data[i], cmap=cm.gray))
+        self.canvas = FigureCanvas(self, -1, self.figure)
+
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.canvas, 1, wx.TOP | wx.LEFT | wx.EXPAND)
+
+        self.toolbar = NavToolbarMri(self.canvas, self,
+                                     vertOn=True,
+                                     horizOn=True,
+                                     lcolor='gold',
+                                     lw=0.5,
+                                     coordinates=True)
+        self.toolbar.Realize()
+        # By adding toolbar in sizer, we are able to put it at the bottom
+        # of the frame - so appearance is closer to GTK version.
+        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+
+        # update the axes menu on the toolbar
+        self.toolbar.update()
+        self.SetSizer(self.sizer)
+        self.Fit()
 
 
+    def on_motion(self, xloc, yloc, iplot):
+        value = self.data[iplot][int(round(xloc)),int(round(yloc))]
+        self.top.statusbar.SetStatusText(" Value = %s" % (str(value),), 0)
+        self.top.statusbar.SetStatusText(" X,Y = %i,%i" % (int(round(xloc)), int(round(yloc))), 1)
+        self.top.statusbar.SetStatusText(" ", 2)
+        self.top.statusbar.SetStatusText(" ", 3)
 
-#     def calc_lut_value(self, data, width, level):
-#         """Apply Look-Up Table values to data for given width/level values."""
-# 
-#         conditions = [data <= (level-0.5-(width-1)/2), data > (level-0.5+(width-1)/2)]
-#         functions  = [0, 255, lambda data: ((data - (level - 0.5))/(width-1) + 0.5)*(255-0)]   # 3rd function is default
-#         lutvalue = np.piecewise(data, conditions, functions)
-# 
-#         # Convert the resultant array to an unsigned 8-bit array to create
-#         # an 8-bit grayscale LUT since the range is only from 0 to 255
-#         return np.array(lutvalue, dtype=np.uint8)
+    def on_select(self, xloc, yloc, iplot):
+        """ placeholder, overload for user defined event handling """
+        print('debug::on_select,          xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+
+    def on_panzoom_motion(self, xloc, yloc, iplot):
+        axes = self.axes[iplot]
+        xmin, xmax = axes.get_xlim()
+        ymax, ymin = axes.get_ylim()  # max/min flipped here because of y orient top/bottom
+        xdelt, ydelt = xmax - xmin, ymax - ymin
+
+        self.top.statusbar.SetStatusText((" X-range = %.1f to %.1f" % (xmin, xmax)), 0)
+        self.top.statusbar.SetStatusText((" Y-range = %.1f to %.1f" % (ymin, ymax)), 1)
+        self.top.statusbar.SetStatusText((" delta X,Y = %.1f,%.1f " % (xdelt, ydelt)), 2)
+        self.top.statusbar.SetStatusText(" ", 3)
+
+    def on_panzoom_release(self, xloc, yloc):
+        """ placeholder, overload for user defined event handling """
+        print('debug::on_panzoom_release, xloc='+str(xloc)+'  yloc='+str(yloc))
+
+    def on_level_press(self, xloc, yloc, iplot):
+        """ placeholder, overload for user defined event handling """
+        print('debug::on_level_press,     xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
+
+    def on_level_release(self, xloc, yloc):
+        """ placeholder, overload for user defined event handling """
+        print('debug::on_level_release,   xloc='+str(xloc)+'  yloc='+str(yloc))
+
+    def on_level_motion(self, xloc, yloc, iplot):
+        wid = float(self.width[iplot])/255.0
+        ctr = float(self.level[iplot])/255.0
+        contr_low = ctr-wid/2.0
+        contr_low = contr_low if contr_low > 0.0 else 0.0
+        contr_hig = ctr+wid/2.0
+        contr_hig = contr_hig if contr_hig < 1.0 else 1.0
+
+        imgmax = self.imax[iplot]
+        imgmin = self.imin[iplot]
+        imglow = imgmin + (imgmax - imgmin) * contr_low
+        imghigh = imgmin + (imgmax - imgmin) * contr_hig
+        width = wid * (imgmax - imgmin)
+        center = ctr * (imgmax - imgmin)
+
+        gray_new = cm.gray
+        newcmp = ListedColormap(gray_new(np.linspace(contr_low, contr_hig, 128)))
+        self.aximg[iplot].set(cmap=newcmp)
+
+        self.top.statusbar.SetStatusText(" ", 0)
+        self.top.statusbar.SetStatusText((" Wid = %i  Lev = %i" % (self.width[iplot],self.level[iplot])), 1)
+        self.top.statusbar.SetStatusText((" Width = %f  Center = %f" % (contr_low, contr_hig,)), 2)
+        self.top.statusbar.SetStatusText(" ", 3)
+
+    def dist(self, n, m=None):
+        """ a rectangular array where each pixel = euclidian distance from the origin. """
+        n1 = n
+        m1 = m if m else n
+        x = np.array([val**2 if val < (n1-val) else (n1-val)**2 for val in np.arange(n1) ])
+        a = np.ndarray((n1,m1),float)   # Make array
+
+        for i in range(int((m1/2)+1)):  # Row loop
+            a[i,:] = np.sqrt(x + i**2.0)     # Euclidian distance
+            if i != 0: a[m1-i,:] = a[i,:]    # Symmetrical
+
+        return a
+
+class App(wx.App):
+    def OnInit(self):
+        """Create the main window and insert the custom frame."""
+        frame = CanvasFrame()
+        frame.Show(True)
+        return True
 
 
-
-
-
-if __name__ == '__main__':
-
-    app   = wx.App( False )
-    frame = MyFrame( title='WxPython and Matplotlib', size=(600,600) )
-    frame.Show()
+if __name__ == "__main__":
+    app = App()
     app.MainLoop()
