@@ -170,6 +170,7 @@ class NavToolbarMri(wx.ToolBar):
 
         # bjs-start
 
+        self.naxes = len(self.canvas.figure.get_axes())
         self.parent = parent
         self.statusbar = self.parent.statusbar
         self.prevxy = [0,0]
@@ -178,9 +179,15 @@ class NavToolbarMri(wx.ToolBar):
         self.levmax = 2048
         self.levmin = -2048
         self.nstep_cmap = 256.0   # number of levels in the cmap
-        self.width = [float(WIDSTR) for a in self.canvas.figure.get_axes()]
-        self.level = [float(LEVSTR) for a in self.canvas.figure.get_axes()]
-        self.cmap = cm.gray
+        self.width = [float(WIDSTR) for a in range(self.naxes)]
+        self.level = [float(LEVSTR) for a in range(self.naxes)]
+
+        # TODO bjs - this setup fails if AxesImage is updated by imshow() with different cmap
+        self.cmap_default = cm.gray
+        self.cmap  = [None for a in range(self.naxes)]
+        for i, ax in enumerate(self.canvas.figure.get_axes()):
+            if ax.images:
+                self.cmap[i] = ax.images[0].get_cmap()
 
         # set up control params for crosshair functionality
         self._crosshairs = False
@@ -408,9 +415,9 @@ class NavToolbarMri(wx.ToolBar):
             ax[1].drag_pan(self._pan_info.button, event.key, event.x, event.y)
         self.canvas.draw_idle()
 
-        xloc, yloc = self.get_bounded_xyloc(event)
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
         iplot = self._pan_info.axes[0][0]
-        self.parent.on_panzoom_motion(xloc, yloc, iplot)
+        self.parent.on_panzoom_motion(xloc, yloc, xpos, ypos, iplot)
 
     def release_pan(self, event):
         """Callback for mouse button release in pan/zoom mode."""
@@ -424,8 +431,8 @@ class NavToolbarMri(wx.ToolBar):
         self._pan_info = None
         self.push_current()
 
-        xloc, yloc = self.get_bounded_xyloc(event)
-        self.parent.on_panzoom_release(xloc, yloc)
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
+        self.parent.on_panzoom_release(xloc, yloc, xpos, ypos)
 
     def zoom(self, *args):
         if not self.canvas.widgetlock.available(self):
@@ -588,8 +595,8 @@ class NavToolbarMri(wx.ToolBar):
             line.set_visible(False)
         self.canvas.draw_idle()
 
-        xloc, yloc = self.get_bounded_xyloc(event)
-        self.parent.on_level_press(xloc, yloc, axes[0][0])
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
+        self.parent.on_level_press(xloc, yloc, xpos, ypos, axes[0][0])
 
     def drag_level(self, event):
         """Callback for dragging in width/level mode."""
@@ -616,16 +623,16 @@ class NavToolbarMri(wx.ToolBar):
             cmarr = cmarr[int((npts-nstep)*0.5):int((npts+nstep)*0.5)]
             cmarr = np.clip(cmarr, 0.0, 1.0)
 
-            newcmp = ListedColormap(self.cmap(cmarr))
-            ax.images[0].set(cmap=newcmp)
+            cmap_base = self.cmap[indx] if self.cmap[indx] is not None else self.cmap_default
+            ax.images[0].set(cmap=ListedColormap(cmap_base(cmarr)))
 
             self.prevxy = [event.x, event.y]
 
         self.canvas.draw_idle()
 
-        xloc, yloc = self.get_bounded_xyloc(event)
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
         iplot = self._level_info.axes[0][0]
-        self.parent.on_level_motion(xloc, yloc, iplot, wid, lev)
+        self.parent.on_level_motion(xloc, yloc, xpos, ypos, iplot, wid, lev)
 
     def release_level(self, event):
         """Callback for mouse button release in width/level mode."""
@@ -639,8 +646,8 @@ class NavToolbarMri(wx.ToolBar):
         self.canvas.draw_idle()
         self._level_info = None
 
-        xloc, yloc = self.get_bounded_xyloc(event)
-        self.parent.on_level_release(xloc, yloc)
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
+        self.parent.on_level_release(xloc, yloc, xpos, ypos)
 
     def press_local(self, event):
         # no toggle buttons on, but maybe we want to show crosshairs
@@ -653,13 +660,14 @@ class NavToolbarMri(wx.ToolBar):
     def release_local(self, event):
         # no toggle buttons on
         self.parent.select_is_held = False
-        xloc, yloc = self.get_bounded_xyloc(event)
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
         # find out what plot we released in
-        iplot = None
-        for i, axes in enumerate(self.parent.axes):
-            if axes == event.inaxes:
-                iplot = i
-        self.parent.on_select(xloc, yloc, iplot)
+        iplot = self.get_plot_index(event)
+        # iplot = None
+        # for i, axes in enumerate(self.parent.axes):
+        #     if axes == event.inaxes:
+        #         iplot = i
+        self.parent.on_select(xloc, yloc, xpos, ypos, iplot)
 
     def mouse_move(self, event):
 
@@ -667,22 +675,31 @@ class NavToolbarMri(wx.ToolBar):
         if not event.inaxes:
             return
 
-        xloc, yloc = self.get_bounded_xyloc(event)
-        iplot = None
-        for i, axes in enumerate(self.parent.axes):
-            if axes == event.inaxes:
-                iplot = i
+        xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
+        iplot = self.get_plot_index(event)
+        # iplot = None
+        # for i, axes in enumerate(self.parent.axes):
+        #     if axes == event.inaxes:
+        #         iplot = i
 
         if iplot is not None:
-            self.parent.on_motion(xloc, yloc, iplot)
+            self.parent.on_motion(xloc, yloc, xpos, ypos, iplot)
+
+            axes = self.canvas.figure.get_axes()
 
             if self._crosshairs and self.vertOn:
-                for line in self.vlines:
-                    line.set_xdata((xloc, xloc))
+                for i, line in enumerate(self.vlines):
+                    x0, y0, x1, y1 = axes[i].dataLim.bounds
+                    fov = self.parent.fov[i] if hasattr(self.parent, 'fov') else 1.0
+                    xtmp = x1 * xpos / fov
+                    line.set_xdata((xtmp, xtmp))
                     line.set_visible(True)
             if self._crosshairs and self.horizOn:
-                for line in self.hlines:
-                    line.set_ydata((yloc, yloc))
+                for i, line in enumerate(self.hlines):
+                    x0, y0, x1, y1 = axes[i].dataLim.bounds
+                    fov = self.parent.fov[i] if hasattr(self.parent, 'fov') else 1.0
+                    ytmp = y1 * ypos / fov
+                    line.set_ydata((ytmp, ytmp))
                     line.set_visible(True)
             self.canvas.draw_idle()
 
@@ -700,7 +717,20 @@ class NavToolbarMri(wx.ToolBar):
         xloc = max(0, min(xmax, xloc))
         yloc = max(0, min(ymax, yloc))
 
-        return xloc,yloc
+        iplot = self.get_plot_index(event)
+
+        xfov = self.parent.fov[iplot] if hasattr(self.parent, 'fov') else 1.0
+        yfov = self.parent.fov[iplot] if hasattr(self.parent, 'fov') else 1.0
+        xpos = xfov * (xloc / x1)
+        ypos = yfov * (yloc / y1)
+
+        return xloc,yloc,xpos,ypos
+
+    def get_plot_index(self, event):
+        for i, axes in enumerate(self.canvas.figure.get_axes()):
+            if axes == event.inaxes:
+                return i
+        return None
 
     def get_canvas(self, frame, fig):
         # saw this in NavigationToolbar2WxAgg, so included here
@@ -1096,7 +1126,7 @@ class CanvasFrame(wx.Frame):
         super().__init__(None, -1, 'WxPython and Matplotlib', size=wx.Size(800,2000))
 
         naxes = 2
-        self.data = [self.dist(256) for i in range(naxes)]
+        self.data = [self.dist(256), self.dist(64)]
 
         self.top = wx.GetApp().GetTopWindow()
 
@@ -1129,18 +1159,18 @@ class CanvasFrame(wx.Frame):
         self.Fit()
 
 
-    def on_motion(self, xloc, yloc, iplot):
+    def on_motion(self, xloc, yloc, xpos, ypos, iplot):
         value = self.data[iplot][int(round(xloc)),int(round(yloc))]
         self.top.statusbar.SetStatusText(" Value = %s" % (str(value),), 0)
         self.top.statusbar.SetStatusText(" X,Y = %i,%i" % (int(round(xloc)), int(round(yloc))), 1)
         self.top.statusbar.SetStatusText(" ", 2)
         self.top.statusbar.SetStatusText(" ", 3)
 
-    def on_select(self, xloc, yloc, iplot):
+    def on_select(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
         print('debug::on_select,          xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
 
-    def on_panzoom_motion(self, xloc, yloc, iplot):
+    def on_panzoom_motion(self, xloc, yloc, xpos, ypos, iplot):
         axes = self.axes[iplot]
         xmin, xmax = axes.get_xlim()
         ymax, ymin = axes.get_ylim()  # max/min flipped here because of y orient top/bottom
@@ -1151,19 +1181,19 @@ class CanvasFrame(wx.Frame):
         self.top.statusbar.SetStatusText((" delta X,Y = %.1f,%.1f " % (xdelt, ydelt)), 2)
         self.top.statusbar.SetStatusText(" ", 3)
 
-    def on_panzoom_release(self, xloc, yloc):
+    def on_panzoom_release(self, xloc, yloc, xpos, ypos):
         """ placeholder, overload for user defined event handling """
         print('debug::on_panzoom_release, xloc='+str(xloc)+'  yloc='+str(yloc))
 
-    def on_level_press(self, xloc, yloc, iplot):
+    def on_level_press(self, xloc, yloc, xpos, ypos, iplot):
         """ placeholder, overload for user defined event handling """
         print('debug::on_level_press,     xloc='+str(xloc)+'  yloc='+str(yloc)+'  Index = '+str(iplot))
 
-    def on_level_release(self, xloc, yloc):
+    def on_level_release(self, xloc, yloc, xpos, ypos):
         """ placeholder, overload for user defined event handling """
         print('debug::on_level_release,   xloc='+str(xloc)+'  yloc='+str(yloc))
 
-    def on_level_motion(self, xloc, yloc, iplot, wid, lev):
+    def on_level_motion(self, xloc, yloc, xpos, ypos, iplot, wid, lev):
         self.top.statusbar.SetStatusText(" ", 0)
         self.top.statusbar.SetStatusText((" Wid = %i  Lev = %i" % (int(wid),int(lev))), 1)
         self.top.statusbar.SetStatusText(" ", 2)

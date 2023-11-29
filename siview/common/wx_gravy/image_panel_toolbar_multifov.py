@@ -1051,13 +1051,15 @@ class NavToolbarMultiFov(NavigationToolbar2, wx.ToolBar):
                 if self._cursors and self.vertOn:
                     for i,line in enumerate(self.vlines):
                         x0, y0, x1, y1 = self.parent.axes[i].dataLim.bounds
-                        xtmp = x1 * xpos / self.parent.fov[i]
+                        fov = self.parent.fov[i] if hasattr(self.parent, 'fov') else 1.0
+                        xtmp = x1 * xpos / fov
                         line.set_xdata((xtmp, xtmp))
                         line.set_visible(True)
                 if self._cursors and self.horizOn:
                     for i,line in enumerate(self.hlines):
                         x0, y0, x1, y1 = self.parent.axes[i].dataLim.bounds
-                        ytmp = y1 * ypos / self.parent.fov[i]
+                        fov = self.parent.fov[i] if hasattr(self.parent, 'fov') else 1.0
+                        ytmp = y1 * ypos / fov
                         line.set_ydata((ytmp, ytmp))
                         line.set_visible(True)    
                 self.dynamic_update()            
@@ -1104,15 +1106,16 @@ class NavToolbarMultiFov(NavigationToolbar2, wx.ToolBar):
 
         iplot = self.get_plot_index(event)
 
-        xfov = self.parent.fov[iplot]
-        yfov = self.parent.fov[iplot]
+        xfov = self.parent.fov[iplot] if hasattr(self.parent, 'fov') else 1.0
+        yfov = self.parent.fov[iplot] if hasattr(self.parent, 'fov') else 1.0
         xpos = xfov * (xloc / x1)
         ypos = yfov * (yloc / y1)
 
         return xloc,yloc,xpos,ypos
 
     def get_plot_index(self, event):
-        for i, axes in enumerate(self.parent.axes):
+        #for i, axes in enumerate(self.parent.axes):
+        for i, axes in enumerate(self.canvas.figure.get_axes()):
             if axes == event.inaxes:
                 return i
         return None
