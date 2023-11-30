@@ -137,5 +137,28 @@ class ImageControlPanel(ImagePaneUI):
         self.top.statusbar.SetStatusText(" Level = %i " % (self.image.level[iplot],), 2)
         self.top.statusbar.SetStatusText(" Plot X,Y,Slc=%i,%i,%i" % (xvox, yvox, zvox), 3)
 
-
+    def on_source_stack1(self, event):  
+        print("Event handler 'on_source_stack1' OVERLOADED but not implemented!")
+        
+    def on_source_stack2(self, event):
+        print("Event handler 'on_source_stack2' OVERLOADED but not implemented!")
+        
+    def on_slice_index1(self, event):
+        print("Event handler 'on_slice_index1' OVERLOADED but not implemented!")
+        
+    def on_calc_range1(self, event):
+        print("Event handler 'on_calc_range1' OVERLOADED but not implemented!")
+        
+    def on_calc_reset1(self, event):
+        print("Event handler 'on_calc_reset1' OVERLOADED but not implemented!")
+        
+    def on_slice_index2(self, event):
+        print("Event handler 'on_slice_index2' OVERLOADED but not implemented!")
+        
+    def on_calc_range2(self, event):
+        print("Event handler 'on_calc_range2' OVERLOADED but not implemented!")
+        
+    def on_calc_reset2(self, event):
+        print("Event handler 'on_calc_reset2' OVERLOADED but not implemented!")
+        
     
