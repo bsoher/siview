@@ -12,6 +12,7 @@ import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets ex
 import numpy as np
 from pubsub import pub as pubsub
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ColumnSorterMixin
+import matplotlib.cm as cm
 
 # Our modules
 import siview.analysis.mrs_dataset as mrs_dataset
@@ -28,9 +29,8 @@ import siview.analysis.functors.funct_water_filter as funct_watfilt
 from siview.analysis.auto_gui.image_pane import ImagePaneUI
 
 from siview.analysis.plot_panel_spectral import PlotPanelSpectral
-from siview.analysis.image_panel_siview import ImagePanelSiview
 from siview.analysis.plot_panel_svd_filter import PlotPanelSvdFilter
-from siview.analysis.image_control_panel import ImageControlPanel
+from siview.analysis.image_pane_mri import ImagePaneMri
 
 import siview.common.wx_gravy.util as wx_util
 import siview.common.constants as common_constants
@@ -615,8 +615,12 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.view.Fit()
         self.view.change_naxes(1)
 
-        self.panel_image = ImageControlPanel(self.tab_notebook, self, self._tab_dataset)
-        self.image = self.panel_image.image
+        self.panel_image = ImagePaneMri(self.tab_notebook, self, self._tab_dataset,
+                                        naxes=2, layout='horiz',
+                                        cmap=cm.gray, color=None, bgcolor="#ffffff",
+                                        vertOn=True, horizOn=True,
+                                        lcolor='gold', lw=0.5
+                                       )
 
         #------------------------------------------------------------------
         # Insert all panels into AUI Notebook and decorate as needed

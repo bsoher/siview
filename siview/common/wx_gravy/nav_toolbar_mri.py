@@ -195,8 +195,10 @@ class NavToolbarMri(wx.ToolBar):
         self.horizOn = horizOn
         self.vlines = []
         self.hlines = []
-        if vertOn:  self.vlines = [ax.axvline(0, visible=False, color=lcolor, lw=lw) for ax in self.parent.axes]
-        if horizOn: self.hlines = [ax.axhline(0, visible=False, color=lcolor, lw=lw) for ax in self.parent.axes]
+        if vertOn:  self.vlines = [ax.axvline(0, visible=False, color=lcolor, lw=lw)
+                                   for ax in self.canvas.figure.get_axes()]
+        if horizOn: self.hlines = [ax.axhline(0, visible=False, color=lcolor, lw=lw)
+                                   for ax in self.canvas.figure.get_axes()]
 
 
     def home(self, *args):
@@ -663,10 +665,6 @@ class NavToolbarMri(wx.ToolBar):
         xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
         # find out what plot we released in
         iplot = self.get_plot_index(event)
-        # iplot = None
-        # for i, axes in enumerate(self.parent.axes):
-        #     if axes == event.inaxes:
-        #         iplot = i
         self.parent.on_select(xloc, yloc, xpos, ypos, iplot)
 
     def mouse_move(self, event):
@@ -677,10 +675,6 @@ class NavToolbarMri(wx.ToolBar):
 
         xloc, yloc, xpos, ypos = self.get_bounded_xyloc(event)
         iplot = self.get_plot_index(event)
-        # iplot = None
-        # for i, axes in enumerate(self.parent.axes):
-        #     if axes == event.inaxes:
-        #         iplot = i
 
         if iplot is not None:
             self.parent.on_motion(xloc, yloc, xpos, ypos, iplot)
@@ -843,50 +837,6 @@ class NavToolbarMri(wx.ToolBar):
         return self.subplot_tool
 
 
-    # def configure_subplots(self, evt):
-    #     frame = wx.Frame(None, -1, "Configure subplots")
-    #
-    #     toolfig = Figure((6, 3))
-    #     canvas = self.get_canvas(frame, toolfig)
-    #
-    #     # Create a figure manager to manage things
-    #     figmgr = FigureManager(canvas, 1, frame)
-    #
-    #     # Now put all into a sizer
-    #     sizer = wx.BoxSizer(wx.VERTICAL)
-    #     # This way of adding to sizer allows resizing
-    #     sizer.Add(canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-    #     frame.SetSizer(sizer)
-    #     frame.Fit()
-    #     tool = SubplotTool(self.canvas.figure, toolfig)
-    #     frame.Show()
-
-    # def save_figure(self, *args):
-    #     # Fetch the required filename and file type.
-    #     filetypes, exts, filter_index = self.canvas._get_imagesave_wildcards()
-    #     default_file = self.canvas.get_default_filename()
-    #     dlg = wx.FileDialog(self.parent, "Save to file", "", default_file,
-    #                         filetypes,
-    #                         wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-    #     dlg.SetFilterIndex(filter_index)
-    #     if dlg.ShowModal() == wx.ID_OK:
-    #         dirname = dlg.GetDirectory()
-    #         filename = dlg.GetFilename()
-    #         format = exts[dlg.GetFilterIndex()]
-    #         basename, ext = os.path.splitext(filename)
-    #         if ext.startswith('.'):
-    #             ext = ext[1:]
-    #         if ext in ('svg', 'pdf', 'ps', 'eps', 'png') and format != ext:
-    #             # looks like they forgot to set the image type drop
-    #             # down, going with the extension.
-    #             warnings.warn('extension %s did not match the selected image type %s; going with %s' % (ext, format, ext),
-    #                           stacklevel=0)
-    #             format = ext
-    #         try:
-    #             self.canvas.print_figure(
-    #                 os.path.join(dirname, filename), format=format)
-    #         except Exception as e:
-    #             error_msg_wx(str(e))
 
 
 

@@ -34,7 +34,7 @@ class ImageControlPanel(ImagePaneUI):
         self.tab_dataset = tab_dataset
 
 #        self.image = ImagePanelMri(self.PanelImagePlot,
-        self.image = ImagePanelMri(self.PanelImagePlot,
+        self.image = ImagePanelMri(self,
                                    naxes=2,
                                    data=[],
                                    cmap=cm.gray,
@@ -50,15 +50,15 @@ class ImageControlPanel(ImagePaneUI):
         self.last_x = 0
         self.last_y = 0
 
-        # de-reference ImagePanelMri events to methods in this object
-        self.image.on_scroll = self.on_scroll
-        self.image.on_motion = self.on_motion
-        self.image.on_select = self.on_select
-        self.image.on_panzoom_release = self.on_panzoom_release
-        self.image.on_panzoom_motion = self.on_panzoom_motion
-        self.image.on_level_press = self.on_level_press
-        self.image.on_level_release = self.on_level_release
-        self.image.on_level_motion = self.on_level_motion
+        # # de-reference ImagePanelMri events to methods in this object
+        # self.image.on_scroll = self.on_scroll
+        # self.image.on_motion = self.on_motion
+        # self.image.on_select = self.on_select
+        # self.image.on_panzoom_release = self.on_panzoom_release
+        # self.image.on_panzoom_motion = self.on_panzoom_motion
+        # self.image.on_level_press = self.on_level_press
+        # self.image.on_level_release = self.on_level_release
+        # self.image.on_level_motion = self.on_level_motion
 
 
     # EVENT FUNCTIONS -----------------------------------------------
