@@ -284,7 +284,7 @@ class Main(wx.Frame):
                 msg = """The file "%s" isn't valid Vespa Interchange File Format.""" % filename
 
             if msg:
-                common_dialogs.message(msg, "MRI_Timeseries - Open File", common_dialogs.E_OK)
+                common_dialogs.message(msg, "MrsiDataset - Open File", common_dialogs.E_OK)
             else:
                 # Time to rock and roll!
                 wx.BeginBusyCursor()

@@ -80,7 +80,14 @@ class ViewIdsSpectral(common_menu.IdContainer):
     DATA_TYPE_IMAGINARY = "replace me"
     DATA_TYPE_MAGNITUDE = "replace me"
     DATA_TYPE_SUMMED = "replace me"
-    
+
+    CMAP_AUTUMN = "replace me"
+    CMAP_BLUES  = "replace me"
+    CMAP_JET    = "replace me"
+    CMAP_RDBU   = "replace me"
+    CMAP_GRAY   = "replace me"
+    CMAP_RDYLBU = "replace me"
+
     PLOT_C_FUNCTION_NONE = "replace me"
     PLOT_C_FUNCTION_A_MINUS_B = "replace me"
     PLOT_C_FUNCTION_B_MINUS_A = "replace me"
@@ -420,39 +427,40 @@ class AnalysisMenuBar(common_menu.VespaMenuBar):
 
         self._user_menu_items = { }
 
-        for module_name in list(import_items.keys()):
-
-            # A top level keyword with the string 'separator' in it will cause
-            # a menu separator to be added to the menu            
-            if 'separator' in module_name.lower():
-                self.file_import_menu.AppendSeparator()
-            else:
-
-                section = import_items[module_name]
-    
-                # Here's what a section looks like:
-                #    [acme]
-                #    path=/Users/fred/acme.py
-                #    class_name=RawReaderAcme
-                #    menu_item_text=Acme
-                #    ini_file_name=import_acme
-
-                path = section["path"]
-                    
-                # Replace '\t' in the text with an actual tab (ASCII 9). This
-                # allows users to define accelerators so that they can access 
-                # their menu item with a single keystroke.
-                menu_item_text = section["menu_item_text"]
-                menu_item_text = menu_item_text.replace("\\t", "\t")
-
-                id_ = wx.NewIdRef()
-                menu_item = wx.MenuItem(self.file_import_menu, id_, text=menu_item_text)
-                self.file_import_menu.Append(menu_item)     # bjs_ccx 
-
-                # Save the module_name & INI file name associated with this menu item.
-                self._user_menu_items[id_] = (module_name, section["ini_file_name"])
-
-                main.Bind(wx.EVT_MENU, main.on_import_user_item, menu_item)
+#         for module_name in list(import_items.keys()):
+#
+#             # A top level keyword with the string 'separator' in it will cause
+#             # a menu separator to be added to the menu
+#             if 'separator' in module_name.lower():
+#                 pass
+# #                self.file_import_menu.AppendSeparator()
+#             else:
+#
+#                 section = import_items[module_name]
+#
+#                 # Here's what a section looks like:
+#                 #    [acme]
+#                 #    path=/Users/fred/acme.py
+#                 #    class_name=RawReaderAcme
+#                 #    menu_item_text=Acme
+#                 #    ini_file_name=import_acme
+#
+#                 path = section["path"]
+#
+#                 # Replace '\t' in the text with an actual tab (ASCII 9). This
+#                 # allows users to define accelerators so that they can access
+#                 # their menu item with a single keystroke.
+#                 menu_item_text = section["menu_item_text"]
+#                 menu_item_text = menu_item_text.replace("\\t", "\t")
+#
+#                 id_ = wx.NewIdRef()
+#                 menu_item = wx.MenuItem(self.file_import_menu, id_, text=menu_item_text)
+# #                self.file_import_menu.Append(menu_item)     # bjs_ccx
+#
+#                 # Save the module_name & INI file name associated with this menu item.
+#                 self._user_menu_items[id_] = (module_name, section["ini_file_name"])
+#
+#                 main.Bind(wx.EVT_MENU, main.on_import_user_item, menu_item)
 
 
         self.show_menus(self.TYPE_START)
@@ -465,11 +473,11 @@ class AnalysisMenuBar(common_menu.VespaMenuBar):
         return self.GetMenu(self.FindMenu("File"))
 
 
-    @property
-    def file_import_menu(self):
-        """A convenience property that returns the File/Import submenu"""
-        id_ = self.file_menu.FindItem("Import")
-        return self.file_menu.FindItemById(id_).GetSubMenu()
+    # @property
+    # def file_import_menu(self):
+    #     """A convenience property that returns the File/Import submenu"""
+    #     id_ = self.file_menu.FindItem("Import")
+    #     return self.file_menu.FindItemById(id_).GetSubMenu()
 
 
     def get_user_menu_item_info(self, menu_id):
@@ -584,21 +592,23 @@ def _get_menu_data(main):
     # to change Exit --> Quit there, so our menu looks a little funny under
     # Gnome.
     file_ = (
-            ("&Open2\tCTRL+O",       main.on_open_viff),
-            ("&Import", (
-                ("VIFF Raw Data (*.xml)",     main.on_import_mrs_data_raw),
-            )),
+            ("&Open\tCTRL+O",       main.on_open_viff),
+#            ("&Import", (
+#                ("VIFF Raw Data (*.xml)",     main.on_import_mrsi_data_raw),
+#            )),
             common_menu.SEPARATOR,
             ("S&ave\tCTRL+S",       main.on_save_viff),       
             ("Save As...",          main.on_save_as_viff),       
             ("Close\tCTRL+W",       main.on_close_dataset),
             ("Close All",           main.on_close_all),
             common_menu.SEPARATOR,
-            ("Presets...", (
-                ("Load from File ",  main.on_load_preset_from_file),       
+#            ("Presets...", (
+#                ("Load from File ",  main.on_load_preset_from_file),       
 #                ("Load from Tab",    main.on_load_preset_from_tab),       
-                ("Save to File",     main.on_save_preset_to_file),
-            )),
+#                ("Save to File",     main.on_save_preset_to_file),
+#            )),
+#            common_menu.SEPARATOR,
+            ("Import Processed CRT Data", main.on_import_data_crt),
             common_menu.SEPARATOR,
             ("Exit",       main.on_close_window, wx.ITEM_NORMAL, wx.ID_EXIT),
             )
@@ -716,6 +726,14 @@ def _get_menu_data(main):
                 common_menu.SEPARATOR,
                 ("Summed",    main.on_menu_view_option, wx.ITEM_CHECK, ViewIdsSpectral.DATA_TYPE_SUMMED),
             )),
+            common_menu.SEPARATOR,
+            ("Colormap - Results", (
+                ("autumn", main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.CMAP_AUTUMN),
+                ("Blues",  main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.CMAP_BLUES),
+                ("jet",    main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.CMAP_JET),
+                ("RdBu",   main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.CMAP_RDBU),
+                ("gray",   main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.CMAP_GRAY),
+                ("RdYlBu", main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.CMAP_RDYLBU))),
             common_menu.SEPARATOR,
             ("Area Calculation", (
                 ("From Plot A", main.on_menu_view_option, wx.ITEM_RADIO, ViewIdsSpectral.AREA_CALC_PLOT_A),

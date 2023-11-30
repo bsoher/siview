@@ -19,7 +19,7 @@ import numpy as np
 #import wx.aui as aui
 
 # Our modules
-import siview.analysis.mrs_dataset as mrs_dataset
+import siview.analysis.mrsi_dataset as mrsi_dataset
 import siview.analysis.notebook_datasets as notebook_datasets
 import siview.analysis.utils as utils
 import siview.analysis.util_menu as util_menu
@@ -27,6 +27,7 @@ import siview.analysis.util_analysis_config as util_analysis_config
 import siview.analysis.util_import as util_import
 import siview.analysis.util_file_import as util_file_import
 
+import siview.common.mrsi_data_raw as mrsi_data_raw
 import siview.common.constants as common_constants
 import siview.common.util.init as util_init
 import siview.common.util.misc as util_misc
@@ -35,6 +36,8 @@ import siview.common.wx_gravy.common_dialogs as common_dialogs
 import siview.common.wx_gravy.util as wx_util
 import siview.common.images as images
 import siview.common.dialog_export as dialog_export
+import siview.common.default_ini_file_content as default_content
+
 
 
 _MSG_PRESET_MISMATCH = """
@@ -97,26 +100,29 @@ class Main(wx.Frame):
         wx.GetApp().siview.statusbar = self.statusbar
         wx.GetApp().siview.update_title = self.update_title
 
-        # set up default and user import data classes
+        # # TODO bjs - need to rework for MRSI here
+        # #
+        # # set up default and user import data classes
+        # #
+        # fname = os.path.join(util_misc.get_data_dir(), "analysis_import_menu_additions.ini")
+        # classes, full_cfg, msg = util_file_import.set_import_data_classes(filename=fname)
+        # if msg:
+        #     # some class was not found ... but we continue
+        #     common_dialogs.message(msg)
+        # self._import_data_classes = classes
         #
-        # TODO - FIXME - bjs this is a hack for 2to3 convert ... rethink in future
-        if (tuple(sys.version_info)[0:2] > (3, 0)):
-            # Python 3 code in this block
-            fname = os.path.join(util_misc.get_data_dir(), "analysis_import_menu_additions.ini")
-        else:
-            fname = os.path.join(util_misc.get_data_dir(), "analysis_import_menu_additions_py2.ini")
-        classes, full_cfg, msg = util_file_import.set_import_data_classes(filename=fname)
-        if msg:
-            # some class was not found ... but we continue
-            common_dialogs.message(msg)
-        self._import_data_classes = classes
+        # bar = util_menu.AnalysisMenuBar(self, full_cfg)
 
-        bar = util_menu.AnalysisMenuBar(self, full_cfg)
+        bar = util_menu.AnalysisMenuBar(self, {})
         self.SetMenuBar(bar)
         util_menu.bar = bar
- 
+
         self.build_panes()
         self.bind_events()
+
+        if fname is not None:
+            self.load_on_start(fname)
+            #wx.CallAfter(self.load_on_start, fname)
 
 
     ##############                                    ############
@@ -157,8 +163,8 @@ class Main(wx.Frame):
     def on_self_close(self, event):
 
         if not self.notebook_datasets.is_welcome_tab_open:
-            msg = "Are you sure you want to exit Analysis2?"
-            if wx.MessageBox(msg, "Quit Analysis2", wx.YES_NO, self) != wx.YES:
+            msg = "Are you sure you want to exit Analysis?"
+            if wx.MessageBox(msg, "Quit Analysis", wx.YES_NO, self) != wx.YES:
                 event.Veto()
                 return
 
@@ -200,42 +206,105 @@ class Main(wx.Frame):
 
     ######  File menu  ######
 
+    def on_import_data_crt(self, event):
+
+        ini_name = "import_data_crt"
+        default_path = util_analysis_config.get_path(ini_name)
+        msg = 'Select file with Processed CRT Data'
+        filetype_filter = "(*.npy, *.*)|*.npy;*.*"
+
+        fname = common_dialogs.pickfile(message=msg,
+                                        default_path=default_path,
+                                        filetype_filter=filetype_filter)
+        msg = ""
+        if fname:
+            try:
+                crt_dat = np.load(fname)
+                if crt_dat.shape == (512,24,24):
+                    crt_dat = np.swapaxes(crt_dat,0,2)
+                if len(crt_dat.shape) != 3:
+                    msg = 'Error (import_data_crt): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
+                elif crt_dat.dtype not in [np.complex64, np.complex128]:
+                    msg = 'Error (import_data_crt): Wrong Dtype, arr.dtype = '+str(crt_dat.dtype)
+            except Exception as e:
+                msg = """Error (import_data_crt): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
+
+            if msg:
+                common_dialogs.message(msg, default_content.APP_NAME+" - Import CRT Data", common_dialogs.E_OK)
+            else:
+                path, _ = os.path.split(fname)
+
+                # bjs hack
+                crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
+                crt_dat *= 1e12
+
+                raw = mrsi_data_raw.MrsiDataRaw()
+                raw.data_sources = [fname,]
+                raw.data = crt_dat
+                raw.sw = 1250.0
+                raw.frequency = 123.9
+                raw.resppm = 4.7
+                raw.seqte = 110.0
+                raw.seqtr = 2000.0
+
+                dataset = mrsi_dataset.dataset_from_raw(raw)
+
+                self.notebook_datasets.Freeze()
+                self.notebook_datasets.add_analysis_tab(dataset=dataset)
+                self.notebook_datasets.Thaw()
+                self.notebook_datasets.Layout()
+                self.update_title()
+
+                path, _ = os.path.split(fname)
+                util_analysis_config.set_path(ini_name, path)
+
+    
     def on_open_viff(self, event):
         self.Freeze()
         wx.BeginBusyCursor()
-        self._open_viff_dataset_file()
+
+        ini_name = "open_viff"
+        default_path = util_analysis_config.get_path(ini_name)
+
+        filetype_filter=default_content.APP_NAME+" (*.xml,*.xml.gz,*.viff,*.vif)|*.xml;*.xml.gz;*.viff;*.vif"
+        filename = common_dialogs.pickfile(filetype_filter=filetype_filter,
+                                            multiple=False,
+                                            default_path=default_path)
+        if filename:
+            msg = ""
+            try:
+                importer = util_import.MrsiDatasetImporter(filename)
+            except IOError:
+                msg = """I can't read the file "%s".""" % filename
+            except SyntaxError:
+                msg = """The file "%s" isn't valid Vespa Interchange File Format.""" % filename
+
+            if msg:
+                common_dialogs.message(msg, "MrsiDataset - Open File", common_dialogs.E_OK)
+            else:
+                # Time to rock and roll!
+                wx.BeginBusyCursor()
+                datasets = importer.go()
+                wx.EndBusyCursor()    
+
+                if datasets:
+                    dataset = datasets[0]
+    
+                    self.notebook_datasets.Freeze()
+                    self.notebook_datasets.add_analysis_tab(dataset=dataset)
+                    self.notebook_datasets.Thaw()
+                    self.notebook_datasets.Layout()
+                    self.update_title()
+                    
+                    path, _ = os.path.split(filename)
+                    util_analysis_config.set_path(ini_name, path)
+                else:
+                    msg = """The file "%s" didn't contain any SIView VIFF data sets.""" % filename
+                    common_dialogs.message(msg)
+                
         wx.EndBusyCursor()
         self.Thaw()
-        self.notebook_datasets.Layout()
-
-
-    def on_import_mrs_data_raw(self, event):
-        datasets = self._import_viff_raw_file()
-        if datasets:
-            # although this format only allows us to import single files, it
-            # still returns the one dataset in a list to mesh with the
-            # functionality in add_dataset_tab() to deal with multiple files
-            self.Freeze()
-            wx.BeginBusyCursor()
-            self.notebook_datasets.add_dataset_tab(datasets)
-            wx.EndBusyCursor()
-            self.Thaw()
-            self.notebook_datasets.Layout()
-
-
-    def on_import_user_item(self, event):
-        # This is triggered for all user-defined menu items created via
-        # analysis_menu_additions.ini. They hang off of File/Import.
-
-        # Get the id of the menu item that triggered this event
-        id_ = event.GetId()
-
-        # Find the reader class & INI file name associated with that id.
-        section_name, ini_name = util_menu.bar.get_user_menu_item_info(id_)
-
-        reader, ini_name = self._import_data_classes[section_name]
-
-        self._import_file(reader(), ini_name)
+        self.notebook_datasets.Layout()        
 
 
     def on_save_viff(self, event, save_as=False):
@@ -293,113 +362,55 @@ class Main(wx.Frame):
             self.close_all = False
 
 
-    def on_load_preset_from_file(self, event):
+    def load_on_start(self, fname):
 
-        tab = self.notebook_datasets.active_tab
-
-        if tab:
-
-            dataset = tab.dataset
-            file_type = common_constants.MrsFileTypes.VIFF
-            ini_name  = "load_preset"       # "open_viff"
-            default_path = util_analysis_config.get_path(ini_name)
-
-            # Note that we only allow people to open a single VIFF file as
-            # opposed to DICOM & VASF where we allow them to open multiple.
-            filetype_filter="Spectra Preset (*.xml,*.xml.gz,*.viff,*.vif)|*.xml;*.xml.gz;*.viff;*.vif"
-            filename = common_dialogs.pickfile(filetype_filter=filetype_filter,
-                                                multiple=False,
-                                                default_path=default_path)
-            if filename:
-                msg = ""
+        msg=''
+        if isinstance(fname, np.ndarray):
+            crt_dat = fname
+        elif isinstance(fname, str):
+            if os.path.exists(fname):
                 try:
-                    importer = util_import.DatasetImporter(filename)
-                except IOError:
-                    msg = """I can't read the preset file "%s".""" % filename
-                except SyntaxError:
-                    msg = """The preset file "%s" isn't valid Vespa Interchange File Format.""" % filename
-
+                    crt_dat = np.load(fname)
+                except Exception as e:
+                    msg = """Error (load_on_start): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
                 if msg:
-                    common_dialogs.message(msg, "Analysis - Open Preset File",  common_dialogs.E_OK)
-                else:
-                    # Time to rock and roll!
-                    wx.BeginBusyCursor()
-                    presets = importer.go()
-                    wx.EndBusyCursor()
+                    common_dialogs.message(msg, default_content.APP_NAME+" - Load on Start", common_dialogs.E_OK)
+                    return
+        else:
+            # TODO bjs - better error/warning reporting
+            return
 
-                    preset = presets[0]
+        if crt_dat.shape == (512,24,24):
+            crt_dat = np.swapaxes(crt_dat,0,2)
+        if len(crt_dat.shape) != 3:
+            msg = 'Error (load_on_start): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
+        elif crt_dat.dtype not in [np.complex64, np.complex128]:
+            msg = 'Error (load_on_start): Wrong Dtype, arr.dtype = '+str(crt_dat.dtype)
+		
+        if msg:
+            common_dialogs.message(msg, default_content.APP_NAME+" - Load on Start", common_dialogs.E_OK)
+        else:
+            path, _ = os.path.split(fname)
 
-                    wx.BeginBusyCursor()
+            # bjs hack
+            crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
 
-                    # update dataset object with preset blocks and chains
-                    dataset.apply_preset(presets[0], voxel=tab.voxel)
+            raw = mrsi_data_raw.MrsiDataRaw()
+            raw.data_sources = [fname,]
+            raw.data = crt_dat
+            raw.sw = 1250.0
+            raw.frequency = 123.9
+            raw.resppm = 4.7
+            raw.seqte = 110.0
+            raw.seqtr = 2000.0
 
-                    # refresh chain in each block for new preset values
-                    chain_outputs = {}
-                    chain_outputs['raw']      = dataset.blocks['raw'].chain.run([(0,0,0)], entry='all')
-                    chain_outputs['prep']     = dataset.blocks['prep'].chain.run([(0,0,0)], entry='all', freq_raw=True)
-                    chain_outputs['spectral'] = dataset.blocks['spectral'].chain.run([(0, 0, 0)], entry='all')
-                    chain_outputs['fit']      = dataset.blocks['fit'].chain.run([(0, 0, 0)], entry='initial_only')
-                    chain_outputs['spectral'] = dataset.blocks['spectral'].chain.run([(0, 0, 0)], entry='all')
-                    chain_outputs['fit']      = dataset.blocks['fit'].chain.run([(0, 0, 0)], entry='initial_only')
-                    chain_outputs['quant']    = dataset.blocks['quant'].chain.run([(0, 0, 0)], entry='initial_only')
+            dataset = mrsi_dataset.dataset_from_raw(raw)
 
-                    # Get the active dataset tab to update itself
-                    self.notebook_datasets.on_preset_loaded()
-
-                    # Check dimensionality on ALL other loaded datasets
-                    preset_zf = dataset.zero_fill_multiplier
-                    self.notebook_datasets.global_block_zerofill_update(preset_zf)
-
-                    # Check gui on ALL tabs for zero fill consistency
-                    self.notebook_datasets.global_tab_zerofill_update(preset_zf)
-
-                    path, _ = os.path.split(filename)
-                    util_analysis_config.set_path(ini_name, path)
-
-                    wx.EndBusyCursor()
-
-
-    def on_load_preset_from_tab(self, event):
-        print("Not yet Implemented - on_load_preset_from_tab")
-
-
-    def on_save_preset_to_file(self, event):
-
-        tab = self.notebook_datasets.active_tab
-        if tab:
-            # get the dataset object if it exists, save settings to preset file
-            dataset  = tab.dataset
-            filename = 'vespa_analysis_preset.xml'
-            dialog = dialog_export.DialogExport(self, False, filename=filename)
-            dialog.ShowModal()
-
-            if dialog.export:
-                filename = dialog.filename
-                comment  = dialog.comment
-                compress = dialog.compress
-
-                wx.BeginBusyCursor()
-                # Many of these objects can deflate themselves into a
-                # more compact form when being deflated as presets, so
-                # we temporarily set a flag on them to let them know
-                # how to behave during deflate(). This hack turns out
-                # to be easier than passing a flag to the deflate()
-                # calls.
-                dataset.set_behave_as_preset(True)
-
-                try:
-                    util_export.export(filename, [dataset], None, comment, compress)
-                except IOError as xxx_todo_changeme:
-                    (error_number, error_string) = xxx_todo_changeme.args
-                    msg = """Exporting to "%s" failed. The operating system message is below --\n\n""" % filename
-                    msg += error_string
-                    common_dialogs.message(msg, "Vespa Export", common_dialogs.E_OK)
-
-                wx.EndBusyCursor()
-
-                # Here we undo the behave_as_preset hack from above.
-                dataset.set_behave_as_preset(False)
+            self.notebook_datasets.Freeze()
+            self.notebook_datasets.add_analysis_tab(dataset=dataset)
+            self.notebook_datasets.Thaw()
+            self.notebook_datasets.Layout()
+            self.update_title()
 
 
     def on_close_window(self, event):
@@ -410,9 +421,6 @@ class Main(wx.Frame):
 
     def on_add_voigt_tab(self, event):
         self.notebook_datasets.on_add_voigt_tab(event)
-
-    def on_add_giso_tab(self, event):
-        self.notebook_datasets.on_add_giso_tab(event)
 
     def on_add_watref_tab(self, event):
         self.notebook_datasets.on_add_watref_tab(event)
@@ -628,7 +636,7 @@ class Main(wx.Frame):
 
                     dataset = [dataset,]
                 else:
-                    msg = """No Vespa raw data found in that VIFF file."""
+                    msg = """No Vespa MRSI raw data found in that VIFF file."""
                     common_dialogs.message(msg, "Analysis - Import Data", common_dialogs.E_OK)
 
 
@@ -826,3 +834,5 @@ if __name__ == "__main__":
     # p = ps.Stats(fname)
     # p.strip_dirs().sort_stats('cumulative').print_stats()
     #
+ 
+    

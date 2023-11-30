@@ -106,7 +106,7 @@ class ImagePaneMri(ImagePaneUI):
         self.imageid    = [None    for i in range(naxes)]
         self.fov        = [1.0     for i in range(naxes)]
         self.naxes = naxes
-        self.axes = [] 
+        self.axes = []
 
         self.init_image_panel(naxes, data, layout, vertOn, horizOn, color, lcolor, lw)
 
