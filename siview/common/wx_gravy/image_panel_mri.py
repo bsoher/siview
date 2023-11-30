@@ -23,10 +23,7 @@ Update - 27 November 2023
 """
 # Python modules
 
-import os
-from enum import Enum
-
-# third party modules
+# 3rd party modules
 import wx
 import numpy as np
 import matplotlib
@@ -34,22 +31,15 @@ import matplotlib.cm as cm
 
 matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.backend_bases          import NavigationToolbar2, cursors
-
-from matplotlib.figure    import Figure
-from numpy.random         import rand
-from wx.lib.embeddedimage import PyEmbeddedImage
+from matplotlib.figure import Figure
 
 # Our modules
 from siview.common.wx_gravy.nav_toolbar_mri import NavToolbarMri
 
 
-LEVMAX =  383
-LEVMIN = -127
-WIDMAX =  255
-WIDMIN =    0
+WIDMAX = 4096
 LEVSTR =  128
-
+WIDSTR =  255
 
 
 
@@ -95,19 +85,19 @@ class ImagePanelMri(wx.Panel):
 
         self.figure = Figure(figsize=(4,4), dpi=100)
 
-        self.cmap       = [cm.gray for i in range(naxes)]
+        self.cmap       = [cmap    for i in range(naxes)]
         self.imageid    = [None    for i in range(naxes)]
-        self.width      = [WIDMAX  for i in range(naxes)]
+        self.width      = [WIDSTR  for i in range(naxes)]
         self.level      = [LEVSTR  for i in range(naxes)]
         self.vmax       = [WIDMAX  for i in range(naxes)]
-        self.vmin       = [LEVSTR  for i in range(naxes)]
+        self.vmin       = [0.0     for i in range(naxes)]
         self.vmax_orig  = [WIDMAX  for i in range(naxes)]
-        self.vmin_orig  = [LEVSTR  for i in range(naxes)]
+        self.vmin_orig  = [0.0     for i in range(naxes)]
         self.fov        = [1.0     for i in range(naxes)]
         
-        # here we create the required naxes, add them to the figure, but we
-        # also keep a permanent reference to each axes so they can be added
-        # or removed from the figure as the user requests 1-N axes be displayed
+        # Create required naxes and add to figure, also keep a permanent ref
+        # to each axes so they can be added or removed from the figure as the
+        # user requests 1-N axes be displayed. TODO - bjs this may be outdated?
         self.naxes = naxes   
         self.axes  = []
 
@@ -115,12 +105,12 @@ class ImagePanelMri(wx.Panel):
             self.axes.append(self.figure.add_subplot(naxes,1,1))
             if naxes>1:
                 for i in range(naxes-1):
-                    self.axes.append(self.figure.add_subplot(naxes,1,i+2)) #, sharex=self.axes[0], sharey=self.axes[0]))
+                    self.axes.append(self.figure.add_subplot(naxes,1,i+2))
         else:
             self.axes.append(self.figure.add_subplot(1,naxes,1))
             if naxes > 1:
                 for i in range(naxes - 1):
-                    self.axes.append(self.figure.add_subplot(1,naxes,i+2)) #, sharex=self.axes[0], sharey=self.axes[0]))
+                    self.axes.append(self.figure.add_subplot(1,naxes,i+2))
 
         self.all_axes = list(self.axes)
  
@@ -158,8 +148,10 @@ class ImagePanelMri(wx.Panel):
         # Capture the paint message
         wx.EvtHandler.Bind(self, wx.EVT_PAINT, self.on_paint)
 
-        self.toolbar = NavToolbarMri(self.canvas, self, vertOn=vertOn,
-                                     horizOn=horizOn, lcolor=lcolor, lw=lw)
+        self.toolbar = NavToolbarMri(self.canvas, self,
+                                     vertOn=vertOn,
+                                     horizOn=horizOn,
+                                     lcolor=lcolor, lw=lw)
         self.toolbar.Realize()
         if wx.Platform == '__WXMAC__':
             # Mac platform (OSX 10.3, MacPython) does not seem to cope with
@@ -210,9 +202,7 @@ class ImagePanelMri(wx.Panel):
         
         """
         if event.inaxes == None: return
-        for i, axes in enumerate(self.axes):
-            if axes == event.inaxes:
-                iplot = i
+        iplot = self.get_plot_index(event)
         self.on_scroll(event.button, event.step, iplot)        
 
 
@@ -224,32 +214,27 @@ class ImagePanelMri(wx.Panel):
 
 
     def _dist(self, n, m=None):  
-        """
-        Return a rectangular array in which each pixel = euclidian
-        distance from the origin.
-
-        """
+        """ a rectangular array where each pixel = euclidian distance from the origin. """
         n1 = n
         m1 = n if m is None else m
-
-        x = np.arange(n1)
-        x = np.array([val**2 if val < (n1-val) else (n1-val)**2 for val in x ])
-        a = np.ndarray((n1,m1),float)
-
-        for i in range(int((m1/2)+1)):      # Row loop
-            y = np.sqrt(x + i**2.0)         # Euclidian distance
-            a[i,:] = y                      # Insert the row
-            if i != 0:
-                a[m1-i,:] = y               # Symmetrical
-
+        x = np.array([val**2 if val < (n1-val) else (n1-val)**2 for val in np.arange(n1) ])
+        a = np.ndarray((n1,m1),float)   # Make array
+        for i in range(int((m1/2)+1)):  # Row loop
+            a[i,:] = np.sqrt(x + i**2.0)     # Euclidian distance
+            if i != 0: a[m1-i,:] = a[i,:]    # Symmetrical
         return a
         
 
     def on_paint(self, event):
         # this is necessary or the embedded MPL canvas does not show
-        self.canvas.draw()
+        self.canvas.draw_idle()
         event.Skip()
 
+    def get_plot_index(self, event):
+        for i, axes in enumerate(self.axes):
+            if axes == event.inaxes:
+                return i
+        return None
 
     #=======================================================
     #
@@ -661,9 +646,9 @@ class DemoImagePanel(ImagePanelMri):
 
     def on_level_motion(self, xloc, yloc, xpos, ypos, iplot, wid, lev):
         self.top.statusbar.SetStatusText( " " , 0)
-        self.top.statusbar.SetStatusText(( " Width = %i " % (self.width[iplot],)), 1)
-        self.top.statusbar.SetStatusText(( " Level = %i " % (self.level[iplot],)), 2)
-        self.top.statusbar.SetStatusText(( "wid/lev = %.1f / %.1f" % (wid, lev)),  3)
+        self.top.statusbar.SetStatusText(( " Width = %i " % (self.toolbar.width[iplot],)), 1)
+        self.top.statusbar.SetStatusText(( " Level = %i " % (self.toolbar.level[iplot],)), 2)
+        self.top.statusbar.SetStatusText( " ",  3)
 
 
 

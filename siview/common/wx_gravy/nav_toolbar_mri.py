@@ -28,9 +28,9 @@ from wx.lib.embeddedimage import PyEmbeddedImage
 LEVMAX =  2048
 LEVMIN = -2048
 WIDMAX =  4096
-WIDMIN =    1
-WIDSTR =  255
-LEVSTR =  128
+WIDMIN =     1
+WIDSTR =   255
+LEVSTR =   128
 
 #------------------------------------------------------------------------------
 # NavToolbarMri
@@ -172,7 +172,7 @@ class NavToolbarMri(wx.ToolBar):
 
         self.naxes = len(self.canvas.figure.get_axes())
         self.parent = parent
-        self.statusbar = self.parent.statusbar
+        self.statusbar = wx.GetApp().GetTopWindow().statusbar
         self.prevxy = [0,0]
         self.widmax = 4096
         self.widmin = 1
@@ -705,7 +705,7 @@ class NavToolbarMri(wx.ToolBar):
 
     def get_bounded_xyloc(self, event):
         if not event.inaxes:
-            return 0,0
+            return 0,0,0,0
 
         xloc, yloc = event.xdata, event.ydata
         
@@ -1205,11 +1205,9 @@ class CanvasFrame(wx.Frame):
         m1 = m if m else n
         x = np.array([val**2 if val < (n1-val) else (n1-val)**2 for val in np.arange(n1) ])
         a = np.ndarray((n1,m1),float)   # Make array
-
         for i in range(int((m1/2)+1)):  # Row loop
             a[i,:] = np.sqrt(x + i**2.0)     # Euclidian distance
             if i != 0: a[m1-i,:] = a[i,:]    # Symmetrical
-
         return a
 
 class App(wx.App):
