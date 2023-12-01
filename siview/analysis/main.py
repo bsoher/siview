@@ -38,6 +38,7 @@ import siview.common.images as images
 import siview.common.dialog_export as dialog_export
 import siview.common.default_ini_file_content as default_content
 
+from wx.lib.embeddedimage import PyEmbeddedImage
 
 
 _MSG_PRESET_MISMATCH = """
@@ -58,6 +59,28 @@ You can open this file, but the zero fill factor of the open datasets needs to b
  
 _MSG_NO_DATASETS_FOUND = """The file "%s" doesn't contain any datasets."""
 
+SIView_Analysis = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAAXNSR0IArs4c6QAAAARnQU1B'
+    b'AACxjwv8YQUAAAF6UExURQAAAP///yIcAP/YAAoIAAABCAAEHAAg2Pn5+ebm5tPT09zc3OXl'
+    b'5fv7++7u7qCgoFhYWCgoKBwcHEZGRnd3d9ra2u/v73V1dR8fH3Fxcc/Pz8rKyiAgIBMTEw0N'
+    b'DbS0tM7OzgsLCxsbG2pqaoGBgY6OjoWFhXZ2dhYWFgYGBi8vL4SEhOLi4rCwsE9PT5aWlp+f'
+    b'n+rq6oqKihQUFDk5OQ8PD+Dg4PHx8f7+/vr6+pSUlGFhYcLCwsDAwLu7u2JiYnh4eFpaWiEh'
+    b'IYuLiycnJ5ycnLy8vDExMTMzM6ysrJOTk0NDQ9vb2/T09Hp6ehEREa2trenp6XR0dH9/f9nZ'
+    b'2Zubm9XV1UxMTBgYGN/f3wgICMTExOvr67W1tff398bGxktLSyoqKpGRkfPz8/z8/K+vr1NT'
+    b'U4yMjOHh4fX19cHBwRAQEEpKStHR0WRkZJqamlRUVCwsLHl5ed3d3VlZWTQ0NL+/v9TU1Kqq'
+    b'qnt7e35+foeHh7KyssYAAFCxjeMAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJcSURBVHhe7Zj3'
+    b'UxNRFIXfjYgoqAj2XoNYgBgbooK9IXYRsYu9a+z6v/ve3UNidmY3Tia5OxnP98u+c9+92W+y'
+    b'k2Q3jjgnqTiXm1M/uRovTwEKUIACFKAABShAAQpQgAIUoEBrCLTl6qdNz1ADnCkBNDUTnCkB'
+    b'NNXN3PY0tAVnSqBmQyrOtc9LgwIUoAAFWlegY/6Czq6FCCk0RWDR4u4lOuh6epcuQzGBJggs'
+    b'X6FDs6yMqqsqrI4qEY0XWLNWZ8qsi8rrET0bokpEwwU2btKRzVu2bsv39W53rj+qWwl07AgD'
+    b'O3chyu4BbFoJDIb+IQQFoVAo7PFbRX+MCqDRAnt9ymMdJ8gVsS7TaIF9Pu3HOo6FwIHQfhAh'
+    b'joXAcGjvRIhjcgmKPh3COo6JwEjoP4wQw0TgSOjvOYpUjYmAjOrEGFIVNgJyTEeODyL+hZGA'
+    b'nNAZd/IUchkrATl9Rqfc2XMoADMBkfP+VzBwYRwFxVBALk706+SlyygELAVErlzVUXcN2WMr'
+    b'IHJ9QIcrHwdrAZEbOn0TKQMBGQrTIwhZCMik37yFdSYCU2G8CyELAbntd6exzkLgThifvUHJ'
+    b'QuBuGL+HYCFwv7v6hvCB35zE2kbAPXz0GGuRGf02fIJkJOCfxZ4+m34+82L85cSrMDyKLTuB'
+    b'al4PY8tG4E30aFrhLTYCFgIi797rG698+PgJVZFSqfTZl4r++AUlpeECnq/f8t/7fvz8NYWs'
+    b'mP0/kAQFkqAABShAgdYQaC4U+AeB36n4BlzPeqAABShAAQpQgAIUoAAFKEABClCgNQT+a5z7'
+    b'A0JMbcVioEvRAAAAAElFTkSuQmCC')
 
 #----------------------------------------------------------------------
 
@@ -73,7 +96,7 @@ class Main(wx.Frame):
                 wx.MAXIMIZE_BOX | wx.SYSTEM_MENU | wx.RESIZE_BORDER |   \
                 wx.CLIP_CHILDREN
 
-        wx.Frame.__init__(self, None, wx.ID_ANY, "Analysis",
+        wx.Frame.__init__(self, None, wx.ID_ANY, "SIView - Analysis",
                           (self._left, self._top),
                           (self._width, self._height), style)
 
@@ -90,7 +113,7 @@ class Main(wx.Frame):
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
 
-        self.SetIcon(images.icon4_128_analysis_monogram.GetIcon())
+        self.SetIcon(SIView_Analysis.GetIcon())
 
         self.statusbar = self.CreateStatusBar(4, 0)
         self.statusbar.SetStatusText("Ready")
@@ -246,11 +269,15 @@ class Main(wx.Frame):
                 raw.resppm = 4.7
                 raw.seqte = 110.0
                 raw.seqtr = 2000.0
+                raw.headers = ['This is a externally processed CRT file, with Spectral Tab-ready data in it.']
 
                 dataset = mrsi_dataset.dataset_from_raw(raw)
+                datasets = [dataset,]
 
                 self.notebook_datasets.Freeze()
-                self.notebook_datasets.add_analysis_tab(dataset=dataset)
+                wx.BeginBusyCursor()
+                self.notebook_datasets.add_dataset_tab(datasets)
+                wx.EndBusyCursor()
                 self.notebook_datasets.Thaw()
                 self.notebook_datasets.Layout()
                 self.update_title()

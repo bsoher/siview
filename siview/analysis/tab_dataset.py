@@ -279,16 +279,10 @@ class TabDataset(dataset_module.DatasetUI):
         # If the voigt or giso tab is activated, we present fit-specific menus
         if tab.is_raw:
             type_ = util_menu.bar.TYPE_RAW
-        elif tab.is_prep_fidsum:
-            type_ = util_menu.bar.TYPE_PREP_FIDSUM
-        elif tab.is_prep_timeseries:
-            type_ = util_menu.bar.TYPE_PREP_FIDSUM
         elif tab.is_spectral:
             type_ = util_menu.bar.TYPE_SPECTRAL
         elif tab.is_voigt:
             type_ = util_menu.bar.TYPE_VOIGT
-        elif tab.is_giso:
-            type_ = util_menu.bar.TYPE_GISO
         elif tab.is_watref:
             type_ = util_menu.bar.TYPE_WATREF
         else:
@@ -338,7 +332,7 @@ class TabDataset(dataset_module.DatasetUI):
         self.set_voxel_range(self.dataset.raw_dims[1])  # bjs si
 
         # reload preset values into each tab
-        for item in ['raw', 'prep', 'spectral', 'fit', 'quant']:    # bjs si
+        for item in ['raw', 'grid', 'spatial', 'prep', 'spectral', 'fit', 'quant']:    # bjs si
             tab = self.get_tab(item)
             if tab:
                 self.top.Freeze()
@@ -385,7 +379,7 @@ class TabDataset(dataset_module.DatasetUI):
 
         # call these individually so we can turn keywords on/off
         
-        for item in ['raw', 'prep', 'spectral', 'fit', 'quant']:    # bjs si
+        for item in ['raw', 'grid', 'spatial', 'prep', 'spectral', 'fit', 'quant']:    # bjs si
             tab = self.get_tab(item)
             if tab is not None:
                 if item == 'raw':

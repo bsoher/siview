@@ -495,7 +495,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         """
         ds = self.dataset
-        dim0, dim1, dim2, dim3 = ds.spectral_dims
+        dim0, dim1, dim2, dim3, _, _ = ds.spectral_dims
         sw      = ds.sw
         maxppm  = ds.pts2ppm(0)
         minppm  = ds.pts2ppm(dim0-1)
@@ -762,7 +762,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         """
         ds = self.dataset
-        dim0, dim1, dim2, dim3 = ds.spectral_dims
+        dim0, dim1, dim2, dim3, _, _ = ds.spectral_dims
         voxel   = self._tab_dataset.voxel
         maxppm  = ds.pts2ppm(0)
         minppm  = ds.pts2ppm(dim0-1)
@@ -863,8 +863,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         #------------------------------------------------------------
 
         # SVD Algorithm Controls
-        self.SliderDataPoints.SetValue(self.block.get_data_point_count(voxel))
-        self.SliderSingularValues.SetValue(self.block.get_signal_singular_value_count(voxel))
+        self.SliderDataPoints.SetValue(int(self.block.get_data_point_count(voxel)))
+        self.SliderSingularValues.SetValue(int(self.block.get_signal_singular_value_count(voxel)))
 
         # SVD Results Controls
         self.svd_checklist_update()
@@ -1359,8 +1359,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         if fname:
 
             voxel   = self._tab_dataset.voxel
-            ndp     = self.block.get_data_point_count(voxel)
-            nssv    = self.block.get_signal_singular_value_count(voxel)
+            ndp     = int(self.block.get_data_point_count(voxel))
+            nssv    = int(self.block.get_signal_singular_value_count(voxel))
             svd_out = self.block.get_svd_output(voxel)
 
             freqs = svd_out.frequencies
@@ -1421,8 +1421,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         if fname:
 
             voxel = self._tab_dataset.voxel
-            ndp = self.block.get_data_point_count(voxel)
-            nssv = self.block.get_signal_singular_value_count(voxel)
+            ndp = int(self.block.get_data_point_count(voxel))
+            nssv = int(self.block.get_signal_singular_value_count(voxel))
             svd_out = self.block.get_svd_output(voxel)
 
             freqs = svd_out.frequencies
@@ -1989,7 +1989,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.block.set.svd_threshold = value
         if self.block.set.svd_threshold_unit == 'PPM':
             dataset = self.dataset
-            dim0, dim1, dim2, dim3 = dataset.spectral_dims
+            dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
             maxppm  = dataset.pts2ppm(0)
             minppm  = dataset.pts2ppm(dim0-1)
             # threshold value used to be in Hz and allowed to range +/- 200
@@ -2010,7 +2010,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         if self.block.set.svd_threshold_unit == 'PPM':
             dataset = self.dataset
-            dim0, dim1, dim2, dim3 = dataset.spectral_dims
+            dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
             maxppm  = dataset.pts2ppm(0)
             minppm  = dataset.pts2ppm(dim0-1)
             # threshold value used to be in Hz and allowed to range +/- 200
@@ -2314,7 +2314,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         index values according to the threshold.
 
         """
-        voxel = self._tab_dataset.voxel
+        voxel = self._tab_dataset.voxel[0:3]
 
         svd_output = self.block.get_svd_output(voxel)
 
@@ -2360,8 +2360,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.FloatPhase0.SetValue(phase_0)
         self.FloatPhase1.SetValue(phase_1)
 
-        self.SliderDataPoints.SetValue(self.block.get_data_point_count(voxel))
-        self.SliderSingularValues.SetValue(self.block.get_signal_singular_value_count(voxel))
+        self.SliderDataPoints.SetValue(int(self.block.get_data_point_count(voxel)))
+        self.SliderSingularValues.SetValue(int(self.block.get_signal_singular_value_count(voxel)))
 
         self.svd_checklist_update()
 

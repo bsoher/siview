@@ -10,6 +10,7 @@ import xml.etree.cElementTree as ElementTree
 # Our modules
 import siview.analysis.block_raw as block_raw
 import siview.analysis.block_prep_identity as block_prep_identity
+import siview.analysis.block_grid_identity as block_grid_identity
 import siview.analysis.block_spatial_identity as block_spatial_identity
 import siview.analysis.block_spectral_identity as block_spectral_identity
 import siview.analysis.block_fit_identity as block_fit_identity
@@ -53,6 +54,7 @@ _XML_TAG_TO_SLOT_CLASS_MAP = {
 # use it here. Don't modify it at runtime.
 DEFAULT_BLOCK_CLASSES = {
     "raw"       : block_raw.BlockRaw,
+    "grid"      : block_grid_identity.BlockGridIdentity,
     "prep"      : block_prep_identity.BlockPrepIdentity,
     "spatial"   : block_spatial_identity.BlockSpatialIdentity,
     "spectral"  : block_spectral_identity.BlockSpectralIdentity,

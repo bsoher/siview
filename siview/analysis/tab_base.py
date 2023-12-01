@@ -49,10 +49,6 @@ class Tab(object):
         return hasattr(self, "IS_PREP_FIDSUM")
 
     @property
-    def is_prep_timeseries(self):
-        return hasattr(self, "IS_PREP_TIMESERIES")
-
-    @property
     def is_voigt(self):
         return hasattr(self, "IS_VOIGT")
 

@@ -123,7 +123,7 @@ class DialogUserPrior(MyDialog):
 
         """
         ds = self.dataset
-        dim0, dim1, dim2, dim3 = ds.spectral_dims
+        dim0, dim1, dim2, dim3, _, _ = ds.spectral_dims
         ppmlim  = (ds.pts2ppm(dim0-1), ds.pts2ppm(0))
         dim0lim = (0, dim0 - 1)
 

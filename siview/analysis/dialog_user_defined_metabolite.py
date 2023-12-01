@@ -152,7 +152,7 @@ class DialogUserDefinedMetabolite(dialog_user_defined_metabolite.MyDialog):
         """
         # calculate a few useful values
         
-        dim0, dim1, dim2, dim3 = self.dataset.spectral_dims
+        dim0, dim1, dim2, dim3, _, _ = self.dataset.spectral_dims
         sw      = self.dataset.sw
         maxppm  = self.dataset.pts2ppm(0)
         minppm  = self.dataset.pts2ppm(dim0-1)

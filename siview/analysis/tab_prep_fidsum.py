@@ -123,7 +123,7 @@ class TabPrepFidsum(tab_base.Tab, fidsum.PanelPrepFidsumUI):
         
         """
         dataset = self.dataset
-        dim0, dim1, dim2, dim3 = dataset.spectral_dims
+        dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
         nrep, ncoil, nfid, npts = dataset.raw_shape
         sw      = dataset.sw
         maxppm  = dataset.pts2ppm(0, acq=True)

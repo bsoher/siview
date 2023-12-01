@@ -14,29 +14,30 @@
 
 # Our modules
 from siview.common.util.import_ import Importer
-import siview.analysis.mrs_dataset as mrs_dataset
+import siview.analysis.mrsi_dataset as mrsi_dataset
 import siview.analysis.mrs_metinfo as mrs_metinfo
 import siview.common.mrs_prior as mrs_prior
-import siview.common.mrs_data_raw as mrs_data_raw
+import siview.common.mrsi_data_raw as mrsi_data_raw
 
 
 
-class DatasetImporter(Importer):
+
+class MrsiDatasetImporter(Importer):
     def __init__(self, source):
         Importer.__init__(self, source, None, False)
 
     def go(self, add_history_comment=False):
-        for element in self.root.getiterator("dataset"):
+        for element in self.root.getiterator("mrsi_dataset"):
             self.found_count += 1
 
-            dataset = mrs_dataset.Dataset(element)
+            dataset = mrsi_dataset.Dataset(element)
             
             self.imported.append(dataset)
 
         self.post_import()
         
         return self.imported
-
+    
 
 class DatasetCliImporter(Importer):
     def __init__(self, source):
@@ -46,7 +47,7 @@ class DatasetCliImporter(Importer):
         for element in self.root.getiterator("dataset"):
             self.found_count += 1
 
-            dataset = mrs_dataset.Dataset(element)
+            dataset = mrsi_dataset.Dataset(element)
             
             self.imported.append(dataset)
 
@@ -63,7 +64,7 @@ class DataRawImporter(Importer):
         for element in self.root.getiterator("data_raw"):
             self.found_count += 1
 
-            data = mrs_data_raw.DataRaw(element)
+            data = mrsi_data_raw.MrsiDataRaw(element)
             
             self.imported.append(data)
 
@@ -104,4 +105,4 @@ class MetinfoImporter(Importer):
 
         self.post_import()
 
-        return self.imported
+        return self.imported    

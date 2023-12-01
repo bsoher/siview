@@ -4,7 +4,7 @@
 from xml.etree.cElementTree import Element
 
 # Our modules
-import siview.analysis.chain_spatial_identity as chain_spatial_identity
+import siview.analysis.chain_grid_identity as chain_grid_identity
 import siview.analysis.block as block
 from siview.common.constants import Deflate
 
@@ -49,7 +49,7 @@ class _Settings(object):
 
 
 
-class BlockSpatialIdentity(block.Block):
+class BlockGridIdentity(block.Block):
     """
     This is a no-op Block object that is a placeholder in a Dataset whose
     Blocks have not been fully instantiated/inflated yet.
@@ -74,13 +74,13 @@ class BlockSpatialIdentity(block.Block):
 
 
     def create_chain(self, dataset):
-        self.chain = chain_spatial_identity.ChainSpatialIdentity(dataset, self)
+        self.chain = chain_grid_identity.ChainGridIdentity(dataset, self)
 
 
     def deflate(self, flavor=Deflate.ETREE):
         if flavor == Deflate.ETREE:
-            e = Element("block_spatial_identity", { "id":self.id,
-                                                     "version":self.XML_VERSION})
+            e = Element("block_grid_identity", { "id":self.id,
+                                                 "version":self.XML_VERSION})
             e.append(self.set.deflate())
             return e
 

@@ -805,12 +805,12 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
         array of zeros of the appropriate shape. The shape relies on the dims,
         so this method will fail if called when dims are not yet set.
         """
-        dims = self.dims
+        dims = self.dims[0:4]
 
         n_pts  = min(dims[0], self.set.svd_last_n_data_points)
         n_sing =              self.set.svd_last_n_singular_values
 
-        shape = dims[1:]
+        shape = dims[1:4]
 
         self._data_point_count            = n_pts  + np.zeros(shape, int )
         self._signal_singular_value_count = n_sing + np.zeros(shape, int )
@@ -823,7 +823,7 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
         objects of the appropriate shape. The shape relies on the dims, so
         this method will fail if called when dims are not yet set.
         """
-        shape = self.dims[1:]
+        shape = self.dims[1:4]
 
         # This line multiplies the elements of shape together; e.g. (3, 4, 5) = 60.
         size = reduce(lambda x, y: x * y, shape)
@@ -834,14 +834,14 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
     def _reset_dimensional_data(self, dataset):
         """Resets (to zero) and resizes dimensionally-dependent data"""
 
-        dims = dataset.spectral_dims        # bjs si
+        dims = dataset.spectral_dims[0:4]        # bjs si
 
         if self.data is None and not self.behave_as_preset:
             # there are no results to maintain
             self.data             = np.zeros(tuple(dims[::-1]), dtype='complex64')      # bjs si
-            self._phase_0         = np.zeros(dims[1:])
-            self._phase_1         = np.zeros(dims[1:])
-            self._frequency_shift = np.zeros(dims[1:])
+            self._phase_0         = np.zeros(dims[1:4])
+            self._phase_1         = np.zeros(dims[1:4])
+            self._frequency_shift = np.zeros(dims[1:4])
 
             self._set_default_svd_inputs()
             self._set_default_svd_outputs()
@@ -852,13 +852,14 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
 
             # data has to match full dimensionality
             if self.dims != dims:
-                self.data = np.zeros(tuple(dims[::-1]), dtype='complex64')
+                tmp_dims = dims[0:4]
+                self.data = np.zeros(tuple(tmp_dims[::-1]), dtype='complex64')
 
             # maintain results if only dims[0] has changed
-            if self.dims[1:] != list(self._phase_0.shape):
-                self._phase_0         = np.zeros(dims[1:])
-                self._phase_1         = np.zeros(dims[1:])
-                self._frequency_shift = np.zeros(dims[1:])
+            if self.dims[1:4] != list(self._phase_0.shape):
+                self._phase_0         = np.zeros(dims[1:4])
+                self._phase_1         = np.zeros(dims[1:4])
+                self._frequency_shift = np.zeros(dims[1:4])
 
             self._set_default_svd_inputs()
             self._set_default_svd_outputs()

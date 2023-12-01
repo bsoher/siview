@@ -18,7 +18,7 @@ from siview.analysis.chain_base import Chain
 
 
 
-class ChainSpectral(Chain):
+class ChainSpectral(Chain): 
     """
     Building block object used to create a processing chain for MRS data.
 
@@ -96,7 +96,7 @@ class ChainSpectral(Chain):
         for voxel in voxels:
             # local copy of input data
             self.data = self._dataset.get_source_data('spectral')
-            self.data = self.data[voxel[2],voxel[1],voxel[0],:]
+            self.data = self.data[0, 0, voxel[2],voxel[1],voxel[0],:]       # bjs SI
             self.data = self.data.copy()
 
             # copy 'global' parameters, that DO change with voxel, from Dataset

@@ -227,7 +227,7 @@ class ImagePaneMri(ImagePaneUI):
     def _default_data(self):
         data = []
         for i in range(self.naxes):
-            data.append({'data': self._dist(128), 'fov': 240.0})
+            data.append({'data': self._dist(24), 'fov': 240.0})
         return data
 
     def _dist(self, n, m=None):

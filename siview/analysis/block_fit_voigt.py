@@ -636,7 +636,7 @@ class BlockFitVoigt(block_fit_identity.BlockFitIdentity):
         
             self.fit_results    = np.zeros((nparam, dims[1], dims[2], dims[3]))      
             self.fit_stats      = np.zeros((3, dims[1], dims[2], dims[3]))      
-            self.fit_baseline   = np.zeros(tuple(dataset.spectral_dims), dtype='complex64')
+            self.fit_baseline   = np.zeros(tuple(dataset.spectral_dims[0:4]), dtype='complex64')
             self.confidence     = np.zeros((nparam, dims[1], dims[2], dims[3]))      
             self.cramer_rao     = np.zeros((nparam, dims[1], dims[2], dims[3]))      
             self.initial_values = np.zeros((nparam, dims[1], dims[2], dims[3]))      
@@ -654,7 +654,7 @@ class BlockFitVoigt(block_fit_identity.BlockFitIdentity):
         
                 self.fit_results    = np.zeros((nparam, dims[1], dims[2], dims[3]))      
                 self.fit_stats      = np.zeros((3, dims[1], dims[2], dims[3]))      
-                self.fit_baseline   = np.zeros(tuple(dataset.spectral_dims), dtype='complex64')
+                self.fit_baseline   = np.zeros(tuple(dataset.spectral_dims[0:4]), dtype='complex64')
                 self.confidence     = np.zeros((nparam, dims[1], dims[2], dims[3]))      
                 self.cramer_rao     = np.zeros((nparam, dims[1], dims[2], dims[3]))      
                 self.initial_values = np.zeros((nparam, dims[1], dims[2], dims[3]))      

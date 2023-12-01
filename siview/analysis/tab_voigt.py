@@ -317,7 +317,7 @@ class TabVoigt(tab_base.Tab, voigt.PanelVoigtUI):
         # calculate a few useful values
         
         dataset = self.dataset
-        dim0, dim1, dim2, dim3 = dataset.spectral_dims
+        dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
         sw      = dataset.sw
         maxppm  = dataset.pts2ppm(0)
         minppm  = dataset.pts2ppm(dim0-1)

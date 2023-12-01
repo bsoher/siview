@@ -182,7 +182,7 @@ def lcm_like(   dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
     # Process 'fit' block to get results --------------------------------------
 
@@ -461,7 +461,7 @@ def lcm_square( dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
     # Process 'fit' block to get results --------------------------------------
 
@@ -740,7 +740,7 @@ def lcm_multipage_pdf(  dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _ , _ = dataset.spectral_dims
 
     # estimate some layout scale issues ---------------------------------------
     
@@ -991,7 +991,7 @@ def analysis_plot2( dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
 
     # Process 'fit' block to get results --------------------------------------
@@ -1284,7 +1284,7 @@ def analysis_plot4( dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
     # Process 'fit' block to get results --------------------------------------
 
@@ -1596,7 +1596,7 @@ def analysis_brp_generic(   dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
     # Process 'fit' block to get results --------------------------------------
 
@@ -1920,7 +1920,7 @@ def debug_plot4(dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
     # estimate some layout scale issues ---------------------------------------
     
@@ -2256,7 +2256,7 @@ def debug_multipage_pdf(dataset,
         voxel = dataset.all_voxels[0]
 
     data_source = dataset.blocks["raw"].get_data_source(voxel)
-    dim0, dim1, dim2, dim3 = dataset.spectral_dims
+    dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
 
     # estimate some layout scale issues ---------------------------------------
     
