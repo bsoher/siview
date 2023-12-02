@@ -539,7 +539,7 @@ class PlotPanelSpectrum(wx.Panel):
         data = []
         for i in range(self.naxes):
             data.append([np.arange(1024).astype(np.complex64)])
-            # data.append([np.zeros([1, 1024], dtype=complex)])
+            # data.append([np.zeros([1, 1024], dtype=complex64)])
         return data
 
 

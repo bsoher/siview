@@ -52,27 +52,34 @@ HLSVD_MIN_DATA_POINTS = 128
 _HLSVD_RESULTS_DISPLAY_SIZE = 6
 
 
-
-class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ColumnSorterMixin):
+#class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ColumnSorterMixin):
+class CheckListCtrl(wx.ListCtrl, ColumnSorterMixin):
     def __init__(self, _inner_notebook, tab):
         style = wx.LC_REPORT | wx.LC_HRULES | wx.LC_VRULES
         wx.ListCtrl.__init__(self, _inner_notebook, -1, style=style)
-        CheckListCtrlMixin.__init__(self)
+#        CheckListCtrlMixin.__init__(self)
         ColumnSorterMixin.__init__(self, _HLSVD_RESULTS_DISPLAY_SIZE)
         self.itemDataMap = {}
         self._tab_dataset = _inner_notebook
         self.tab = tab
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
+        self.Bind(wx.EVT_LIST_ITEM_CHECKED , self.OnCheckItem)
+        self.Bind(wx.EVT_LIST_ITEM_UNCHECKED, self.OnCheckItem)
+
 
     def GetListCtrl(self):
         return self
 
     def OnItemActivated(self, evt):
-        self.ToggleItem(evt.Index)
+        #self.ToggleItem(evt.Index)
+        flag = evt.GetEventObject().IsItemChecked(evt.Index)
+        self.CheckItem(evt.Index, check=(not flag))
 
     # this is called by the base class when an item is checked/unchecked
-    def OnCheckItem(self, index, flag):
-        self.tab.on_check_item(self, index, flag)
+    def OnCheckItem(self, event): #, flag):
+        flag = event.GetEventObject().IsItemChecked(event.Index)
+        print('in OnCheckItem index/flag = '+str(event.Index)+'/'+str(flag))
+        self.tab.on_check_item(self, event.Index, flag)
 
 
 #------------------------------------------------------------------------------
@@ -677,6 +684,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         # Results Control
 
         self.list_svd_results = CheckListCtrl(self.PanelResults, self)
+        self.list_svd_results.EnableCheckBoxes(enable=True)
         sizer = wx.BoxSizer()
         sizer.Add(self.list_svd_results, 1, wx.EXPAND)
         self.PanelResults.SetSizer(sizer)
