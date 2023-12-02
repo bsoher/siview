@@ -653,10 +653,10 @@ class Main(wx.Frame):
 
                     # set up user-defined changes to blocks that will be created
                     block_classes = {}
-                    if raw.block_prep_flavor in list(mrs_dataset._XML_TAG_TO_SLOT_CLASS_MAP.keys()):
-                        block_classes['prep'] = mrs_dataset._XML_TAG_TO_SLOT_CLASS_MAP[raw.block_prep_flavor][1]
+                    if raw.block_prep_flavor in list(mrsi_dataset._XML_TAG_TO_SLOT_CLASS_MAP.keys()):
+                        block_classes['prep'] = mrsi_dataset._XML_TAG_TO_SLOT_CLASS_MAP[raw.block_prep_flavor][1]
 
-                    dataset = mrs_dataset.dataset_from_raw(raw, block_classes, zero_fill_multiplier)
+                    dataset = mrsi_dataset.dataset_from_raw(raw, block_classes, zero_fill_multiplier)
 
                     path, _ = os.path.split(filename)
                     util_analysis_config.set_path(ini_name, path)
