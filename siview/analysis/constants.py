@@ -88,6 +88,25 @@ class Apodization(object):
                                        (LORENTZIAN , "Lorentzian"),
                                       ))
 
+class ImageStack(object):
+    """ ImageStack constants """
+    # MIN =   0
+    # MAX = 100
+    # INCREMENT = 0.5
+
+    # These constants are arbitrary and may change.
+    # However bool(NONE) is guaranteed to be False while
+    # bool(X) == True is guaranteed for all other values.
+    NONE       = ''
+    GAUSSIAN   = 'gaussian'
+    LORENTZIAN = 'lorentzian'
+
+    # Items for the spectral processing options dropdown
+    choices = collections.OrderedDict(((NONE ,       "None"),
+                                       (GAUSSIAN ,   "Gaussian"),
+                                       (LORENTZIAN , "Lorentzian"),
+                                      ))
+
 class SpatialFilter(object):
     """ Spatial filter constants """
     # These constants are arbitrary and may change.
