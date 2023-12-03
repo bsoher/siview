@@ -232,6 +232,9 @@ class ImagePaneMri(ImagePaneUI):
 
     def _dist(self, n, m=None):
         """ a rectangular array where each pixel = euclidian distance from the origin. """
+
+        bob =       # bjs fix this ... find exp() dist!!!!
+
         n1 = n
         m1 = n if m is None else m
         x = np.array([val ** 2 if val < (n1 - val) else (n1 - val) ** 2 for val in np.arange(n1)])
@@ -345,29 +348,95 @@ class ImagePaneMri(ImagePaneUI):
         self.top.statusbar.SetStatusText(" Level = %i " % (self.toolbar.level[iplot],), 2)
         self.top.statusbar.SetStatusText(" Plot X,Y,Slc=%i,%i,%i" % (xvox, yvox, zvox), 3)
 
-    def on_source_stack1(self, event):  
-        print("Event handler 'on_source_stack1' OVERLOADED but not implemented!")
-        
+
+    # Image Control events ---------------------------------------
+
+    def on_source_stack1(self, event):
+        # We allow control to update itself to avoid a noticeable & confusing
+        # pause between clicking the control and seeing it actually change.
+        wx.CallAfter(self._source_stack1_changed)
+
+    def _source_stack1_changed(self):
+        key = self.ComboSourceStack1.GetStringSelection()
+        if key == self.tab.stack1_select: return
+        self.stack1_select = key
+        d = self.tab.stack_sources[key]
+        self.FloatStackCeil1.SetValue(d['ceil'])
+        self.FloatStackFloor1.SetValue(d['floor'])
+        self.tab.show()
+
     def on_source_stack2(self, event):
-        print("Event handler 'on_source_stack2' OVERLOADED but not implemented!")
-        
+        wx.CallAfter(self._source_stack2_changed)
+
+    def _source_stack2_changed(self):
+        key = self.ComboSourceStack2.GetStringSelection()
+        if key == self.tab.stack2_select: return
+        self.stack2_select = key
+        d = self.tab.stack_sources[key]
+        self.FloatStackCeil2.SetValue(d['ceil'])
+        self.FloatStackFloor2.SetValue(d['floor'])
+        self.tab.show()
+
     def on_slice_index1(self, event):
-        print("Event handler 'on_slice_index1' OVERLOADED but not implemented!")
-        
-    def on_calc_range1(self, event):
-        print("Event handler 'on_calc_range1' OVERLOADED but not implemented!")
-        
-    def on_calc_reset1(self, event):
-        print("Event handler 'on_calc_reset1' OVERLOADED but not implemented!")
-        
-    def on_slice_index2(self, event):
-        print("Event handler 'on_slice_index2' OVERLOADED but not implemented!")
-        
-    def on_calc_range2(self, event):
-        print("Event handler 'on_calc_range2' OVERLOADED but not implemented!")
-        
-    def on_calc_reset2(self, event):
-        print("Event handler 'on_calc_reset2' OVERLOADED but not implemented!")
+        wx.CallAfter(self._slice_index_changed1)
+
+    def _slice_index_changed1(self):
+        tmp = self.SpinSliceIndex1.GetValue() - 1
+        dims = self.tab.stack_sources[self.stack1_select]['data'].shape
+        tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
+        self.SpinSliceIndex1.SetValue(tmp)
+        self.tab.stack_sources[self.stack1_select]['slice'] = tmp
+        self.tab.show()
+
+    def on_slice_index1(self, event):
+        wx.CallAfter(self._slice_index_changed1)
+
+    def _slice_index_changed1(self):
+        tmp = self.SpinSliceIndex2.GetValue() - 1
+        dims = self.tab.stack_sources[self.stack2_select]['data'].shape
+        tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
+        self.SpinSliceIndex2.SetValue(tmp)
+        self.tab.stack_sources[self.stack1_select]['slice'] = tmp
+        self.tab.show()
+
+    def on_stack_range1(self, event):
+        ceil_val = self.FloatStackCeil1.GetValue()
+        floor_val = self.FloatStackFloor1.GetValue()
+        tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
+        self.FloatStackCeil1.SetValue(tmp[0])
+        self.FloatStackFloor1.SetValue(tmp[1])
+        d = self.tab.stack_sources[self.stack1_select]
+        d['floor'] = tmp[0]
+        d['ceil'] = tmp[1]
+        self.tab.show()
+
+    def on_stack_range2(self, event):
+        ceil_val = self.FloatStackCeil2.GetValue()
+        floor_val = self.FloatStackFloor2.GetValue()
+        tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
+        self.FloatStackCeil2.SetValue(tmp[0])
+        self.FloatStackFloor2.SetValue(tmp[1])
+        d = self.tab.stack_sources[self.stack2_select]
+        d['floor'] = tmp[0]
+        d['ceil'] = tmp[1]
+        self.tab.show()
+
+    def on_stack_reset1(self, event):
+        d = self.tab.stack_sources[self.stack1_select]
+        d['floor'] = np.nanmin(d['data'])
+        d['ceil'] = np.nanmax(d['data'])
+        self.FloatStackFloor1.SetValue(d['floor'])
+        self.FloatStackCeil1.SetValue(d['ceil'])
+        self.tab.show()
+
+    def on_stack_reset2(self, event):
+        d = self.tab.stack_sources[self.stack2_select]
+        d['floor'] = np.nanmin(d['data'])
+        d['ceil'] = np.nanmax(d['data'])
+        self.FloatStackFloor2.SetValue(d['floor'])
+        self.FloatStackCeil2.SetValue(d['ceil'])
+        self.tab.show()
+
 
     # =======================================================
     #
@@ -375,7 +444,7 @@ class ImagePaneMri(ImagePaneUI):
     #
     # =======================================================
 
-    def set_data(self, data, index=None, keep_norm=False):
+    def set_data(self, data, index=None):
         """
         User can set data into one or all axes using this method.
 
@@ -437,7 +506,7 @@ class ImagePaneMri(ImagePaneUI):
             self.data = data
 
 
-    def update(self, index=None, keep_norm=False, no_draw=False):
+    def update(self, index=None, no_draw=False):
         """
         Convenience function that runs through all the typical steps needed
         to refresh the screen after a set_data().

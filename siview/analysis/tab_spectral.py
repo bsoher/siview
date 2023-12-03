@@ -439,14 +439,13 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.initialize_controls()
         self.populate_controls()
 
-        self.on_stack_reset1(None)
-        self.on_stack_reset2(None)
-
         self._plotting_enabled = True
 
         #------------------------------------------------------------
         # Setup the canvas
         self.process_and_plot()
+        self.stack_sources = self.update_sources()
+        self.show()
 
         #------------------------------------------------------------
         # PubSub subscriptions
@@ -1022,8 +1021,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                            ):
                 self.view.update_axes()
                 self.view_svd.update_axes()
-                self.view.canvas.draw()
-                self.view_svd.canvas.draw()
+                self.view.canvas.draw_idle()
+                self.view_svd.canvas.draw_idle()
 
 
             elif event_id in (util_menu.ViewIdsSpectral.DATA_TYPE_REAL,
@@ -1052,8 +1051,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 self.view_svd.update(no_draw=True)
                 self.view_svd.set_phase_0(0.0, no_draw=True)
                 self.set_plot_c()
-                self.view.canvas.draw()
-                self.view_svd.canvas.draw()
+                self.view.canvas.draw_idle()
+                self.view_svd.canvas.draw_idle()
 
             elif event_id in (util_menu.ViewIdsSpectral.AREA_CALC_PLOT_A,
                               util_menu.ViewIdsSpectral.AREA_CALC_PLOT_B,
@@ -1089,7 +1088,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 self.plot_C_function = self.plot_C_map[event_id]
 
                 self.set_plot_c()
-                self.view.canvas.draw()
+                self.view.canvas.draw_idle()
 
             elif event_id in (util_menu.ViewIdsSpectral.USER_BUTTON_PHASING,
                               util_menu.ViewIdsSpectral.USER_BUTTON_AREA,
@@ -2182,105 +2181,6 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self._update_svd_gui = False
 
 
-    # Image Control events ---------------------------------------
-
-    def on_source_stack1(self, event):
-        # We allow control to update itself to avoid a noticeable & confusing
-        # pause between clicking the control and seeing it actually change.
-        wx.CallAfter(self._source_stack1_changed)
-
-    def _source_stack1_changed(self):
-        key = self.panel_image.ComboSourceStack1.GetStringSelection()
-        if key == self.stack1_select: return
-        self.stack1_select = key
-        d = self.stack_sources[key]
-        self.panel_image.FloatStackCeil1.SetValue(d['ceil'])
-        self.panel_image.FloatStackFloor1.SetValue(d['floor'])
-        self.process_image()
-        self.show()
-
-    def on_source_stack2(self, event):
-        wx.CallAfter(self._source_stack2_changed)
-
-    def _source_stack2_changed(self):
-        key = self.panel_image.ComboSourceStack2.GetStringSelection()
-        if key == self.stack2_select: return
-        self.stack2_select = key
-        d = self.stack_sources[key]
-        self.panel_image.FloatStackCeil2.SetValue(d['ceil'])
-        self.panel_image.FloatStackFloor2.SetValue(d['floor'])
-        self.process_image()
-        self.show()
-
-    def on_slice_index1(self, event):
-        wx.CallAfter(self._slice_index_changed1)
-
-    def _slice_index_changed1(self):
-        tmp = self.panel_image.SpinSliceIndex1.GetValue() - 1
-        dims = self.stack_sources[self.stack1_select]['data'].shape
-        tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
-        self.panel_image.SpinSliceIndex1.SetValue(tmp)
-        self.stack_sources[self.stack1_select]['slice'] = tmp
-        self.process_image()
-        self.show()
-
-    def on_slice_index1(self, event):
-        wx.CallAfter(self._slice_index_changed1)
-
-    def _slice_index_changed1(self):
-        tmp = self.panel_image.SpinSliceIndex2.GetValue() - 1
-        dims = self.stack_sources[self.stack2_select]['data'].shape
-        tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
-        self.panel_image.SpinSliceIndex2.SetValue(tmp)
-        self.stack_sources[self.stack1_select]['slice'] = tmp
-        self.process_image()
-        self.show()
-
-    def on_stack_range1(self, event):
-        ceil_val = self.FloatStackCeil1.GetValue()
-        floor_val = self.FloatStackFloor1.GetValue()
-        tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
-        self.panel_image.FloatStackCeil1.SetValue(tmp[0])
-        self.panel_image.FloatStackFloor1.SetValue(tmp[1])
-        d = self.stack_sources[self.stack1_select]
-        d['floor'] = tmp[0]
-        d['ceil'] = tmp[1]
-        self.process_image()
-        self.show()
-
-    def on_stack_range2(self, event):
-        ceil_val = self.FloatStackCeil2.GetValue()
-        floor_val = self.FloatStackFloor2.GetValue()
-        tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
-        self.panel_image.FloatStackCeil2.SetValue(tmp[0])
-        self.panel_image.FloatStackFloor2.SetValue(tmp[1])
-        d = self.stack_sources[self.stack2_select]
-        d['floor'] = tmp[0]
-        d['ceil'] = tmp[1]
-        self.process_image()
-        self.show()
-
-    def on_stack_reset1(self, event):
-        d = self.stack_sources[self.stack1_select]
-        d['floor'] = np.nanmin(d['data'])
-        d['ceil'] = np.nanmax(d['data'])
-        self.panel_image.FloatStackFloor1.SetValue(d['floor'])
-        self.panel_image.FloatStackCeil1.SetValue(d['ceil'])
-        self.process_image()
-        self.show()
-
-    def on_stack_reset2(self, event):
-        d = self.stack_sources[self.stack2_select]
-        d['floor'] = np.nanmin(d['data'])
-        d['ceil'] = np.nanmax(d['data'])
-        self.panel_image.FloatStackFloor2.SetValue(d['floor'])
-        self.panel_image.FloatStackCeil2.SetValue(d['ceil'])
-        self.process_image()
-        self.show()
-
-
-
-
 
     #=======================================================
     #
@@ -2362,24 +2262,6 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         """
         return
 
-        # voxel = [self.voxel]
-        # if self.iresult == 'Integral':
-        #     dat = self.dataset.blocks['spectral'].data
-        #     istr = 360 #0
-        #     iend = 400 #dat.shape[-1]
-        #     if self.view.data_type[0] == 'magnitude':
-        #         dat = np.sum(np.abs(dat[:,:,:,istr:iend]),axis=-1)
-        #     elif self.view.data_type[0] == 'real':
-        #         dat = np.sum(dat[:,:,:,istr:iend].real, axis=-1)
-        #     elif  self.view.data_type[0] == 'imaginary':
-        #         dat = np.sum(dat[:,:,:,istr:iend].imag, axis=-1)
-        #     else:
-        #         dat = dat[:,:,:,0].real * 0
-        #     self.image_calc[self.iresult] = dat
-        #
-        # elif self.iresult == 'First Point':
-        #     dat = (np.abs(self.dataset.blocks['raw'].data[:,:,:,0]))
-        #     self.image_calc[self.iresult] = dat
 
 
     def plot_svd(self, no_draw=False):
@@ -2475,7 +2357,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
             self.set_plot_c()
 
-            self.view.canvas.draw()
+            self.view.canvas.draw_idle()
 
             # Calculate the new area after phasing
             area, rms = self.view.calculate_area()
@@ -2505,22 +2387,20 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         dat1 = d1['data'][d1['slice'], :, :]
         dat2 = d2['data'][d2['slice'], :, :]
 
-        data1 = [{'data': dat1,
-                  'cmap': self.cmap_results,
-                  'vmax': d1['ceil'],  # ignores NaN values
-                  'vmin': d1['floor'],
-                  'keep_norm': False}]
+        # apply ceil/floor here, NOT in image_pane_mri
+        dat1 = np.where(dat1>d1['ceil'], d1['ceil'], dat1)
+        dat2 = np.where(dat2>d2['ceil'], d2['ceil'], dat2)
+        dat1 = np.where(dat1<d1['floor'], d1['floor'], dat1)
+        dat2 = np.where(dat2>d2['floor'], d1['floor'], dat2)
 
-        data2 = [{'data': dat2,
-                  'cmap': self.cmap_results,
-                  'vmax': d2['ceil'],  # ignores NaN values
-                  'vmin': d2['floor'],
-                  'keep_norm': False}]
+        data1 = [{'data': dat1, 'cmap': self.cmap_results, 'fov': d1['fov']}]
+        data2 = [{'data': dat2, 'cmap': self.cmap_results, 'fov': d2['fov']}]
 
         data = [data1,data2]
-        self.panel_image.image.set_data(data, keep_norm=keep_norm)
-        self.panel_image.image.update(no_draw=True, keep_norm=keep_norm)
-        self.panel_image.image.canvas.draw()
+        self.panel_image.set_data(data)
+        self.panel_image.update(no_draw=True)
+        self.panel_image.canvas.draw_idle()
+
 
     def set_check_boxes(self):
         """
@@ -2594,18 +2474,6 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             self.list_svd_results.CheckItem(index, check=in_model[i])
             self.list_svd_results.SetItemData(index, i)
 
-        # for i in range(nsvd):
-        #     res[i] = (i + 1, float(ppm[i]), float(fre[i]*1000), float(dam[i]), float(pha[i]), float(amp[i]))
-        #     index = self.list_svd_results.InsertItem(i,' '+str(res[i][0])+' ')
-        #     self.list_svd_results.SetItemImage(index, in_model[i])
-        #     self.list_svd_results.SetItem(index, 1, '%.2f'%(res[i][1])) # bjs_ccx
-        #     self.list_svd_results.SetItem(index, 2, '%.1f'%(res[i][2])) # bjs_ccx
-        #     self.list_svd_results.SetItem(index, 3, '%.1f'%(res[i][3])) # bjs_ccx
-        #     self.list_svd_results.SetItem(index, 4, '%.1f'%(res[i][4])) # bjs_ccx
-        #     self.list_svd_results.SetItem(index, 5, '%.1f'%(res[i][5])) # bjs_ccx
-        #     self.list_svd_results.SetItemData(index, i)
-        #     self.list_svd_results.CheckItem(index, check=in_model[i])
-
         self.list_svd_results.itemDataMap = res
 
 
@@ -2625,10 +2493,55 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         self.svd_checklist_update()
 
+    def update_sources(self, refs_changed=False):
+        """ determine which images need updating in stack_sources, then show them """
+        if refs_changed:
+            self.update_image_integral()
+        else:
+            self.update_image_integral()
+            self.update_image_first_point()
+        self.show()
+
+    def update_image_integral(self):
+        """ update (and maybe create entry) in stack_sources for Integral images """
+        dat = self.dataset.get_source_data('spectral')
+        npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
+        istr, iend = self.view.ref_locations
+        if self.view.data_type[0] == 'magnitude':
+            dat = np.sum(np.abs(dat[:, :, :, istr:iend]), axis=-1)
+        elif self.view.data_type[0] == 'real':
+            dat = np.sum(dat[:, :, :, istr:iend].real, axis=-1)
+        elif self.view.data_type[0] == 'imaginary':
+            dat = np.sum(dat[:, :, :, istr:iend].imag, axis=-1)
+        else:
+            dat = dat[:, :, :, 0].real * 0
+
+        if 'Integral' not in self.stack_sources.keys():
+            self.stack_sources['Integral'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0}
+            self.stack_sources['Integral']['ceil'] = dat.min()
+            self.stack_sources['Integral']['floor'] = dat.max()
+            self.stack_sources['Integral']['fov'] = 240.0       # TODO bjs
+            slice = self._tab_dataset.Spinz.GetValue()-1
+            self.stack_sources['Integral']['slice'] = slice if slice < zdim else zdim
+
+        self.stack_sources['Integral']['data'] = dat
 
 
+    def update_image_first_point(self):
+        """ update (and maybe create entry) in stack_sources for First Point images """
+        dat = self.dataset.get_source_data('spectral')
+        npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
+        dat = (np.abs(self.dataset.blocks['raw'].data[:, :, :, 0]))
 
+        if 'First Point' not in self.stack_sources.keys():
+            self.stack_sources['First Point'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
+            self.stack_sources['First Point']['ceil'] = dat.min()
+            self.stack_sources['First Point']['floor'] = dat.max()
+            self.stack_sources['First Point']['fov'] = 240.0  # TODO bjs
+            slice = self._tab_dataset.SpinZ.GetValue() - 1
+            self.stack_sources['First Point']['slice'] = slice if slice < zdim else zdim
 
+        self.stack_sources['First Point']['data'] = dat
 
     #=======================================================
     #

@@ -160,5 +160,5 @@ class ImageControlPanel(ImagePaneUI):
 
     def on_calc_reset2(self, event):
         self.tab.on_calc_reset2(event)
-        
-    
+
+
