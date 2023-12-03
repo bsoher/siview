@@ -10,6 +10,7 @@ import wx
 import wx.grid as gridlib
 import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets exception on Close/Exit ?? Not anymore in wxPython 4.0.6 ??
 import numpy as np
+from scipy.fft import fft, fftshift
 from pubsub import pub as pubsub
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ColumnSorterMixin
 import matplotlib.cm as cm
@@ -72,15 +73,23 @@ class CheckListCtrl(wx.ListCtrl, ColumnSorterMixin):
         return self
 
     def OnItemActivated(self, evt):
-        #self.ToggleItem(evt.Index)
         flag = evt.GetEventObject().IsItemChecked(evt.Index)
         self.CheckItem(evt.Index, check=(not flag))
 
     # this is called by the base class when an item is checked/unchecked
-    def OnCheckItem(self, event): #, flag):
+    def OnCheckItem(self, event):
+        """
+        Note. This event is called everytime self.svd_checklist_update() calls
+          CheckItem() for the lines it includes while updating the SVD table.
+          This was creating a race condition that crashed Analysis. That method
+          is only called when _update_svd_gui is True, so we check for False
+          here and know that it is a manual click on a CheckBox and that we
+          need to call the on_check_item() method.
+        """
         flag = event.GetEventObject().IsItemChecked(event.Index)
         print('in OnCheckItem index/flag = '+str(event.Index)+'/'+str(flag))
-        self.tab.on_check_item(self, event.Index, flag)
+        if self.tab._update_svd_gui == False:
+            self.tab.on_check_item(self, event.Index, flag)
 
 
 #------------------------------------------------------------------------------
@@ -386,6 +395,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         # _svd_scale_initialized performs the same role as
         # tab_base.Tab._scale_initialized (q.v.)
         self._svd_scale_initialized = False
+        self._update_svd_gui = False
 
         # Plotting is disabled during some of init. That's because the plot
         # isn't ready to plot, but the population of some controls
@@ -2030,7 +2040,6 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.CheckSvdExcludeLipid.SetValue(False)
         self.FloatSvdExcludeLipidStart.Disable()
         self.FloatSvdExcludeLipidEnd.Disable()
-
         self.process_and_plot()
 
     def on_svd_manual(self, event):
@@ -2038,23 +2047,30 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.block.set.svd_apply_threshold = False
         self.FloatSvdThreshold.Disable()
         self.ComboSvdThresholdUnit.Disable()
+        self.process_and_plot()
 
     def on_svd_cursor_span_picks_lines(self, event):
         self.cursor_span_picks_lines = True
         self.block.set.svd_apply_threshold = False
         self.FloatSvdThreshold.Disable()
         self.ComboSvdThresholdUnit.Disable()
+        self._update_svd_gui = True
+        self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_svd_apply_threshold(self, event):
         self.cursor_span_picks_lines = False
         self.block.set.svd_apply_threshold = True
         self.FloatSvdThreshold.Enable()
         self.ComboSvdThresholdUnit.Enable()
+        self._update_svd_gui = True
         self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_svd_threshold(self, event):
         value = event.GetEventObject().GetValue()
         self.block.set.svd_threshold = value
+        self._update_svd_gui = True
         if self.block.set.svd_threshold_unit == 'PPM':
             dataset = self.dataset
             dim0, dim1, dim2, dim3, _, _ = dataset.spectral_dims
@@ -2070,6 +2086,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 self.block.set.svd_threshold = maxppm
                 self.FloatSvdThreshold.SetValue(self.block.set.svd_threshold)
         self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_svd_threshold_unit(self, event):
         index = event.GetEventObject().GetSelection()
@@ -2100,7 +2117,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         else:
             self.FloatSvdExcludeLipidStart.Disable()
             self.FloatSvdExcludeLipidEnd.Disable()
+        self._update_svd_gui = True
         self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_svd_exclude_lipid_start(self, event):
         # Note. min=End and max=Start because dealing with PPM range
@@ -2108,7 +2127,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                                  self.FloatSvdExcludeLipidStart)
         self.block.set.svd_exclude_lipid_start = max 
         self.block.set.svd_exclude_lipid_end   = min
+        self._update_svd_gui = True
         self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_svd_exclude_lipid_end(self, event):
         # Note. min=End and max=Start because dealing with PPM range
@@ -2116,7 +2137,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                                  self.FloatSvdExcludeLipidStart)
         self.block.set.svd_exclude_lipid_start = max 
         self.block.set.svd_exclude_lipid_end   = min
+        self._update_svd_gui = True
         self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_all_on(self, event):
         # Spectral water filter HLSVD threshold value will take precedence
@@ -2125,7 +2148,6 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         voxel = self._tab_dataset.voxel
         svd_output = self.block.get_svd_output(voxel)
         svd_output.in_model.fill(True)
-
         self.block.set.svd_apply_threshold = False
         self.FloatSvdThreshold.Disable()
         if self.RadioSvdApplyThreshold.GetValue():
@@ -2135,8 +2157,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.CheckSvdExcludeLipid.SetValue(False)
         self.FloatSvdExcludeLipidStart.Disable()
         self.FloatSvdExcludeLipidEnd.Disable()
-
+        self._update_svd_gui = True
         self.process_and_plot()
+        self._update_svd_gui = False
 
     def on_all_off(self, event):
         # Spectral water filter HLSVD threshold value will take precedence
@@ -2145,7 +2168,6 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         voxel = self._tab_dataset.voxel
         svd_output = self.block.get_svd_output(voxel)
         svd_output.in_model.fill(False)
-
         self.block.set.svd_apply_threshold = False
         self.FloatSvdThreshold.Disable()
         if self.RadioSvdApplyThreshold.GetValue():
@@ -2155,6 +2177,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.CheckSvdExcludeLipid.SetValue(False)
         self.FloatSvdExcludeLipidStart.Disable()
         self.FloatSvdExcludeLipidEnd.Disable()
+        self._update_svd_gui = True
+        self.process_and_plot()
+        self._update_svd_gui = False
 
 
     # Image Control events ---------------------------------------
@@ -2317,7 +2342,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
                     if dataset == self.dataset:
                         # refresh the hlsvd sub-tab on the active dataset tab
-                        if do_fit:
+                        if do_fit or self._update_svd_gui:
                             # we changed results, now need to update results widget
                             self.svd_checklist_update()
                         else:
@@ -2387,9 +2412,12 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
             data = [[data1], [data2], [data3]]
             self.view_svd.set_data(data)
-            self.view_svd.update(no_draw=True, set_scale=not self._svd_scale_initialized)
 
-            if not self._svd_scale_initialized:
+            if self._svd_scale_initialized:
+                self.view_svd.update(no_draw=True)
+            else:
+                ymax = np.max(np.abs(fft(self.dataset.get_source_data('spectral')))/self.dataset.spectral_dims[0])
+                self.view_svd.update(no_draw=True, set_scale=True, force_ymax=ymax)
                 self._svd_scale_initialized = True
 
             ph0 = self.dataset.get_phase_0(voxel)
@@ -2430,9 +2458,12 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             # these data will use default line colors in view  data1 == data2
             data = [[data1], [data2], [data3]]
             self.view.set_data(data)
-            self.view.update(no_draw=True, set_scale=not self._scale_initialized)
 
-            if not self._scale_initialized:
+            if self._scale_initialized:
+                self.view.update(no_draw=True)
+            else:
+                ymax = np.max(np.abs(fft(self.dataset.get_source_data('spectral')))/self.dataset.spectral_dims[0])
+                self.view.update(no_draw=True, set_scale=True, force_ymax=ymax)
                 self._scale_initialized = True
 
             # we take this opportunity to ensure that our phase values reflect
@@ -2553,17 +2584,27 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         res = {}
         self.list_svd_results.DeleteAllItems()
         for i in range(nsvd):
-#            res[i] = (i + 1, ppm[i], fre[i]*1000, dam[i], pha[i], amp[i])
-#            index = self.list_svd_results.InsertItem(sys.maxsize, ' '+str(res[i][0])+' ')    # bjs_ccx
             res[i] = (i + 1, float(ppm[i]), float(fre[i]*1000), float(dam[i]), float(pha[i]), float(amp[i]))
-            index = self.list_svd_results.InsertItem(i,' '+str(res[i][0])+' ')    
-            self.list_svd_results.SetItemImage(index, in_model[i])
+            index = self.list_svd_results.InsertItem(i,' '+str(res[i][0])+' ')
             self.list_svd_results.SetItem(index, 1, '%.2f'%(res[i][1])) # bjs_ccx
             self.list_svd_results.SetItem(index, 2, '%.1f'%(res[i][2])) # bjs_ccx
             self.list_svd_results.SetItem(index, 3, '%.1f'%(res[i][3])) # bjs_ccx
             self.list_svd_results.SetItem(index, 4, '%.1f'%(res[i][4])) # bjs_ccx
             self.list_svd_results.SetItem(index, 5, '%.1f'%(res[i][5])) # bjs_ccx
+            self.list_svd_results.CheckItem(index, check=in_model[i])
             self.list_svd_results.SetItemData(index, i)
+
+        # for i in range(nsvd):
+        #     res[i] = (i + 1, float(ppm[i]), float(fre[i]*1000), float(dam[i]), float(pha[i]), float(amp[i]))
+        #     index = self.list_svd_results.InsertItem(i,' '+str(res[i][0])+' ')
+        #     self.list_svd_results.SetItemImage(index, in_model[i])
+        #     self.list_svd_results.SetItem(index, 1, '%.2f'%(res[i][1])) # bjs_ccx
+        #     self.list_svd_results.SetItem(index, 2, '%.1f'%(res[i][2])) # bjs_ccx
+        #     self.list_svd_results.SetItem(index, 3, '%.1f'%(res[i][3])) # bjs_ccx
+        #     self.list_svd_results.SetItem(index, 4, '%.1f'%(res[i][4])) # bjs_ccx
+        #     self.list_svd_results.SetItem(index, 5, '%.1f'%(res[i][5])) # bjs_ccx
+        #     self.list_svd_results.SetItemData(index, i)
+        #     self.list_svd_results.CheckItem(index, check=in_model[i])
 
         self.list_svd_results.itemDataMap = res
 

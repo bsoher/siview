@@ -445,6 +445,18 @@ class TabDataset(dataset_module.DatasetUI):
     #
     #=======================================================
 
+    def set_voxel(self):
+        """ called from an ImagePaneMri object for interactive 'browsing' """
+        tmpx, tmpy, tmpz = self.voxel
+        dims = self.dataset.spectral_dims
+        tmpx = max(0, min(dims[1] - 1, tmpx))  # clip to range
+        tmpy = max(0, min(dims[2] - 1, tmpy))
+        tmpz = max(0, min(dims[3] - 1, tmpz))
+        self.SpinX.SetValue(tmpx + 1)
+        self.SpinY.SetValue(tmpy + 1)
+        self.SpinZ.SetValue(tmpz + 1)
+        self.on_voxel_change()
+
     def on_voxel_change(self, event=None):
         # This event can be called programmatically, in which case event is None.
         raw = self.dataset.blocks["raw"]

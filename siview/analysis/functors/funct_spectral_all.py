@@ -2,6 +2,7 @@
 
 # 3rd party modules
 import numpy as np
+import scipy as sp
 
 # Our modules
 import siview.analysis.constants as constants
@@ -45,7 +46,7 @@ def fft(chain):
 
     # apply FFT if needed
     if set.fft:
-        chain.data = np.fft.fft(chain.data, n=dim0) / float(dim0)
+        chain.data = sp.fft.fft(chain.data, n=dim0) / float(dim0)
     else:
         if set.zero_fill_multiplier > 1:
             temp = np.zeros(dim0, 'complex')

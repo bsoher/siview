@@ -278,11 +278,23 @@ class ImagePaneMri(ImagePaneUI):
         # self.top.statusbar.SetStatusText( " Plot X,Y,Slc=%i,%i,%i"   % (xvox,yvox,zvox), 3)
 
     def on_motion(self, xloc, yloc, xpos, ypos, iplot):
+        xloc  = int(xloc)
+        yloc  = int(yloc)
+        iplot = int(iplot)
         value = self.data[iplot]['data'][int(round(xloc))][int(round(yloc))]
         self.top.statusbar.SetStatusText(" Value = %s" % (str(value),), 0)
         self.top.statusbar.SetStatusText(" X,Y = %i,%i" % (int(round(xloc+1)), int(round(yloc+1))), 1)
         self.top.statusbar.SetStatusText(" ", 2)
         self.top.statusbar.SetStatusText(" ", 3)
+
+        if self.select_is_held:
+            if xloc == self.last_x and yloc == self.last_y:  # minimize event calls
+                return
+            self.tab_dataset.SpinX.SetValue(xloc+1)
+            self.tab_dataset.SpinY.SetValue(yloc+1)
+            self.last_x = xloc
+            self.last_y = yloc
+            self.tab_dataset.set_voxel()
 
     def on_select(self, xloc, yloc, xpos, ypos, iplot):
         xloc = int(round(xloc))
