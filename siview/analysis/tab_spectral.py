@@ -444,7 +444,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         #------------------------------------------------------------
         # Setup the canvas
         self.process_and_plot()
-        self.stack_sources = self.update_sources()
+        self.update_sources()
         self.show()
 
         #------------------------------------------------------------
@@ -791,8 +791,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         self.set_stack_choices(no_update=True)
 
-        wx_util.configure_spin(self.panel_image.SpinSliceIndex1, 60, min_max=(1, dims_stack1[0]))
-        wx_util.configure_spin(self.panel_image.SpinSliceIndex2, 60, min_max=(1, dims_stack2[0]))
+        wx_util.configure_spin(self.panel_image.SpinSliceIndex1, 60, min_max=(1, dims_stack1[2]))
+        wx_util.configure_spin(self.panel_image.SpinSliceIndex2, 60, min_max=(1, dims_stack2[2]))
         wx_util.configure_spin(self.panel_image.FloatStackCeil1, 60, 3, None, min_max=(-1000,1000))
         wx_util.configure_spin(self.panel_image.FloatStackCeil2, 60, 3, None, min_max=(-1000,1000))
         wx_util.configure_spin(self.panel_image.FloatStackFloor1, 60, 3, None, min_max=(-1000,1000))
@@ -2391,10 +2391,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         dat1 = np.where(dat1>d1['ceil'], d1['ceil'], dat1)
         dat2 = np.where(dat2>d2['ceil'], d2['ceil'], dat2)
         dat1 = np.where(dat1<d1['floor'], d1['floor'], dat1)
-        dat2 = np.where(dat2>d2['floor'], d1['floor'], dat2)
+        dat2 = np.where(dat2<d2['floor'], d2['floor'], dat2)
 
-        data1 = [{'data': dat1, 'cmap': self.cmap_results, 'fov': d1['fov']}]
-        data2 = [{'data': dat2, 'cmap': self.cmap_results, 'fov': d2['fov']}]
+        data1 = {'data': dat1, 'cmap': self.cmap_results, 'fov': d1['fov']}
+        data2 = {'data': dat2, 'cmap': self.cmap_results, 'fov': d2['fov']}
 
         data = [data1,data2]
         self.panel_image.set_data(data)
@@ -2500,7 +2500,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         else:
             self.update_image_integral()
             self.update_image_first_point()
-        self.show()
+            self.update_image_mri()
 
     def update_image_integral(self):
         """ update (and maybe create entry) in stack_sources for Integral images """
@@ -2508,13 +2508,13 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
         istr, iend = self.view.ref_locations
         if self.view.data_type[0] == 'magnitude':
-            dat = np.sum(np.abs(dat[:, :, :, istr:iend]), axis=-1)
+            dat = np.sum(np.abs(dat[0, 0, :, :, :, istr:iend]), axis=-1)
         elif self.view.data_type[0] == 'real':
-            dat = np.sum(dat[:, :, :, istr:iend].real, axis=-1)
+            dat = np.sum(dat[0, 0, :, :, :, istr:iend].real, axis=-1)
         elif self.view.data_type[0] == 'imaginary':
-            dat = np.sum(dat[:, :, :, istr:iend].imag, axis=-1)
+            dat = np.sum(dat[0, 0, :, :, :, istr:iend].imag, axis=-1)
         else:
-            dat = dat[:, :, :, 0].real * 0
+            dat = dat[0, 0, :, :, :, 0].real * 0
 
         if 'Integral' not in self.stack_sources.keys():
             self.stack_sources['Integral'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0}
@@ -2531,7 +2531,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         """ update (and maybe create entry) in stack_sources for First Point images """
         dat = self.dataset.get_source_data('spectral')
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
-        dat = (np.abs(self.dataset.blocks['raw'].data[:, :, :, 0]))
+        dat = (np.abs(self.dataset.blocks['raw'].data[0, 0, :, :, :, 0]))
 
         if 'First Point' not in self.stack_sources.keys():
             self.stack_sources['First Point'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
@@ -2542,6 +2542,21 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             self.stack_sources['First Point']['slice'] = slice if slice < zdim else zdim
 
         self.stack_sources['First Point']['data'] = dat
+
+    def update_image_mri(self):
+        """ update (and maybe create entry) in stack_sources for First Point images """
+        npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
+        dat = self.default_mri(128,128)
+
+        if 'MRI' not in self.stack_sources.keys():
+            self.stack_sources['MRI'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
+            self.stack_sources['MRI']['ceil'] = dat.min()
+            self.stack_sources['MRI']['floor'] = dat.max()
+            self.stack_sources['MRI']['fov'] = 240.0  # TODO bjs
+            slice = self._tab_dataset.SpinZ.GetValue() - 1
+            self.stack_sources['MRI']['slice'] = slice if slice < zdim else zdim
+
+        self.stack_sources['MRI']['data'] = dat
 
     #=======================================================
     #
@@ -2567,10 +2582,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.set_check_boxes()
 
     def default_stack_sources(self):
-        d = {'None':     {'data': None, 'ceil': 1.0, 'floor' :0.0, 'fov': 240.0, 'slice':0},
-             'Integral': {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
-             'First Pt': {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
-             'MRI':      {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
+        d = {'None':        {'data': None, 'ceil': 1.0, 'floor' :0.0, 'fov': 240.0, 'slice':0},
+             'Integral':    {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
+             'First Point': {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
+             'MRI':         {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
             }
         dat = self.default_calc()
         dmax = dat.max()
@@ -2581,9 +2596,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         d['Integral']['data'] = dat.copy()
         d['Integral']['ceil'] = dmax
         d['Integral']['floor'] = dmin
-        d['First Pt']['data'] = dat.copy()
-        d['First Pt']['ceil'] = dmax
-        d['First Pt']['floor'] = dmin
+        d['First Point']['data'] = dat.copy()
+        d['First Point']['ceil'] = dmax
+        d['First Point']['floor'] = dmin
         d['MRI']['data'] = self.default_mri(256)
         d['MRI']['ceil'] = d['MRI']['data'].max()
         d['MRI']['floor'] = d['MRI']['data'].min()

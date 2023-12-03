@@ -52,7 +52,7 @@ WIDSTR =  255
 
 
 class ImagePaneMri(ImagePaneUI):
-    
+
     def __init__(self,
                  parent,
                  tab,
@@ -83,7 +83,7 @@ class ImagePaneMri(ImagePaneUI):
         _EVENT_DEBUG = False  # Set to True to print messages to stdout during events.
 
         self.statusbar = tab.top.statusbar
-        
+
         ImagePaneUI.__init__( self, parent, **kwargs )
 
         # tab is the containing widget for this plot_panel, it is used
@@ -227,14 +227,11 @@ class ImagePaneMri(ImagePaneUI):
     def _default_data(self):
         data = []
         for i in range(self.naxes):
-            data.append({'data': self._dist(24), 'fov': 240.0})
+            data.append({'data': self.dist(24), 'fov': 240.0})
         return data
 
     def _dist(self, n, m=None):
         """ a rectangular array where each pixel = euclidian distance from the origin. """
-
-        bob =       # bjs fix this ... find exp() dist!!!!
-
         n1 = n
         m1 = n if m is None else m
         x = np.array([val ** 2 if val < (n1 - val) else (n1 - val) ** 2 for val in np.arange(n1)])
@@ -243,6 +240,35 @@ class ImagePaneMri(ImagePaneUI):
             a[i, :] = np.sqrt(x + i ** 2.0)  # Euclidian distance
             if i != 0: a[m1 - i, :] = a[i, :]  # Symmetrical
         return a
+
+    def dist(self, nx, ny=None):
+        '''  Implements the IDL dist() function in Python '''
+        if ny is None:
+            ny = nx
+        x = np.linspace(start=-nx / 2, stop=nx / 2 - 1, num=nx)
+        y = np.linspace(start=-ny / 2, stop=ny / 2 - 1, num=ny)
+        xx = x + 1j * y[:, np.newaxis]
+        out = np.roll(np.roll(np.abs(xx), int(nx/2), 1), int(ny/2), 0)
+        return out
+
+    def dist3(self, nx, ny=None, nz=1):
+        ''' Implements the IDL dist() function in Python '''
+        if nz==1:
+            return self.dist(nx, ny=ny)
+
+        if ny is None:
+            ny = nx
+        x = np.linspace(start=-nx / 2, stop=nx / 2 - 1, num=nx)
+        y = np.linspace(start=-ny / 2, stop=ny / 2 - 1, num=ny)
+        xx = x + 1j * y[:, np.newaxis]
+        r2d = np.roll(np.roll(np.abs(xx), int(nx/2), 1), int(ny/2), 0)
+
+        z = np.linspace(start=-nz / 2, stop=nz / 2 - 1, num=nz)
+        z = -1 * (np.abs(z) - nz/2)
+
+        out = r2d * z[:, None, None]
+
+        return out
 
     def on_paint(self, event):
         # this is necessary or the embedded MPL canvas does not show
@@ -300,14 +326,15 @@ class ImagePaneMri(ImagePaneUI):
             self.tab_dataset.set_voxel()
 
     def on_select(self, xloc, yloc, xpos, ypos, iplot):
-        xloc = int(round(xloc))
-        yloc = int(round(yloc))
-        if xloc == self.last_x and yloc == self.last_y:  # minimize event calls
+        npts, xdim, ydim, zdim, _, _ = self.tab.dataset.spectral_dims
+        xpos = int(round(xdim * xpos/self.fov[iplot]))
+        ypos = int(round(ydim * ypos / self.fov[iplot]))
+        if xpos == self.last_x and ypos == self.last_y:  # minimize event calls
             return
-        self.tab_dataset.SpinX.SetValue(xloc + 1)
-        self.tab_dataset.SpinY.SetValue(yloc + 1)
-        self.last_x = xloc
-        self.last_y = yloc
+        self.tab_dataset.SpinX.SetValue(xpos + 1)
+        self.tab_dataset.SpinY.SetValue(ypos + 1)
+        self.last_x = xpos
+        self.last_y = ypos
         self.tab_dataset.on_voxel_change()
 
     def on_panzoom_release(self, xloc, yloc, xpos, ypos):
@@ -359,7 +386,7 @@ class ImagePaneMri(ImagePaneUI):
     def _source_stack1_changed(self):
         key = self.ComboSourceStack1.GetStringSelection()
         if key == self.tab.stack1_select: return
-        self.stack1_select = key
+        self.tab.stack1_select = key
         d = self.tab.stack_sources[key]
         self.FloatStackCeil1.SetValue(d['ceil'])
         self.FloatStackFloor1.SetValue(d['floor'])
@@ -371,7 +398,7 @@ class ImagePaneMri(ImagePaneUI):
     def _source_stack2_changed(self):
         key = self.ComboSourceStack2.GetStringSelection()
         if key == self.tab.stack2_select: return
-        self.stack2_select = key
+        self.tab.stack2_select = key
         d = self.tab.stack_sources[key]
         self.FloatStackCeil2.SetValue(d['ceil'])
         self.FloatStackFloor2.SetValue(d['floor'])
@@ -382,30 +409,30 @@ class ImagePaneMri(ImagePaneUI):
 
     def _slice_index_changed1(self):
         tmp = self.SpinSliceIndex1.GetValue() - 1
-        dims = self.tab.stack_sources[self.stack1_select]['data'].shape
+        dims = self.tab.stack_sources[self.tab.stack1_select]['data'].shape
         tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
         self.SpinSliceIndex1.SetValue(tmp)
-        self.tab.stack_sources[self.stack1_select]['slice'] = tmp
+        self.tab.stack_sources[self.tab.stack1_select]['slice'] = tmp
         self.tab.show()
 
-    def on_slice_index1(self, event):
+    def on_slice_index2(self, event):
         wx.CallAfter(self._slice_index_changed1)
 
-    def _slice_index_changed1(self):
+    def _slice_index_changed2(self):
         tmp = self.SpinSliceIndex2.GetValue() - 1
-        dims = self.tab.stack_sources[self.stack2_select]['data'].shape
+        dims = self.tab.stack_sources[self.tab.stack2_select]['data'].shape
         tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
         self.SpinSliceIndex2.SetValue(tmp)
-        self.tab.stack_sources[self.stack1_select]['slice'] = tmp
+        self.tab.stack_sources[self.tab.stack2_select]['slice'] = tmp
         self.tab.show()
 
     def on_stack_range1(self, event):
         ceil_val = self.FloatStackCeil1.GetValue()
         floor_val = self.FloatStackFloor1.GetValue()
         tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
-        self.FloatStackCeil1.SetValue(tmp[0])
-        self.FloatStackFloor1.SetValue(tmp[1])
-        d = self.tab.stack_sources[self.stack1_select]
+        self.FloatStackCeil1.SetValue(tmp[1])
+        self.FloatStackFloor1.SetValue(tmp[0])
+        d = self.tab.stack_sources[self.tab.stack1_select]
         d['floor'] = tmp[0]
         d['ceil'] = tmp[1]
         self.tab.show()
@@ -414,15 +441,15 @@ class ImagePaneMri(ImagePaneUI):
         ceil_val = self.FloatStackCeil2.GetValue()
         floor_val = self.FloatStackFloor2.GetValue()
         tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
-        self.FloatStackCeil2.SetValue(tmp[0])
-        self.FloatStackFloor2.SetValue(tmp[1])
-        d = self.tab.stack_sources[self.stack2_select]
+        self.FloatStackCeil2.SetValue(tmp[1])
+        self.FloatStackFloor2.SetValue(tmp[0])
+        d = self.tab.stack_sources[self.tab.stack2_select]
         d['floor'] = tmp[0]
         d['ceil'] = tmp[1]
         self.tab.show()
 
     def on_stack_reset1(self, event):
-        d = self.tab.stack_sources[self.stack1_select]
+        d = self.tab.stack_sources[self.tab.stack1_select]
         d['floor'] = np.nanmin(d['data'])
         d['ceil'] = np.nanmax(d['data'])
         self.FloatStackFloor1.SetValue(d['floor'])
@@ -430,7 +457,7 @@ class ImagePaneMri(ImagePaneUI):
         self.tab.show()
 
     def on_stack_reset2(self, event):
-        d = self.tab.stack_sources[self.stack2_select]
+        d = self.tab.stack_sources[self.tab.stack2_select]
         d['floor'] = np.nanmin(d['data'])
         d['ceil'] = np.nanmax(d['data'])
         self.FloatStackFloor2.SetValue(d['floor'])

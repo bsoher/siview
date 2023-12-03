@@ -105,7 +105,8 @@ class PlotPanelSpectral(PlotPanelSpectrum):
 
         self.top.statusbar.SetStatusText(self.tab.build_area_text(area[index], rms[index], plot_label=labl), 3)
 
-        self.tab.update_images(refs_changed=True)
+        self.tab.update_sources(refs_changed=True)
+        self.tab.show()
 
 
     def on_refs_motion(self, xmin, xmax, val, iplot=None):
