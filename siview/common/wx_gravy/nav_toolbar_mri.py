@@ -698,6 +698,15 @@ class NavToolbarMri(wx.ToolBar):
             self.canvas.draw_idle()
 
     def get_bounded_xyloc(self, event):
+        """
+        Remember, imshow defaults to the center of each voxel being the integer
+        x,y location. So far left is -0.5 so that center of first voxel is 0.0
+        and similarly far right is 23.5 (-0.5 start + 24 total points).
+
+        Here we want to return a value between 0 and 23.99999 that can be int()
+        to 0-23 for reporting voxel number and data values.
+
+        """
         if not event.inaxes:
             return 0,0,0,0
 
@@ -706,10 +715,11 @@ class NavToolbarMri(wx.ToolBar):
         # bound these values to be inside the size of the image.
         # - a pan event could yield negative locations.
         x0, y0, x1, y1 = event.inaxes.dataLim.bounds
-        xmin,xmax = x0+0.5, x0+0.5+x1-1
-        ymin,ymax = y0+0.5, y0+0.5+y1-1     # position swap due to 0,0 location 'upper'
-        xloc = max(0, min(xmax, xloc))
-        yloc = max(0, min(ymax, yloc))
+
+        xloc = xloc+0.5
+        yloc = yloc+0.5
+        xloc = max(0, min(x1*0.99999, xloc))
+        yloc = max(0, min(y1*0.99999, yloc))
 
         iplot = self.get_plot_index(event)
 
@@ -1087,7 +1097,8 @@ class CanvasFrame(wx.Frame):
         self.axes.append(self.figure.add_subplot(2, 1, 2))
 
         self.aximg = []
-        for i in range(naxes): self.aximg.append(self.axes[i].imshow(self.data[i], cmap=cm.gray))
+        for i in range(naxes):
+            self.aximg.append(self.axes[i].imshow(self.data[i], cmap=cm.gray))
         self.canvas = FigureCanvas(self, -1, self.figure)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)

@@ -607,15 +607,26 @@ def _get_menu_data(main):
 #                ("Load from Tab",    main.on_load_preset_from_tab),       
 #                ("Save to File",     main.on_save_preset_to_file),
 #            )),
-#            common_menu.SEPARATOR,
             ("Import Processed CRT Data", main.on_import_data_crt),
+            common_menu.SEPARATOR,
+            ("Load MRI - DICOM", (
+                ("T1 MRI",      main.on_load_dicom_t1),
+                ("T2 MRI",      main.on_load_dicom_t2),
+                ("PD MRI",      main.on_load_dicom_pd),
+                ("FLAIR MRI",   main.on_load_dicom_flair),
+            )),
+            # ("Load MRI - Nifti", (
+            #     ("T1 MRI",      main.on_load_nifti_t1),
+            #     ("T2 MRI",      main.on_load_nifti_t2),
+            #     ("PD MRI",      main.on_load_nifti_pd),
+            #     ("FLAIR MRI",   main.on_load_nifti_flair),
+            # )),
             common_menu.SEPARATOR,
             ("Exit",       main.on_close_window, wx.ITEM_NORMAL, wx.ID_EXIT),
             )
 
     processing = (
             ("Add Fitting Tab - Voigt", main.on_add_voigt_tab, wx.ITEM_NORMAL),
-#            ("Add Fitting Tab - Giso",  main.on_add_giso_tab, wx.ITEM_NORMAL),
             ("Add WatRef Quant Tab",    main.on_add_watref_tab, wx.ITEM_NORMAL),
             common_menu.SEPARATOR,
             ("Edit User Spectral Information...",   main.on_user_prior,           wx.ITEM_NORMAL),

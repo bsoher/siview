@@ -388,6 +388,41 @@ class Main(wx.Frame):
                 self.notebook_datasets.close_active_dataset()
             self.close_all = False
 
+    def on_load_dicom_t1(self, event):
+        self.load_dicom('T1_MRI')
+
+    def on_load_dicom_t2(self, event):
+        self.load_dicom('T2_MRI')
+
+    def on_load_dicom_pd(self, event):
+        self.load_dicom('PD_MRI')
+
+    def on_load_dicom_flair(self, event):
+        self.load_dicom('FLAIR_MRI')
+
+    # def on_load_nifti_t1(self, event):
+    #     self.load_nifti('T1_MRI')
+    #
+    # def on_load_nifti_t2(self, event):
+    #     self.load_nifti('T2_MRI')
+    #
+    # def on_load_nifti_pd(self, event):
+    #     self.load_nifti('PD_MRI')
+    #
+    # def on_load_nifti_flair(self, event):
+    #     self.load_nifti('FLAIR_MRI')
+
+    def load_dicom(self, label):
+        wx.BeginBusyCursor()
+        if self.datasets:
+            self.notebook_datasets.load_stack_dicom(label)
+        wx.EndBusyCursor()
+
+    def load_nifti(self, label):
+        wx.BeginBusyCursor()
+        if self.notebook_datasets:
+            self.notebook_datasets.load_stack_nifti(label)
+        wx.EndBusyCursor()
 
     def load_on_start(self, fname):
 

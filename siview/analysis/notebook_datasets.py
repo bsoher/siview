@@ -192,6 +192,14 @@ class NotebookDatasets(vespa_notebooks.VespaAuiNotebook):
     #
     #=======================================================
 
+    def load_stack_dicom(self, label):
+        self.active_tab.load_stack_dicom(label)
+
+
+    def load_stack_nifti(self, label):
+        self.active_tab.load_stack_nifti(label)
+
+
     def add_dataset_tab(self, datasets=None, force_name=None):
         # If the welcome tab is open, close it.
         if self.is_welcome_tab_open:

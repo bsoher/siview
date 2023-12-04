@@ -430,6 +430,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         elif self._prefs.cmap_rdbu   : self.cmap_results = cm.RdBu
         elif self._prefs.cmap_gray   : self.cmap_results = cm.gray
         elif self._prefs.cmap_rdylbu : self.cmap_results = cm.RdYlBu
+        else: self.cmap_results = cm.gray
 
         self.stack_choices = ['None','Integral','First Point','MRI']
         self.stack_sources = self.default_stack_sources()
@@ -442,9 +443,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self._plotting_enabled = True
 
         #------------------------------------------------------------
-        # Setup the canvas
+        # Setup the plot and image canvases and gui settings
         self.process_and_plot()
-        self.update_sources()
+        self.update_sources(set_ceil=True, set_floor=True)
+        self.update_image_ranges()
         self.show()
 
         #------------------------------------------------------------
@@ -471,12 +473,9 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         # this method is done. So setting the sash position here does no
         # good. We use wx.CallAfter() to (a) set the sash position and
         # (b) fake an EVT_SPLITTER_SASH_POS_CHANGED.
-        wx.CallAfter(self.SplitterWindow.SetSashPosition,
-                     self._prefs.sash_position_main, True)
-        wx.CallAfter(self.SplitterWindowSvd.SetSashPosition,
-                     self._prefs.sash_position_svd, True)
-        wx.CallAfter(self.panel_image.ImageSplitterWindow.SetSashPosition,
-                     self._prefs.sash_position_image, True)
+        wx.CallAfter(self.SplitterWindow.SetSashPosition, self._prefs.sash_position_main, True)
+        wx.CallAfter(self.SplitterWindowSvd.SetSashPosition, self._prefs.sash_position_svd, True)
+        wx.CallAfter(self.panel_image.ImageSplitterWindow.SetSashPosition, self._prefs.sash_position_image, True)
         wx.CallAfter(self.on_splitter)
 
 
@@ -2493,16 +2492,16 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         self.svd_checklist_update()
 
-    def update_sources(self, refs_changed=False):
+    def update_sources(self, refs_changed=False, set_ceil=False, set_floor=False):
         """ determine which images need updating in stack_sources, then show them """
         if refs_changed:
-            self.update_image_integral()
+            self.update_image_integral(set_ceil=set_ceil, set_floor=set_floor)
         else:
-            self.update_image_integral()
-            self.update_image_first_point()
-            self.update_image_mri()
+            self.update_image_integral(set_ceil=set_ceil, set_floor=set_floor)
+            self.update_image_first_point(set_ceil=set_ceil, set_floor=set_floor)
+            self.update_image_mri(set_ceil=set_ceil, set_floor=set_floor)
 
-    def update_image_integral(self):
+    def update_image_integral(self, set_ceil=False, set_floor=False):
         """ update (and maybe create entry) in stack_sources for Integral images """
         dat = self.dataset.get_source_data('spectral')
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
@@ -2515,48 +2514,97 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             dat = np.sum(dat[0, 0, :, :, :, istr:iend].imag, axis=-1)
         else:
             dat = dat[0, 0, :, :, :, 0].real * 0
-
-        if 'Integral' not in self.stack_sources.keys():
-            self.stack_sources['Integral'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0}
-            self.stack_sources['Integral']['ceil'] = dat.min()
-            self.stack_sources['Integral']['floor'] = dat.max()
-            self.stack_sources['Integral']['fov'] = 240.0       # TODO bjs
+        label = 'Integral'
+        if label not in self.stack_sources.keys():
+            self.stack_sources[label] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0}
+            self.stack_sources[label]['ceil'] = dat.min()
+            self.stack_sources[label]['floor'] = dat.max()
+            self.stack_sources[label]['fov'] = 240.0       # TODO bjs
             slice = self._tab_dataset.Spinz.GetValue()-1
-            self.stack_sources['Integral']['slice'] = slice if slice < zdim else zdim
+            self.stack_sources[label]['slice'] = slice if slice < zdim else zdim
+        self.stack_sources[label]['data'] = dat
+        if set_ceil:
+            self.stack_sources[label]['ceil'] = dat.max()
+        if set_floor:
+            self.stack_sources[label]['floor'] = dat.min()
 
-        self.stack_sources['Integral']['data'] = dat
 
-
-    def update_image_first_point(self):
+    def update_image_first_point(self, set_ceil=False, set_floor=False):
         """ update (and maybe create entry) in stack_sources for First Point images """
         dat = self.dataset.get_source_data('spectral')
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
         dat = (np.abs(self.dataset.blocks['raw'].data[0, 0, :, :, :, 0]))
-
-        if 'First Point' not in self.stack_sources.keys():
-            self.stack_sources['First Point'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
-            self.stack_sources['First Point']['ceil'] = dat.min()
-            self.stack_sources['First Point']['floor'] = dat.max()
-            self.stack_sources['First Point']['fov'] = 240.0  # TODO bjs
+        label = 'First Point'
+        if label not in self.stack_sources.keys():
+            self.stack_sources[label] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
+            self.stack_sources[label]['ceil'] = dat.min()
+            self.stack_sources[label]['floor'] = dat.max()
+            self.stack_sources[label]['fov'] = 240.0  # TODO bjs
             slice = self._tab_dataset.SpinZ.GetValue() - 1
-            self.stack_sources['First Point']['slice'] = slice if slice < zdim else zdim
+            self.stack_sources[label]['slice'] = slice if slice < zdim else zdim
+        self.stack_sources[label]['data'] = dat
+        if set_ceil:
+            self.stack_sources[label]['ceil'] = dat.max()
+        if set_floor:
+            self.stack_sources[label]['floor'] = dat.min()
 
-        self.stack_sources['First Point']['data'] = dat
 
-    def update_image_mri(self):
+    def update_image_mri(self, set_ceil=False, set_floor=False):
         """ update (and maybe create entry) in stack_sources for First Point images """
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
         dat = self.default_mri(128,128)
-
-        if 'MRI' not in self.stack_sources.keys():
-            self.stack_sources['MRI'] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
-            self.stack_sources['MRI']['ceil'] = dat.min()
-            self.stack_sources['MRI']['floor'] = dat.max()
-            self.stack_sources['MRI']['fov'] = 240.0  # TODO bjs
+        label = 'MRI'
+        if label not in self.stack_sources.keys():
+            self.stack_sources[label] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
+            self.stack_sources[label]['ceil'] = dat.min()
+            self.stack_sources[label]['floor'] = dat.max()
+            self.stack_sources[label]['fov'] = 240.0  # TODO bjs
             slice = self._tab_dataset.SpinZ.GetValue() - 1
-            self.stack_sources['MRI']['slice'] = slice if slice < zdim else zdim
+            self.stack_sources[label]['slice'] = slice if slice < zdim else zdim
+        self.stack_sources[label]['data'] = dat
+        if set_ceil:
+            self.stack_sources[label]['ceil'] = dat.max()
+        if set_floor:
+            self.stack_sources[label]['floor'] = dat.min()
 
-        self.stack_sources['MRI']['data'] = dat
+
+    def update_image_ranges(self, refs_changed=False):
+        """ determine which images range widgets need updating  """
+        d1 = self.stack_sources[self.stack1_select]
+        d2 = self.stack_sources[self.stack2_select]
+        if refs_changed:
+            # only refresh Ceil/Floor GUI if it contains Integral source
+            if self.stack1_select == 'Integral':
+                n = max(min(d1['ceil'], self.panel_image.FloatStackCeil1.GetValue()), d1['floor'])
+                self.panel_image.FloatStackCeil1.SetRange(d1['floor'],d1['ceil'])
+                self.panel_image.FloatStackCeil1.SetValue(n)
+                n = max(min(d1['ceil'], self.panel_image.FloatStackFloor1.GetValue()), d1['floor'])
+                self.panel_image.FloatStackFloor1.SetRange(d1['floor'],d1['ceil'])
+                self.panel_image.FloatStackFloor1.SetValue(n)
+            if self.stack2_select == 'Integral':
+                n = max(min(d2['ceil'], self.panel_image.FloatStackCeil2.GetValue()), d2['floor'])
+                self.panel_image.FloatStackCeil2.SetRange(d2['floor'],d2['ceil'])
+                self.panel_image.FloatStackCeil2.SetValue(n)
+                n = max(min(d2['ceil'], self.panel_image.FloatStackFloor2.GetValue()), d2['floor'])
+                self.panel_image.FloatStackFloor2.SetRange(d2['floor'],d2['ceil'])
+                self.panel_image.FloatStackFloor2.SetValue(n)
+
+            self.update_image_integral(set_ceil=set_ceil, set_floor=set_floor)
+        else:
+            # both sets of Ceil/Floor GUI refreshed to current source dict values
+            n = max(min(d1['ceil'], self.panel_image.FloatStackCeil1.GetValue()), d1['floor'])
+            self.panel_image.FloatStackCeil1.SetRange(d1['floor'], d1['ceil'])
+            self.panel_image.FloatStackCeil1.SetValue(n)
+            n = max(min(d1['ceil'], self.panel_image.FloatStackFloor1.GetValue()), d1['floor'])
+            self.panel_image.FloatStackFloor1.SetRange(d1['floor'], d1['ceil'])
+            self.panel_image.FloatStackFloor1.SetValue(n)
+
+            n = max(min(d2['ceil'], self.panel_image.FloatStackCeil2.GetValue()), d2['floor'])
+            self.panel_image.FloatStackCeil2.SetRange(d2['floor'], d2['ceil'])
+            self.panel_image.FloatStackCeil2.SetValue(n)
+            n = max(min(d2['ceil'], self.panel_image.FloatStackFloor2.GetValue()), d2['floor'])
+            self.panel_image.FloatStackFloor2.SetRange(d2['floor'], d2['ceil'])
+            self.panel_image.FloatStackFloor2.SetValue(n)
 
     #=======================================================
     #

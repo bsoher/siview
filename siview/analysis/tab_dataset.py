@@ -9,29 +9,22 @@ import wx.lib.agw.aui as aui        # NB. wx.aui version throws odd wxWidgets ex
 
 # Our modules
 import siview.analysis.util_menu as util_menu
+import siview.analysis.util_analysis_config as util_analysis_config
 import siview.analysis.block_raw as block_raw
-#import siview.analysis.block_raw_probep as block_raw_probep
-#import siview.analysis.block_raw_edit as block_raw_edit
-#import siview.analysis.block_raw_edit_fidsum as block_raw_edit_fidsum
 import siview.analysis.block_prep_fidsum as block_prep_fidsum
-#import siview.analysis.block_prep_timeseries as block_prep_timeseries
-#import siview.analysis.block_prep_wbnaa as block_prep_wbnaa
-#import siview.analysis.block_prep_edit_fidsum as block_prep_edit_fidsum
 import siview.analysis.block_spectral as block_spectral
 import siview.analysis.block_fit_voigt as block_fit_voigt
-#import siview.analysis.block_fit_giso as block_fit_giso
 import siview.analysis.block_quant_watref as block_quant_watref
 import siview.analysis.constants as constants
 import siview.analysis.tab_raw as tab_raw
 import siview.analysis.tab_prep_fidsum as tab_prep_fidsum
-#import siview.analysis.tab_prep_timeseries as tab_prep_timeseries
-#import siview.analysis.tab_prep_wbnaa as tab_prep_wbnaa
 import siview.analysis.tab_spectral as tab_spectral
 import siview.analysis.tab_voigt as tab_voigt
 import siview.analysis.tab_watref as tab_watref
 import siview.analysis.dialog_user_metabolite_info as dialog_user_metabolite_info
 import siview.analysis.auto_gui.dataset as dataset_module
 import siview.common.wx_gravy.notebooks as notebooks
+import siview.common.wx_gravy.common_dialogs as common_dialogs
 
 from siview.analysis.dialog_user_prior import DialogUserPrior
 
@@ -393,8 +386,6 @@ class TabDataset(dataset_module.DatasetUI):
                     tab.process(entry='voxel_change')
                 elif item == 'quant':
                     tab.process()
-                    
-
 
         self.NotebookDataset.active_tab.plot()
 
@@ -409,6 +400,79 @@ class TabDataset(dataset_module.DatasetUI):
         
         """
         self.dataset.batch_process_all(statusbar=statusbar)
+
+
+    def load_stack_dicom(self, label):
+
+        ini_name = "load_stack_dicom"
+        default_path = util_analysis_config.get_path(ini_name)
+        title = "Choose the directory with the DICOM series:"
+
+        dlg = wx.DirDialog(self, title, default_path, wx.DD_DIR_MUST_EXIST)
+
+        if dlg.ShowModal() == wx.ID_OK:
+
+            msg = ""
+            try:
+                src_path = dlg.GetPath()
+                self.dataset.load_stack_dicom(src_path, label)
+
+                # CODE TO UPDATE blocks/tabs in this dataset
+
+            except Exception as e:
+                msg = """Exception (TabDataset::load_stack_dicom): \n"%s".""" % str(e)
+
+            if msg:
+                common_dialogs.message(msg, "SIView-Analysis - Load MRI - DICOM", common_dialogs.E_OK)
+            else:
+                util_analysis_config.set_path(ini_name, src_path)
+
+        dlg.Destroy()
+
+
+    def load_stack_nifti(self, label):
+        pass
+    #     ini_name = "add_node_dataseries_nifti"
+    #     default_path = util_mriseg_config.get_path(ini_name)
+    #     message = "Choose a Nifti format file:"
+    #     filetype_filter = "Nifti (*.nii)|*.nii|Analyze style (*.hdr)|*.hdr"
+    #
+    #     filename = common_dialogs.pickfile(message=message,
+    #                                        default_path=default_path,
+    #                                        filetype_filter=filetype_filter)
+    #     if filename:
+    #
+    #         msg = ""
+    #         try:
+    #             nii_img = ni.load(filename)
+    #             source_path, _ = os.path.split(filename)
+    #
+    #         except Exception, e:
+    #             msg = """Exception reading Nifti file: \n"%s".""" % str(e)
+    #
+    #         if msg:
+    #             common_dialogs.message(msg, default_content.APP_NAME + " - Add Node Nifti", common_dialogs.E_OK)
+    #         else:
+    #
+    #             if flavor == 't1':
+    #                 # this is a new mriseg tab
+    #                 dataset = mri_mriseg.Mriseg()
+    #                 dataset.set_node_t1_nifti(nii_img, [filename, ])
+    #                 # create new tab
+    #                 wx.BeginBusyCursor()
+    #                 self.notebook_mriseg.Freeze()
+    #                 self.notebook_mriseg.add_mriseg_tab(dataset=dataset)
+    #                 self.notebook_mriseg.Thaw()
+    #                 self.notebook_mriseg.Layout()
+    #                 wx.EndBusyCursor()
+    #                 self.update_title()
+    #
+    #             else:
+    #                 # append to the active mriseg tab
+    #                 node = NiftiWrapper(nii_img)
+    #                 self.notebook_mriseg.append_node_to_active(node, flavor=flavor)
+    #
+    #             util_mriseg_config.set_path(ini_name, source_path)
 
 
     def set_voxel_range(self, xmax, ymax, zmax):        # bjs si

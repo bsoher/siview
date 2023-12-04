@@ -5,6 +5,21 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are not permitted without explicit permission.
 
+# NOTE NOTE NOTE - bjs - deprecated for SIView
+# This was the first attempt to add an 'MRI pane' to the spectral plot notebook
+# for displaying MRI and calculated images like 'integral across the ref lines'
+# to facilitate moving around the spatial voxels of the MRSI.  It had issues.
+# Mainly, ImagePaneUI is created in wxglade, but it needed to add a ImagePanelMri
+# to a blank panel to show the images. The events from the ImagePanelMri nav
+# toolbar ought to be handled at the ImageControlPane level since it has access
+# to the TabSpectral and Dataset refs. However, I could not figure out a slick
+# way to inherently do this without a hack like:
+# self.image.on_scroll = self.on_scroll
+# So, instead I created ImagePaneMri object (image_pane_mri.py in analysis dir)
+# where I directly create the Figure/Canvas/Axes in that object. Thus the events
+# can be controlled at that level.  No import of another module either (other
+# than the nav toolbar).
+
 
 # Python modules
 
@@ -33,7 +48,6 @@ class ImageControlPanel(ImagePaneUI):
         self.top = wx.GetApp().GetTopWindow()
         self.tab_dataset = tab_dataset
 
-#        self.image = ImagePanelMri(self.PanelImagePlot,
         self.image = ImagePanelMri(self,
                                    naxes=2,
                                    data=[],
@@ -137,27 +151,128 @@ class ImageControlPanel(ImagePaneUI):
         self.top.statusbar.SetStatusText(" Level = %i " % (self.image.level[iplot],), 2)
         self.top.statusbar.SetStatusText(" Plot X,Y,Slc=%i,%i,%i" % (xvox, yvox, zvox), 3)
 
-    def on_source_stack1(self, event):  
-        self.tab.on_source_stack1(event)
-        
+    # Image Stack events ---------------------------------------
+
+    def on_source_stack1(self, event):
+        # We allow control to update itself to avoid a noticeable & confusing
+        # pause between clicking the control and seeing it actually change.
+        wx.CallAfter(self._source_stack1_changed)
+
+    def _source_stack1_changed(self):
+        key = self.ComboSourceStack1.GetStringSelection()
+        if key == self.tab.stack1_select: return
+        self.tab.stack1_select = key
+        d = self.tab.stack_sources[key]
+        self.FloatStackCeil1.SetValue(d['ceil'])
+        self.FloatStackFloor1.SetValue(d['floor'])
+        self.tab.process_image()
+        self.tab.show()
+
     def on_source_stack2(self, event):
-        self.tab.on_source_stack2(event)
-        
+        wx.CallAfter(self._source_stack2_changed)
+
+    def _source_stack2_changed(self):
+        key = self.ComboSourceStack2.GetStringSelection()
+        if key == self.tab.stack2_select: return
+        self.tab.stack2_select = key
+        d = self.tab.stack_sources[key]
+        self.FloatStackCeil2.SetValue(d['ceil'])
+        self.FloatStackFloor2.SetValue(d['floor'])
+        self.tab.process_image()
+        self.tab.show()
+
     def on_slice_index1(self, event):
-        self.tab.on_slice_index1(event)
+        wx.CallAfter(self._slice_index_changed1)
+
+    def _slice_index_changed1(self):
+        tmp = self.SpinSliceIndex1.GetValue() - 1
+        dims = self.tab.stack_sources[self.tab.stack1_select]['data'].shape
+        tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
+        self.SpinSliceIndex1.SetValue(tmp)
+        self.tab.stack_sources[self.tab.stack1_select]['slice'] = tmp
+        self.tab.process_image()
+        self.tab.show()
 
     def on_slice_index2(self, event):
-        self.tab.on_slice_index2(event)
+        wx.CallAfter(self._slice_index_changed2)
 
-    def on_calc_range1(self, event):
-        self.tab.on_calc_range1(event)
+    def _slice_index_changed2(self):
+        tmp = self.SpinSliceIndex2.GetValue() - 1
+        dims = self.tab.stack_sources[self.tab.stack2_select]['data'].shape
+        tmp = max(0, min(dims[3] - 1, tmp))  # clip to range
+        self.SpinSliceIndex2.SetValue(tmp)
+        self.tab.stack_sources[self.tab.stack1_select]['slice'] = tmp
+        self.tab.process_image()
+        self.tab.show()
 
-    def on_calc_range2(self, event):
-        self.tab.on_calc_range2(event)
+    def on_stack_range1(self, event):
+        ceil_val = self.FloatStackCeil1.GetValue()
+        floor_val = self.FloatStackFloor1.GetValue()
+        tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
+        self.FloatStackCeil1.SetValue(tmp[0])
+        self.FloatStackFloor1.SetValue(tmp[1])
+        d = self.tab.stack_sources[self.tab.stack1_select]
+        d['floor'] = tmp[0]
+        d['ceil'] = tmp[1]
+        self.process_image()
+        self.show()
 
-    def on_calc_reset1(self, event):
-        self.tab.on_calc_reset1(event)
+    def on_stack_range2(self, event):
+        ceil_val = self.FloatStackCeil2.GetValue()
+        floor_val = self.FloatStackFloor2.GetValue()
+        tmp = [floor_val, ceil_val] if floor_val < ceil_val else [ceil_val, floor_val]
+        self.FloatStackCeil2.SetValue(tmp[0])
+        self.FloatStackFloor2.SetValue(tmp[1])
+        d = self.tab.stack_sources[self.tab.stack2_select]
+        d['floor'] = tmp[0]
+        d['ceil'] = tmp[1]
+        self.tab.process_image()
+        self.tab.show()
 
+
+    def on_stack_reset1(self, event):
+        d = self.tab.stack_sources[self.tab.stack1_select]
+        d['floor'] = np.nanmin(d['data'])
+        d['ceil'] = np.nanmax(d['data'])
+        self.FloatStackFloor1.SetValue(d['floor'])
+        self.FloatStackCeil1.SetValue(d['ceil'])
+        self.tab.process_image()
+        self.tab.show()
+
+    def on_stack_reset2(self, event):
+        d = self.tab.stack_sources[self.tab.stack2_select]
+        d['floor'] = np.nanmin(d['data'])
+        d['ceil'] = np.nanmax(d['data'])
+        self.FloatStackFloor2.SetValue(d['floor'])
+        self.FloatStackCeil2.SetValue(d['ceil'])
+        self.tab.process_image()
+        self.tab.show()
+
+    # def on_source_stack1(self, event):
+    #     self.tab.on_source_stack1(event)
+    #
+    # def on_source_stack2(self, event):
+    #     self.tab.on_source_stack2(event)
+    #
+    # def on_slice_index1(self, event):
+    #     self.tab.on_slice_index1(event)
+    #
+    # def on_slice_index2(self, event):
+    #     self.tab.on_slice_index2(event)
+    #
+    # def on_calc_range1(self, event):
+    #     self.tab.on_calc_range1(event)
+    #
+    # def on_calc_range2(self, event):
+    #     self.tab.on_calc_range2(event)
+    #
+    # def on_calc_reset1(self, event):
+    #     self.tab.on_calc_reset1(event)
+    #
+    # def on_calc_reset2(self, event):
+    #     self.tab.on_calc_reset2(event)
+        
+    
     def on_calc_reset2(self, event):
         self.tab.on_calc_reset2(event)
 

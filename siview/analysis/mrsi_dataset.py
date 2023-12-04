@@ -6,6 +6,7 @@ import collections
 # 3rd party modules
 import numpy as np
 import xml.etree.cElementTree as ElementTree
+import pydicom as dicom
 
 # Our modules
 import siview.analysis.block_raw as block_raw
@@ -23,9 +24,58 @@ import siview.analysis.mrs_user_prior as mrs_user_prior
 import siview.common.util.misc as util_misc
 import siview.common.util.xml_ as util_xml
 import siview.common.constants as common_constants
+import siview.common.dcmstack as dcmstack
+from siview.common.dcmstack.dcmmeta import NiftiWrapper
 
 from siview.common.constants import Deflate
 
+fake_excl = ['Physician', ]
+fake_incl = ['ImageOrientationPatient', ]
+
+my_key_excl_res = ['Patient',
+                   'Physician',
+                   'Operator',
+#                    'Date',
+                   'Birth',
+                   'Address',
+                   'Institution',
+                   'Station',
+                   'SiteName',
+                   'Age',
+                   'Comment',
+                   'Phone',
+                   'Telephone',
+                   'Insurance',
+                   'Religious',
+                   'Language',
+                   'Military',
+                   'MedicalRecord',
+                   'Ethnic',
+                   'Occupation',
+                   'Unknown',
+                   'PrivateTagData',
+                   'UID',
+                   'StudyDescription',
+                   'DeviceSerialNumber',
+                   'ReferencedImageSequence',
+                   'RequestedProcedureDescription',
+                   'PerformedProcedureStepDescription',
+                   'PerformedProcedureStepID',
+                   ]
+'''A list of regexes passed to `make_key_regex_filter` as `exclude_res` to 
+create the `default_meta_filter`.'''
+
+my_key_incl_res = ['ImageOrientationPatient',
+                   'ImagePositionPatient',
+                   ]
+'''A list of regexes passed to `make_key_regex_filter` as `force_include_res` 
+to create the `default_meta_filter`.'''
+
+my_meta_filter = dcmstack.make_key_regex_filter(my_key_excl_res, my_key_incl_res)
+
+fake_meta_filter = dcmstack.make_key_regex_filter(fake_excl, fake_incl)
+
+LABELS_STACK = ["T1_MRI", "T2_MRI", "PD_MRI", "FLAIR_MRI"]
 
 
 ###########    Start of "private" constants, functions and classes    #########
@@ -114,6 +164,18 @@ def dataset_from_raw(raw, block_classes={ }, zero_fill_multiplier=0):
     return dataset
 
 
+def is_dicom(filename):
+    """Returns True if the file in question is a DICOM file, else False. """
+    # Per specs, DICOM files start with 128 reserved bytes followed by "DICM".
+    if os.path.isfile(filename):
+        with open(filename, "rb") as f:
+            s = f.read(132)
+        return s.endswith(b"DICM")
+    else:
+        return False
+
+
+
 class Dataset(object):
     """
     This is the primary data object for the SIView program.
@@ -194,6 +256,11 @@ class Dataset(object):
         self.blocks = collections.OrderedDict()
         for name in ("raw", "grid", "spatial", "prep", "spectral", "fit", "quant"):
             self._create_block( (name, DEFAULT_BLOCK_CLASSES[name]) )
+
+        # Create default MRI stack. We replace these as needed.
+        self.stack_sources_mri = collections.OrderedDict()
+        for label in LABELS_STACK:
+            self.stack_sources_mri[label] = None
 
         if attributes is not None:
             self.inflate(attributes)
@@ -636,6 +703,14 @@ class Dataset(object):
                     ee.append(block.deflate())
                 #else:
                     # We don't clutter up the XML with identity blocks.
+
+            for label in self.stack_sources_mri.keys():
+                node = self.stack_sources_mri[label]
+                if node is not None:
+                    # compress here at node level
+                    e.append(util_xml.nifti_to_element(node.nii_img, 'node_'+label, compress=True))
+
+
             return e
 
         elif flavor == Deflate.DICTIONARY:
@@ -674,6 +749,13 @@ class Dataset(object):
 
             for block_element in block_elements:
                 self._create_block(block_element.tag, block_element)
+
+            for label in LABELS_STACK:
+                val = source.find('node_'+label)
+                if val is not None:
+                    # decompress here at node level
+                    nii_img = util_xml.element_to_nifti(val, compress=True)
+                    self.nodes[label] = NiftiWrapper(nii_img)
 
         elif hasattr(source, "keys"):
             # Quacks like a dict
@@ -796,4 +878,41 @@ class Dataset(object):
         return max_index
 
 
+    #--------------------------------------------------------------------
+    # MRI Stack methods
+    #--------------------------------------------------------------------
 
+    def load_stack_dicom(self, path, label):
+
+        my_stack = dcmstack.DicomStack(vector_order='SeriesNumber',
+                                       meta_filter=fake_meta_filter)
+        try:
+            fnames = os.listdir(path)
+            fnames = [os.path.join(path, item) for item in fnames]
+            fnames = [item for item in fnames if os.path.isfile(item)]
+            fnames = [item for item in fnames if is_dicom(item)]
+
+            for item in fnames:
+                src_dcm = dicom.read_file(item)
+                my_stack.add_dcm(src_dcm)
+
+        except Exception as e:
+            msg = """Exception (load_node_dicom) reading DICOM file: \n"%s".""" % str(e)
+            raise ValueError(msg)
+
+        # NB. this will overwrite whatever is in this stack location
+        self.stack_sources_mri[label] = my_stack.to_nifti_wrapper()
+
+        # NB. dicom file tag/values can be accessed via the DcmMetaExtension
+        #   class. Examples:
+        #
+        #   >self.stack_sources_mri['T1_MRI'].meta_ext.to_json()
+        #   >self.stack_sources_mri['T1_MRI'].get_meta('EchoTime')
+        #
+        #   BUT, the original filenames are not saved. Just UID type
+        #   info.  So, we may want the line below, or something like it, at
+        #   some future point.
+
+        # self.stack_sources_mri[label]['source_names'] = fnames
+
+        bob = 10

@@ -6,15 +6,17 @@ import base64
 import datetime
 import sys
 import io
+from io import StringIO
 
 # 3rd party modules
 import numpy as np
+import nibabel as ni
 
 # Our modules
 import siview.common.constants as constants
 import siview.common.util.fileio as util_fileio
 from functools import reduce
-
+import siview.common.dcmstack as dcmstack
 
 # ENCODING_ATTR is a convenience constant. It's the encoding as dict suitable
 # for passing to ElementTree as the description of an element's attributes.
@@ -628,7 +630,95 @@ def encode_numeric_list(data, data_type):
     data = data.decode('utf-8')     # new with Py3 since some steps above now return 'byte' instead of 'str'
 
     return data
-    
+
+
+def nifti_to_element(nii_img, tag_name, compress=False):
+    """
+    Given a Nibabel Nifti1 object, returns an ElementTree.Element containing
+    three TextElements representing the byte encoded nifti header (with any
+    extensions), the byte encoded numpy array that is the affine, and the byte
+    encoded numpy array that is the nifti data object. This XML node can be
+    loaded back into a Nifti1 object using the element_to_nifti() method.
+
+    Note. Use np.save() here because ndarray.tofile() will not take StringIO
+
+    - from pymriseg
+
+    """
+    hdr = nii_img.get_header().copy()
+    dat = nii_img.dataobj[:, :, :]
+    aff = nii_img.get_affine().copy()
+
+    e = ElementTree.Element(tag_name, {"type": "nifti"})
+
+    ffake1 = StringIO.StringIO()
+    hdr.write_to(ffake1)
+    data = ffake1.getvalue()
+    if compress:
+        data = zlib.compress(data, 9)
+    hdr_encoded = base64.b64encode(data)
+    ffake1.close()
+    TextSubElement(e, "hdr_encoded", hdr_encoded)
+
+    ffake2 = StringIO.StringIO()
+    np.save(ffake2, aff)
+    data = ffake2.getvalue()
+    if compress:
+        data = zlib.compress(data, 9)
+    aff_encoded = base64.b64encode(data)
+    ffake2.close()
+    TextSubElement(e, "aff_encoded", aff_encoded)
+
+    ffake3 = StringIO.StringIO()
+    np.save(ffake3, dat)
+    data = ffake3.getvalue()
+    if compress:
+        data = zlib.compress(data, 9)
+    dat_encoded = base64.b64encode(data)
+    ffake3.close()
+    TextSubElement(e, "dat_encoded", dat_encoded)
+
+    return e
+
+
+def element_to_nifti(e, compress=False):
+    """
+    Complement to nifti_to_element() method.
+    - from pymriseg
+
+    """
+    hdr = ni.nifti1.Nifti1Header()
+
+    item = e.findtext('hdr_encoded')
+    if item is not None:
+        val = base64.b64decode(item)
+        if compress:
+            val = zlib.decompress(val)
+        val = StringIO.StringIO(val)
+        hdr = ni.nifti1.Nifti1Header().from_fileobj(val)
+
+    item = e.findtext('aff_encoded')
+    if item is not None:
+        val = base64.b64decode(item)
+        if compress:
+            val = zlib.decompress(val)
+        val = StringIO.StringIO(val)
+        aff = np.load(val)
+
+    item = e.findtext('dat_encoded')
+    if item is not None:
+        val = base64.b64decode(item)
+        if compress:
+            val = zlib.decompress(val)
+        val = StringIO.StringIO(val)
+        dat = np.load(val)
+
+    nii_img = ni.nifti1.Nifti1Image(dat, aff, header=hdr)
+
+    return nii_img
+
+
+
 
 if __name__ == "__main__":
     # test _is_homogenous()

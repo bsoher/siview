@@ -310,8 +310,8 @@ class ImagePaneMri(ImagePaneUI):
         xloc  = int(xloc)
         yloc  = int(yloc)
         iplot = int(iplot)
-        value = self.data[iplot]['data'][int(round(xloc))][int(round(yloc))]
-        self.top.statusbar.SetStatusText(" Value = %s" % (str(value),), 0)
+        val   = self.data[iplot]['data'][yloc, xloc]
+        self.top.statusbar.SetStatusText(" Value = %s" % (str(val),), 0)
         self.top.statusbar.SetStatusText(" X,Y = %i,%i" % (int(round(xloc+1)), int(round(yloc+1))), 1)
         self.top.statusbar.SetStatusText(" ", 2)
         self.top.statusbar.SetStatusText(" ", 3)
@@ -566,7 +566,6 @@ class ImagePaneMri(ImagePaneUI):
                 self.imageid[i].axes.add_line(self.toolbar.vlines[i])
             if self.horizOn:
                 self.imageid[i].axes.add_line(self.toolbar.hlines[i])
-
 
 
     def parse_indices(self, index=None):
