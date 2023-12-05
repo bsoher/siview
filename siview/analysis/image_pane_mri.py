@@ -297,7 +297,7 @@ class ImagePaneMri(ImagePaneUI):
         dims = self.tab.dataset.spectral_dims
         tmp = self.tab_dataset.voxel[2] + step
         tmp = tmp if tmp > 0 else 0
-        tmp = tmp if tmp < dims[2] - 1 else dims[2] - 1
+        tmp = tmp if tmp < dims[3] - 1 else dims[3] - 1
         self.tab_dataset.voxel[2] = tmp
         zvox = tmp
         # self.tab.process()

@@ -16,7 +16,7 @@ from wx.lib.mixins.listctrl import CheckListCtrlMixin, ColumnSorterMixin
 import matplotlib.cm as cm
 
 # Our modules
-import siview.analysis.mrs_dataset as mrs_dataset
+import siview.analysis.mrsi_dataset as mrsi_dataset
 import siview.analysis.tab_base as tab_base
 import siview.analysis.constants as constants
 import siview.analysis.util_menu as util_menu
@@ -315,7 +315,7 @@ def derived_dataset(ds, dsB, view, _tab_dataset, top, mode):
         # Convert Raw to Dataset - from util_file_import.get_datasets() line 356-ish
         block_classes = {}
         block_classes["raw"] = getattr(importlib.import_module('siview.analysis.block_raw_edit'), 'BlockRawEdit')
-        derived = mrs_dataset.dataset_from_raw(met, block_classes, ds.zero_fill_multiplier)
+        derived = mrsi_dataset.dataset_from_raw(met, block_classes, ds.zero_fill_multiplier)
 
         # set up associated datasets in original and derived objects
         # - get existing values first from original
@@ -432,10 +432,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         elif self._prefs.cmap_rdylbu : self.cmap_results = cm.RdYlBu
         else: self.cmap_results = cm.gray
 
-        self.stack_choices = ['None','Integral','First Point','MRI']
+        self.stack_choices = ['None','Integral','Integral Source','First Point']+mrsi_dataset.LABELS_STACK
         self.stack_sources = self.default_stack_sources()
         self.stack1_select = 'Integral'
-        self.stack2_select = 'MRI'
+        self.stack2_select = 'T1_MRI'
 
         self.initialize_controls()
         self.populate_controls()
@@ -2552,8 +2552,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
     def update_image_mri(self, set_ceil=False, set_floor=False):
         """ update (and maybe create entry) in stack_sources for First Point images """
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
-        dat = self.default_mri(128,128)
-        label = 'MRI'
+        dat = self.default_mri3d(128,32)
+        label = 'T1_MRI'
         if label not in self.stack_sources.keys():
             self.stack_sources[label] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice': 0}
             self.stack_sources[label]['ceil'] = dat.min()
@@ -2630,26 +2630,27 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.set_check_boxes()
 
     def default_stack_sources(self):
-        d = {'None':        {'data': None, 'ceil': 1.0, 'floor' :0.0, 'fov': 240.0, 'slice':0},
-             'Integral':    {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
-             'First Point': {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
-             'MRI':         {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0},
-            }
+
+        d = {}
+        for label in self.stack_choices:
+            d[label] = {'data': None, 'ceil': 1.0, 'floor' :0.0, 'fov': 240.0, 'slice':0}
+
+        # fill in SI data dimension images
         dat = self.default_calc()
         dmax = dat.max()
         dmin = dat.min()
-        d['None']['data'] = dat.copy()
-        d['None']['ceil'] = dmax
-        d['None']['floor'] = dmin
-        d['Integral']['data'] = dat.copy()
-        d['Integral']['ceil'] = dmax
-        d['Integral']['floor'] = dmin
-        d['First Point']['data'] = dat.copy()
-        d['First Point']['ceil'] = dmax
-        d['First Point']['floor'] = dmin
-        d['MRI']['data'] = self.default_mri(256)
-        d['MRI']['ceil'] = d['MRI']['data'].max()
-        d['MRI']['floor'] = d['MRI']['data'].min()
+        for label in ['None','Integral','Integral Source','First Point']:
+            d[label]['data'] = dat.copy()
+            d[label]['ceil'] = dmax
+            d[label]['floor'] = dmin
+        # fill in MRI data dimension images
+        dat = self.default_mri3d(128,32)
+        dmax = dat.max()
+        dmin = dat.min()
+        for label in mrsi_dataset.LABELS_STACK:
+            d[label]['data'] = dat.copy()
+            d[label]['ceil'] = dmax
+            d[label]['floor'] = dmin
         return d
 
 
@@ -2658,14 +2659,19 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         if ny is None:
             ny = nx
         r = self.dist(nx,ny=ny)
-        r.shape = 1, r.shape[0], r.shape[1]
+        r.shape = 1, r.shape[1], r.shape[0]
+        return r
+
+    def default_mri3d(self, nxy, nz):
+        """ can be different size from spectral data """
+        r = self.dist3d(nxy, nz)
         return r
 
     def default_calc(self):
         """ sized based on existing data """
         dim0, dim1, dim2, dim3, _, _ = self.dataset.spectral_dims
         r = self.dist(dim1, ny=dim2)
-        r.shape = 1, r.shape[0], r.shape[1]
+        r.shape = 1, r.shape[1], r.shape[0]
         return r
 
     def dist(self, nx, ny=None):
@@ -2678,17 +2684,15 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         out = np.roll(np.roll(np.abs(xx), int(nx/2), 1), int(ny/2), 0)
         return out
 
-    def dist3(self, nx, ny=None, nz=1):
+    def dist3d(self, nxy, nz=1):
         ''' Implements the IDL dist() function in Python '''
         if nz==1:
-            return self.dist(nx, ny=ny)
+            return self.dist(nxy)
 
-        if ny is None:
-            ny = nx
-        x = np.linspace(start=-nx / 2, stop=nx / 2 - 1, num=nx)
-        y = np.linspace(start=-ny / 2, stop=ny / 2 - 1, num=ny)
+        x = np.linspace(start=-nxy / 2, stop=nxy / 2 - 1, num=nxy)
+        y = np.linspace(start=-nxy / 2, stop=nxy / 2 - 1, num=nxy)
         xx = x + 1j * y[:, np.newaxis]
-        r2d = np.roll(np.roll(np.abs(xx), int(nx/2), 1), int(ny/2), 0)
+        r2d = np.roll(np.roll(np.abs(xx), int(nxy/2), 1), int(nxy/2), 0)
 
         z = np.linspace(start=-nz / 2, stop=nz / 2 - 1, num=nz)
         z = -1 * (np.abs(z) - nz/2)
