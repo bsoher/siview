@@ -2589,7 +2589,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 self.panel_image.FloatStackFloor2.SetRange(d2['floor'],d2['ceil'])
                 self.panel_image.FloatStackFloor2.SetValue(n)
 
-            self.update_image_integral(set_ceil=set_ceil, set_floor=set_floor)
+            self.update_image_integral(set_ceil=False, set_floor=False)
         else:
             # both sets of Ceil/Floor GUI refreshed to current source dict values
             n = max(min(d1['ceil'], self.panel_image.FloatStackCeil1.GetValue()), d1['floor'])
