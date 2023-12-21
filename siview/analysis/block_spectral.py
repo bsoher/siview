@@ -156,7 +156,7 @@ class _Settings(object):
         self.left_shift_correct      = False         # was kiss_off_correction  v1.2.0
         # SVD Filter parameters
         self.svd_apply_threshold     = True
-        self.svd_threshold           = 30            # value
+        self.svd_threshold           = 60            # value
         self.svd_threshold_unit      = 'Hz'          # units for svd_threshold, 'Hz' or 'PPM'
         self.svd_exclude_lipid       = False
         self.svd_exclude_lipid_start = 1.9
@@ -597,8 +597,12 @@ class BlockSpectral(block_spectral_identity.BlockSpectralIdentity):
 
     def get_do_fit(self, xyz):
         """ Returns do_fit for the voxel at the xyz tuple """
-        x, y, z = xyz
-        return self._water_filter_do_fit[x, y, z]
+        if len(xyz) == 3:
+            x, y, z = xyz
+            return self._water_filter_do_fit[x, y, z]
+        else:
+            return self._water_filter_do_fit
+
 
     def set_do_fit(self, do_fit, xyz):
         """ Sets do_fit for the voxel at the xyz tuple """

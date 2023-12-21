@@ -84,6 +84,7 @@ class ChainSpectral(Chain):
         The 'entry' keyword adds flexibility to Block-Chain-View relationship.
 
         """
+        data = self._dataset.get_source_data('spectral')
 
         # Get 'global' parameters, that DO NOT change with voxel, from Dataset
         #  - these processing/data parameters have to be updated at run time 
@@ -92,11 +93,10 @@ class ChainSpectral(Chain):
         self.spectral_hpp         = self._dataset.spectral_hpp
         self.zero_fill_multiplier = self._dataset.zero_fill_multiplier
         self.phase_1_pivot        = self._dataset.phase_1_pivot
-        
+
         for voxel in voxels:
             # local copy of input data
-            self.data = self._dataset.get_source_data('spectral')
-            self.data = self.data[0, 0, voxel[2],voxel[1],voxel[0],:]       # bjs SI
+            self.data = data[0, 0, voxel[2],voxel[1],voxel[0],:]       # bjs SI
             self.data = self.data.copy()
 
             # copy 'global' parameters, that DO change with voxel, from Dataset

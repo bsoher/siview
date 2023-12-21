@@ -444,7 +444,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         #------------------------------------------------------------
         # Setup the plot and image canvases and gui settings
-        self.process_and_plot()
+        self.process_and_plot(init=True, dataset_to_process=[0,])
         self.update_sources(set_ceil=True, set_floor=True)
         self.update_image_ranges()
         self.show()
@@ -788,10 +788,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         dims_stack1 = self.stack_sources[self.stack1_select]['data'].shape
         dims_stack2 = self.stack_sources[self.stack2_select]['data'].shape
 
-        self.set_stack_choices(no_update=True)
+        self.set_stack_choices(prev=[self.stack1_select,self.stack2_select], no_update=True)
 
-        wx_util.configure_spin(self.panel_image.SpinSliceIndex1, 60, min_max=(1, dims_stack1[2]))
-        wx_util.configure_spin(self.panel_image.SpinSliceIndex2, 60, min_max=(1, dims_stack2[2]))
+        wx_util.configure_spin(self.panel_image.SpinSliceIndex1, 60, min_max=(1, dims_stack1[0]))
+        wx_util.configure_spin(self.panel_image.SpinSliceIndex2, 60, min_max=(1, dims_stack2[0]))
         wx_util.configure_spin(self.panel_image.FloatStackCeil1, 60, 3, None, min_max=(-1000,1000))
         wx_util.configure_spin(self.panel_image.FloatStackCeil2, 60, 3, None, min_max=(-1000,1000))
         wx_util.configure_spin(self.panel_image.FloatStackFloor1, 60, 3, None, min_max=(-1000,1000))
@@ -962,10 +962,11 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.panel_image.FloatStackFloor2.SetValue(d2['floor'])
 
 
-    def set_stack_choices(self, no_update=False):
+    def set_stack_choices(self, prev=[], no_update=False):
         lines = self.stack_choices
         items = [self.panel_image.ComboSourceStack1, self.panel_image.ComboSourceStack2]
-        prev = [combo.GetStringSelection() for combo in items]
+        if not prev:
+            prev = [combo.GetStringSelection() for combo in items]
         for combo, label in zip(items,prev):
             combo.SetItems(lines)
             if label in lines:
@@ -1990,6 +1991,12 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 # We saved results, so we write the path to the INI file.
                 util_analysis_config.set_path(ini_name, filename)
 
+    def on_process_all(self, event):
+        self.process(init=True, dataset_to_process=[0,])
+        self.update_image_integral(set_ceil=True, set_floor=True)
+        self.plot()
+        self.show()
+
 
 
     # start SVD tab event handlers --------------------------------------------
@@ -2189,6 +2196,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
     def process_and_plot(self, entry='all',
                                dataset_to_process=(0, 1),
+                               init=False,
                                no_draw=False):
         """
         The process(), plot() and process_and_plot() methods are standard in
@@ -2199,13 +2207,13 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         tab_base.Tab.process_and_plot(self, entry)
 
         if self._plotting_enabled:
-            self.process(entry, dataset_to_process)
+            self.process(entry, dataset_to_process, init)
             self.plot(no_draw=no_draw)
             self.plot_svd(no_draw=no_draw)
 
 
 
-    def process(self, entry='all', dataset_to_process=(0,1)):
+    def process(self, entry='all', dataset_to_process=(0,1), init=False):
         """
         Data processing results are stored into the Block inside the Chain,
         but the View results are returned as a dictionary from the Chain.run()
@@ -2228,20 +2236,23 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 # Make it a tuple
                 dataset_to_process = (dataset_to_process,)
 
-            # update plot results arrays if required
-            voxel = self._tab_dataset.voxel
-
             for i in dataset_to_process:
                 dataset = self.dataset if i==0 else self.datasetB
                 tab = self if i==0 else self.tabB_spectral
                 if dataset:
+                    # update plot results arrays if required
+                    if not init:
+                        voxel = [self._tab_dataset.voxel,]
+                    else:
+                        voxel = dataset.all_voxels
+
                     block = dataset.blocks["spectral"]
-                    do_fit = block.get_do_fit(voxel)
-                    tab.plot_results = block.chain.run([voxel], entry=entry)
+                    do_fit = block.get_do_fit(voxel[0])
+                    tab.plot_results = block.chain.run(voxel, entry=entry)
 
                     if dataset == self.dataset:
                         # refresh the hlsvd sub-tab on the active dataset tab
-                        if do_fit or self._update_svd_gui:
+                        if do_fit or init or self._update_svd_gui:
                             # we changed results, now need to update results widget
                             self.svd_checklist_update()
                         else:
@@ -2503,30 +2514,37 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
     def update_image_integral(self, set_ceil=False, set_floor=False):
         """ update (and maybe create entry) in stack_sources for Integral images """
-        dat = self.dataset.get_source_data('spectral')
+        src = self.dataset.get_source_data('spectral')
+        dat = self.block.data
         npts, xdim, ydim, zdim, _, _ = self.dataset.spectral_dims
         istr, iend = self.view.ref_locations
         if self.view.data_type[0] == 'magnitude':
-            dat = np.sum(np.abs(dat[0, 0, :, :, :, istr:iend]), axis=-1)
+            src = np.sum(np.abs(src[0, 0, :, :, :, istr:iend]), axis=-1)
+            dat = np.sum(np.abs(dat[:, :, :, istr:iend]), axis=-1)
         elif self.view.data_type[0] == 'real':
-            dat = np.sum(dat[0, 0, :, :, :, istr:iend].real, axis=-1)
+            src = np.sum(src[0, 0, :, :, :, istr:iend].real, axis=-1)
+            dat = np.sum(dat[:, :, :, istr:iend].real, axis=-1)
         elif self.view.data_type[0] == 'imaginary':
-            dat = np.sum(dat[0, 0, :, :, :, istr:iend].imag, axis=-1)
+            src = np.sum(src[0, 0, :, :, :, istr:iend].imag, axis=-1)
+            dat = np.sum(dat[:, :, :, istr:iend].imag, axis=-1)
         else:
-            dat = dat[0, 0, :, :, :, 0].real * 0
-        label = 'Integral'
-        if label not in self.stack_sources.keys():
-            self.stack_sources[label] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0}
-            self.stack_sources[label]['ceil'] = dat.min()
-            self.stack_sources[label]['floor'] = dat.max()
-            self.stack_sources[label]['fov'] = 240.0       # TODO bjs
-            slice = self._tab_dataset.Spinz.GetValue()-1
-            self.stack_sources[label]['slice'] = slice if slice < zdim else zdim
-        self.stack_sources[label]['data'] = dat
-        if set_ceil:
-            self.stack_sources[label]['ceil'] = dat.max()
-        if set_floor:
-            self.stack_sources[label]['floor'] = dat.min()
+            src = src[0, 0, :, :, :, 0].real * 0
+            dat = dat[:, :, :, 0].real * 0
+        labels = ['Integral', 'Integral Source']
+        sources = [dat, src]
+        for label, source in zip(labels,sources):
+            if label not in self.stack_sources.keys():
+                self.stack_sources[label] = {'data': None, 'ceil': 1.0, 'floor': 0.0, 'fov': 240.0, 'slice':0}
+                self.stack_sources[label]['ceil'] = source.min()
+                self.stack_sources[label]['floor'] = source.max()
+                self.stack_sources[label]['fov'] = 240.0       # TODO bjs
+                slice = self._tab_dataset.Spinz.GetValue()-1
+                self.stack_sources[label]['slice'] = slice if slice < zdim else zdim
+            self.stack_sources[label]['data'] = source
+            if set_ceil:
+                self.stack_sources[label]['ceil'] = source.max()
+            if set_floor:
+                self.stack_sources[label]['floor'] = source.min()
 
 
     def update_image_first_point(self, set_ceil=False, set_floor=False):
@@ -2670,8 +2688,11 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
     def default_calc(self):
         """ sized based on existing data """
         dim0, dim1, dim2, dim3, _, _ = self.dataset.spectral_dims
-        r = self.dist(dim1, ny=dim2)
-        r.shape = 1, r.shape[1], r.shape[0]
+        if dim3 == 1:
+            r = self.dist(dim1, ny=dim2)
+            r.shape = 1, r.shape[1], r.shape[0]
+        else:
+            r = self.dist3d(dim1, nz=dim3)
         return r
 
     def dist(self, nx, ny=None):
