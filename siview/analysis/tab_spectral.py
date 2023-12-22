@@ -59,7 +59,6 @@ class CheckListCtrl(wx.ListCtrl, ColumnSorterMixin):
     def __init__(self, _inner_notebook, tab):
         style = wx.LC_REPORT | wx.LC_HRULES | wx.LC_VRULES
         wx.ListCtrl.__init__(self, _inner_notebook, -1, style=style)
-#        CheckListCtrlMixin.__init__(self)
         ColumnSorterMixin.__init__(self, _HLSVD_RESULTS_DISPLAY_SIZE)
         self.itemDataMap = {}
         self._tab_dataset = _inner_notebook
@@ -87,7 +86,7 @@ class CheckListCtrl(wx.ListCtrl, ColumnSorterMixin):
           need to call the on_check_item() method.
         """
         flag = event.GetEventObject().IsItemChecked(event.Index)
-        print('in OnCheckItem index/flag = '+str(event.Index)+'/'+str(flag))
+#        print('in OnCheckItem index/flag = '+str(event.Index)+'/'+str(flag))
         if self.tab._update_svd_gui == False:
             self.tab.on_check_item(self, event.Index, flag)
 
@@ -424,13 +423,17 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.plot_C_final = None
 
         # Image panel settings
-        if   self._prefs.cmap_autumn : self.cmap_results = cm.autumn
-        elif self._prefs.cmap_blues  : self.cmap_results = cm.Blues
-        elif self._prefs.cmap_jet    : self.cmap_results = cm.jet
-        elif self._prefs.cmap_rdbu   : self.cmap_results = cm.RdBu
-        elif self._prefs.cmap_gray   : self.cmap_results = cm.gray
-        elif self._prefs.cmap_rdylbu : self.cmap_results = cm.RdYlBu
-        else: self.cmap_results = cm.gray
+        self.cmap_results = cm.gray
+
+        # TODO bjs - need to decide how to manage cmap for Image Stack 1/2
+        #   both in prefs, and in menu, and here.
+        # if   self._prefs.cmap_autumn : self.cmap_results = cm.autumn
+        # elif self._prefs.cmap_blues  : self.cmap_results = cm.Blues
+        # elif self._prefs.cmap_jet    : self.cmap_results = cm.jet
+        # elif self._prefs.cmap_rdbu   : self.cmap_results = cm.RdBu
+        # elif self._prefs.cmap_gray   : self.cmap_results = cm.gray
+        # elif self._prefs.cmap_rdylbu : self.cmap_results = cm.RdYlBu
+        # else: self.cmap_results = cm.gray
 
         self.stack_choices = ['None','Integral','Integral Source','First Point']+mrsi_dataset.LABELS_STACK
         self.stack_sources = self.default_stack_sources()
@@ -790,12 +793,12 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         self.set_stack_choices(prev=[self.stack1_select,self.stack2_select], no_update=True)
 
-        wx_util.configure_spin(self.panel_image.SpinSliceIndex1, 60, min_max=(1, dims_stack1[0]))
-        wx_util.configure_spin(self.panel_image.SpinSliceIndex2, 60, min_max=(1, dims_stack2[0]))
-        wx_util.configure_spin(self.panel_image.FloatStackCeil1, 60, 3, None, min_max=(-1000,1000))
-        wx_util.configure_spin(self.panel_image.FloatStackCeil2, 60, 3, None, min_max=(-1000,1000))
-        wx_util.configure_spin(self.panel_image.FloatStackFloor1, 60, 3, None, min_max=(-1000,1000))
-        wx_util.configure_spin(self.panel_image.FloatStackFloor2, 60, 3, None, min_max=(-1000,1000))
+        wx_util.configure_spin(self.panel_image.SpinSliceIndex1, 50, min_max=(1, dims_stack1[0]))
+        wx_util.configure_spin(self.panel_image.SpinSliceIndex2, 50, min_max=(1, dims_stack2[0]))
+        wx_util.configure_spin(self.panel_image.FloatStackCeil1, 100, 3, None, min_max=(-1000,1000))
+        wx_util.configure_spin(self.panel_image.FloatStackCeil2, 100, 3, None, min_max=(-1000,1000))
+        wx_util.configure_spin(self.panel_image.FloatStackFloor1, 100, 3, None, min_max=(-1000,1000))
+        wx_util.configure_spin(self.panel_image.FloatStackFloor2, 100, 3, None, min_max=(-1000,1000))
 
 
     def populate_controls(self, preset=False):
@@ -1992,7 +1995,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                 util_analysis_config.set_path(ini_name, filename)
 
     def on_process_all(self, event):
-        self.process(init=True, dataset_to_process=[0,])
+        self.process(init=True, dataset_to_process=[0,], dynamic=False)
         self.update_image_integral(set_ceil=True, set_floor=True)
         self.plot()
         self.show()
@@ -2197,7 +2200,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
     def process_and_plot(self, entry='all',
                                dataset_to_process=(0, 1),
                                init=False,
-                               no_draw=False):
+                               no_draw=False,
+                               dynamic=False):
         """
         The process(), plot() and process_and_plot() methods are standard in
         all processing tabs. They are called to update the data in the plot
@@ -2207,13 +2211,14 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         tab_base.Tab.process_and_plot(self, entry)
 
         if self._plotting_enabled:
-            self.process(entry, dataset_to_process, init)
+            self.process(entry, dataset_to_process, init, dynamic=dynamic)
             self.plot(no_draw=no_draw)
-            self.plot_svd(no_draw=no_draw)
+            if not dynamic:
+                self.plot_svd(no_draw=no_draw)
 
 
 
-    def process(self, entry='all', dataset_to_process=(0,1), init=False):
+    def process(self, entry='all', dataset_to_process=(0,1), init=False, dynamic=False):
         """
         Data processing results are stored into the Block inside the Chain,
         but the View results are returned as a dictionary from the Chain.run()
@@ -2246,11 +2251,14 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                     else:
                         voxel = dataset.all_voxels
 
+                    if dynamic:
+                        entry = 'dynamic'
+
                     block = dataset.blocks["spectral"]
                     do_fit = block.get_do_fit(voxel[0])
                     tab.plot_results = block.chain.run(voxel, entry=entry)
 
-                    if dataset == self.dataset:
+                    if dataset == self.dataset and not dynamic:
                         # refresh the hlsvd sub-tab on the active dataset tab
                         if do_fit or init or self._update_svd_gui:
                             # we changed results, now need to update results widget
@@ -2274,12 +2282,14 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
 
 
-    def plot_svd(self, no_draw=False):
+    def plot_svd(self, no_draw=False, dynamic=False):
         """
         The set_data() method sets data into the plot_panel_spectrum object
         in the plot in the right panel.
 
         """
+        if dynamic: return
+
         if self._plotting_enabled:
             if not self._tab_dataset.indexAB[0]:
                 return
@@ -2383,6 +2393,24 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
             self.top.statusbar.SetStatusText(self.build_area_text(area[index], rms[index], plot_label=labl), 3)
 
 
+    def plot_dynamic(self, xloc, yloc):
+        """
+        Bare min call to plot things quickly ... TODO consider adding more functionality - bjs.
+
+        """
+        _, _, zloc   = self._tab_dataset.voxel
+
+        data1 = self.block.data[zloc, yloc, xloc, :].copy()
+        data2 = np.zeros_like(data1)
+        data3 = np.zeros_like(data1)
+
+        # these data will use default line colors in view  data1 == data2
+        data = [[data1], [data2], [data3]]
+        self.view.set_data(data)
+        self.view.update(no_draw=True)
+        self.view.canvas.draw()
+
+
     def show(self, keep_norm=True):
 
         if not self._plotting_enabled:
@@ -2444,7 +2472,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         view_data3 = self.plot_C_function(view_data1, view_data2)
         self.view.set_data_direct(view_data3, 2)
 
-    def svd_checklist_update(self):
+    def svd_checklist_update(self, dynamic=False):
         """
         This method totally rebuilds the result set in the checklist widget.
 
@@ -2454,6 +2482,8 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         index values according to the threshold.
 
         """
+        if dynamic: return
+
         voxel = self._tab_dataset.voxel[0:3]
 
         svd_output = self.block.get_svd_output(voxel)
@@ -2487,7 +2517,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.list_svd_results.itemDataMap = res
 
 
-    def on_voxel_change(self, voxel):
+    def on_voxel_change(self, voxel, dynamic=False):
         # this just updates widgets that vary based on the voxel number
         # selection. We do not update plot here because that is only done
         # for the active tab in the inner notebook.
@@ -2501,7 +2531,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
         self.SliderDataPoints.SetValue(int(self.block.get_data_point_count(voxel)))
         self.SliderSingularValues.SetValue(int(self.block.get_signal_singular_value_count(voxel)))
 
-        self.svd_checklist_update()
+        self.svd_checklist_update(dynamic=dynamic)
 
     def update_sources(self, refs_changed=False, set_ceil=False, set_floor=False):
         """ determine which images need updating in stack_sources, then show them """

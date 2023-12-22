@@ -323,7 +323,8 @@ class ImagePaneMri(ImagePaneUI):
             self.tab_dataset.SpinY.SetValue(yloc+1)
             self.last_x = xloc
             self.last_y = yloc
-            self.tab_dataset.set_voxel()
+            self.tab.plot_dynamic(xloc, yloc)
+            #self.tab_dataset.set_voxel(dynamic=True)
 
     def on_select(self, xloc, yloc, xpos, ypos, iplot):
         npts, xdim, ydim, zdim, _, _ = self.tab.dataset.spectral_dims

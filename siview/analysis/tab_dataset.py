@@ -509,7 +509,7 @@ class TabDataset(dataset_module.DatasetUI):
     #
     #=======================================================
 
-    def set_voxel(self):
+    def set_voxel(self, dynamic=False):
         """ called from an ImagePaneMri object for interactive 'browsing' """
         tmpx, tmpy, tmpz = self.voxel
         dims = self.dataset.spectral_dims
@@ -519,34 +519,40 @@ class TabDataset(dataset_module.DatasetUI):
         self.SpinX.SetValue(tmpx + 1)
         self.SpinY.SetValue(tmpy + 1)
         self.SpinZ.SetValue(tmpz + 1)
-        self.on_voxel_change()
+        self.on_voxel_change(dynamic=dynamic)
 
-    def on_voxel_change(self, event=None):
-        # This event can be called programmatically, in which case event is None.
-        raw = self.dataset.blocks["raw"]
-        self.TextData.ChangeValue(raw.get_data_source(self.voxel))
-
-        # Let everyone know that the current voxel changed.
-        for tab in self.NotebookDataset.tabs:
-            tab.on_voxel_change(self.voxel)
-
-            if tab.is_spectral and not self.turn_off_update:
-                tab.process()
+    def on_voxel_change(self, event=None, dynamic=False):
 
         # not all pages need process() updated
         active_tab = self.NotebookDataset.active_tab
 
-        if active_tab is not None:
-    
-            if active_tab.is_spectral:
-                active_tab.plot()
-                active_tab.plot_svd()
-            elif active_tab.is_voigt:
-                active_tab.process_and_plot(entry='plot_refresh')
-                active_tab.view.canvas.draw()
-            elif active_tab.is_watref:
-                active_tab.process_and_plot()
-                #active_tab.view.canvas.draw()
+        if dynamic:
+            if active_tab is not None:
+                if active_tab.is_spectral:
+                    active_tab.plot_dynamic()
+        else:
+            # This event can be called programmatically, in which case event is None.
+            raw = self.dataset.blocks["raw"]
+            self.TextData.ChangeValue(raw.get_data_source(self.voxel))
+
+            # Let everyone know that the current voxel changed.
+            for tab in self.NotebookDataset.tabs:
+                tab.on_voxel_change(self.voxel)
+
+                if tab.is_spectral and not self.turn_off_update:
+                    tab.process(dynamic=dynamic)
+
+            if active_tab is not None:
+
+                if active_tab.is_spectral:
+                    active_tab.plot()
+                    active_tab.plot_svd(dynamic=dynamic)
+                elif active_tab.is_voigt:
+                    active_tab.process_and_plot(entry='plot_refresh')
+                    active_tab.view.canvas.draw()
+                elif active_tab.is_watref:
+                    active_tab.process_and_plot()
+                    #active_tab.view.canvas.draw()
 
 
     def on_scale(self, event):

@@ -72,7 +72,6 @@ class ChainSpectral(Chain):
             self.svd_peaks_checked_sum = np.zeros(spectral_dim0,      complex)
                         
 
-
     def run(self, voxels, entry='all'):
         """
         Run is typically called every time a processing setting is changed
@@ -84,6 +83,15 @@ class ChainSpectral(Chain):
         The 'entry' keyword adds flexibility to Block-Chain-View relationship.
 
         """
+        if entry == 'dynamic':
+            voxel = voxels[0]
+            plot_results = {'svd_data': self.svd_data.copy(),
+                            'svd_peaks_checked': self.svd_peaks_checked.copy(),
+                            'svd_peaks_checked_sum': self.svd_peaks_checked_sum.copy(),
+                            'svd_fids_checked_sum': self.svd_fids_checked.copy(),
+                            'freq': self._block.data[voxel[2], voxel[1], voxel[0], :].copy()}
+            return plot_results
+
         data = self._dataset.get_source_data('spectral')
 
         # Get 'global' parameters, that DO NOT change with voxel, from Dataset
@@ -124,13 +132,12 @@ class ChainSpectral(Chain):
             self._block.set_svd_output(self.svd_output, voxel)
             self._block.set_do_fit(self.do_fit, voxel)
 
-        # Return values specific to calling Tab that contains this Block.Chain
-        # Used to update its self.view (plot_panel_spectrum object).
+            # Return values specific to calling Tab that contains this Block.Chain
+            # Used to update its self.view (plot_panel_spectrum object).
+            plot_results = {'svd_data': self.svd_data.copy(),
+                            'svd_peaks_checked': self.svd_peaks_checked.copy(),
+                            'svd_peaks_checked_sum': self.svd_peaks_checked_sum.copy(),
+                            'svd_fids_checked_sum': self.svd_fids_checked.copy(),
+                            'freq': self.freq.copy()}
 
-        plot_results = { 'svd_data'               : self.svd_data.copy(),
-                         'svd_peaks_checked'      : self.svd_peaks_checked.copy(),
-                         'svd_peaks_checked_sum'  : self.svd_peaks_checked_sum.copy(),
-                         'svd_fids_checked_sum'   : self.svd_fids_checked.copy(),
-                         'freq'                   : self.freq.copy()   }
-                        
         return plot_results
