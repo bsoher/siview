@@ -3,7 +3,7 @@ Command line interface for nitool.
 
 @author: moloney
 """
-from __future__ import print_function
+
 
 import os, sys, argparse
 
@@ -16,12 +16,9 @@ prog_descrip = """Work with extended Nifti files created by dcmstack"""
 def main(argv=sys.argv):
     #Setup the top level parser
     arg_parser = argparse.ArgumentParser(description=prog_descrip)
-    if sys.version_info > (3, 7):
-        sub_parsers = arg_parser.add_subparsers(title="Subcommands",
-                                                dest='cmd',
-                                                required=True)
-    else:
-        sub_parsers = arg_parser.add_subparsers(title="Subcommands", dest='cmd')
+    sub_parsers = arg_parser.add_subparsers(title="Subcommands",
+                                            dest='cmd',
+                                            required=True)
 
     #Split command
     split_help = ("Split src_nii file along a dimension. Defaults to the slice "

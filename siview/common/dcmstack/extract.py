@@ -239,7 +239,7 @@ def csa_series_trans_func(elem):
     if not phx_src is None:
         phoenix_dict = parse_phoenix_prot(phx_src, csa_dict[phx_src])
         del csa_dict[phx_src]
-        for key, val in phoenix_dict.items():
+        for key, val in list(phoenix_dict.items()):
             new_key = '%s.%s' % ('MrPhoenixProtocol', key)
             csa_dict[new_key] = val
 
@@ -517,8 +517,8 @@ class MetaExtractor(object):
             result[name] = value
 
         #Inject translator results
-        for trans_name, meta in trans_meta_dicts.items():
-            for name, value in meta.items():
+        for trans_name, meta in list(trans_meta_dicts.items()):
+            for name, value in list(meta.items()):
                 name = '%s.%s' % (trans_name, name)
                 result[name] = value
 

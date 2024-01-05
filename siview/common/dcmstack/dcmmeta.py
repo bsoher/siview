@@ -1,7 +1,7 @@
 """
 DcmMeta header extension and NiftiWrapper for working with extended Niftis.
 """
-from __future__ import print_function
+
 
 import sys, re, json, warnings
 from copy import deepcopy
@@ -340,7 +340,7 @@ class DcmMetaExtension(Nifti1Extension):
         '''Get a list of all the meta data keys that are available.'''
         keys = []
         for base_class, sub_class in self.get_valid_classes():
-            keys += self._content[base_class][sub_class].keys()
+            keys += list(self._content[base_class][sub_class].keys())
         return keys
 
     def get_classification(self, key):
@@ -980,7 +980,7 @@ class DcmMetaExtension(Nifti1Extension):
                     for key, vals in iteritems(src_dict):
                         self.get_class_dict(dest_cls)[key] = \
                             deepcopy(vals[idx::stride])
-                    for key in src_dict.keys():
+                    for key in list(src_dict.keys()):
                         self._simplify(key)
 
             else: #Otherwise classification does not change
@@ -1435,7 +1435,7 @@ class NiftiWrapper(object):
 
         '''
         shape = self.nii_img.shape
-        data = np.asanyarray(self.nii_img.dataobj)
+        data = self.nii_img.get_data()
         header = self.nii_img.header
         slice_dim = header.get_dim_info()[2]
 
@@ -1462,7 +1462,7 @@ class NiftiWrapper(object):
             else:
                 slices[dim] = slice(idx, idx+1)
 
-            split_data = data[tuple(slices)].copy()
+            split_data = data[slices].copy()
 
             #Update the translation in any affines if needed
             if not trans_update is None and idx != 0:
@@ -1647,7 +1647,7 @@ class NiftiWrapper(object):
             result_shape.append(1)
         result_shape[dim] = n_inputs
 
-        result_dtype = max(input_wrp.nii_img.get_data_dtype()
+        result_dtype = max(input_wrp.nii_img.get_data().dtype
                            for input_wrp in seq)
         result_data = np.empty(result_shape, dtype=result_dtype)
 
@@ -1721,7 +1721,7 @@ class NiftiWrapper(object):
 
 
             data_slices[dim] = input_idx
-            result_data[tuple(data_slices)] = np.asanyarray(input_nii.dataobj).squeeze()
+            result_data[data_slices] = input_nii.get_data().squeeze()
 
             if input_idx != 0:
                 if (hdr_info['qform'] is None or
