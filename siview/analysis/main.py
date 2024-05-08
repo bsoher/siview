@@ -243,7 +243,7 @@ class Main(wx.Frame):
         if fname:
             try:
                 crt_dat = np.load(fname)
-                if crt_dat.shape == (512,24,24):
+                if crt_dat.shape in [(512,24,24), (512,40,40), (512,36,36)]:
                     crt_dat = np.swapaxes(crt_dat,0,2)
                 if len(crt_dat.shape) != 3:
                     msg = 'Error (import_data_crt): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
