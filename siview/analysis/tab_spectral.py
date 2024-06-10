@@ -2399,8 +2399,10 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
 
         """
         _, _, zloc   = self._tab_dataset.voxel
-
-        data1 = self.block.data[zloc, yloc, xloc, :].copy()
+        x = min(max(xloc, 0), self.block.data.shape[2])
+        y = min(max(yloc, 0), self.block.data.shape[1])
+        z = zloc
+        data1 = self.block.data[z, y, x, :].copy()
         data2 = np.zeros_like(data1)
         data3 = np.zeros_like(data1)
 
