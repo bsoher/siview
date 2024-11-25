@@ -285,6 +285,61 @@ class Main(wx.Frame):
                 path, _ = os.path.split(fname)
                 util_analysis_config.set_path(ini_name, path)
 
+    def on_import_data_challenge(self, event):
+
+        ini_name = "import_data_challenge"
+        default_path = util_analysis_config.get_path(ini_name)
+        msg = 'Select file with Processed Challenge Data'
+        filetype_filter = "(*.npy, *.*)|*.npy;*.*"
+
+        fname = common_dialogs.pickfile(message=msg,
+                                        default_path=default_path,
+                                        filetype_filter=filetype_filter)
+        msg = ""
+        if fname:
+            try:
+                crt_dat = np.load(fname)
+                if crt_dat.shape in [(512,24,24), (512,40,40), (512,36,36)]:
+                    crt_dat = np.swapaxes(crt_dat,0,2)
+                if len(crt_dat.shape) != 3:
+                    msg = 'Error (import_data_crt): Wrong Dimensions, arr.shape = %d' % len(crt_dat.shape)
+                elif crt_dat.dtype not in [np.complex64, np.complex128]:
+                    msg = 'Error (import_data_crt): Wrong Dtype, arr.dtype = '+str(crt_dat.dtype)
+            except Exception as e:
+                msg = """Error (import_data_crt): Exception reading Numpy CRT dat file: \n"%s"."""%str(e)
+
+            if msg:
+                common_dialogs.message(msg, default_content.APP_NAME+" - Import CRT Data", common_dialogs.E_OK)
+            else:
+                path, _ = os.path.split(fname)
+
+                # bjs hack
+                # crt_dat = crt_dat * np.exp(-1j*np.pi*90/180)
+                # crt_dat *= 1e12
+
+                raw = mrsi_data_raw.MrsiDataRaw()
+                raw.data_sources = [fname,]
+                raw.data = crt_dat
+                raw.sw = 1204.0
+                raw.frequency = 127.7
+                raw.resppm = 4.7
+                raw.seqte = 2.0
+                raw.seqtr = 2000.0
+                raw.headers = ['This is a externally processed Challenge file, with Spectral Tab-ready data in it.']
+
+                dataset = mrsi_dataset.dataset_from_raw(raw)
+                datasets = [dataset,]
+
+                self.notebook_datasets.Freeze()
+                wx.BeginBusyCursor()
+                self.notebook_datasets.add_dataset_tab(datasets)
+                wx.EndBusyCursor()
+                self.notebook_datasets.Thaw()
+                self.notebook_datasets.Layout()
+                self.update_title()
+
+                path, _ = os.path.split(fname)
+                util_analysis_config.set_path(ini_name, path)
     
     def on_open_viff(self, event):
         self.Freeze()
