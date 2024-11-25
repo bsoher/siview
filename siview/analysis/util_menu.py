@@ -608,6 +608,7 @@ def _get_menu_data(main):
 #                ("Save to File",     main.on_save_preset_to_file),
 #            )),
             ("Import Processed CRT Data", main.on_import_data_crt),
+            ("Import Processed Challenge Data", main.on_import_data_challenge),
             common_menu.SEPARATOR,
             ("Load MRI - DICOM", (
                 ("T1 MRI",      main.on_load_dicom_t1),

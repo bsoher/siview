@@ -1208,7 +1208,7 @@ class TabSpectral(tab_base.Tab, spectral.PanelSpectralUI):
                                     facecolor='w',
                                     edgecolor='w',
                                     orientation='portrait',
-                                    papertype='letter',
+                                    #papertype='letter',
                                     format=None,
                                     transparent=False)
                 except IOError:
