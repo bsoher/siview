@@ -548,8 +548,10 @@ class ImagePanel(wx.Panel):
                 yold, xold = axes.images[0].get_array().shape
             else:
                 yold, xold = -1,-1
-            
-            axes.images.clear()
+
+            # axes.images.clear()
+            for item in list(axes.images):
+                item.remove()
             
             ddict    = self.data[i][0]
             img_norm = self.img_norm[i]
@@ -1894,7 +1896,10 @@ class RoiTool:
         
         # remove previous ROI patches, if needed
         if self.to_draw is not None:
-            self.axes.patches.remove(self.to_draw)
+            # self.axes.patches.remove(self.to_draw)
+            for item in list(self.axes.patches):
+                item.remove()
+
             self.to_draw = None
         
         # create ROI template of selected shape
@@ -1983,8 +1988,12 @@ class RoiTool:
             if roi is not None:
                 # remove from the two locations roi was saved in release()
                 if roi.patch in self.axes.patches:
-                    self.axes.patches.remove(roi.patch)
-                self.rois.remove(roi)
+                    #self.axes.patches.remove(roi.patch)
+                    roi.patch.remove()
+
+                #self.rois.remove(roi)
+                roi.remove()
+
                 self.canvas.draw()
                 return
 
